@@ -1,0 +1,545 @@
+% !Mode:: "TeX:UTF-8"
+%\chapter{多领域标注数据获取和NER系统构建}
+%第一章，我们构建了人工标注的双树对齐数据，并提出了两种性能相当的树库转化模型，即基于模式的树库转化方法和基于TreeLSTM的树库转化方法. 但是两种方法都存在一定的缺陷.
+%pattern：理论上浅层编码，实验表明了局限性.
+%treelstm： 1. lstm无法并行，treelstm更无法并行 2. 使用最短路径树时，n方
+%我们尝试了两种优化，一改进treelstm方法 二，基于可以并行的GCN方法
+%此外，考虑到对源端树库利用的不充分，我们的方法：
+%1. 概率， 2. treebank embedding 3. copus weighting 4. concate-finetune
+%最后我们提出基于多任务学习的依存句法-树库转化联合模型，尝试xxxx.
+
+%此外，现有的树库转化方式为级联的方式，即先经过源端句法树和目标端句法树
+\chapter{高阶依存句法分析近似方法：变分推断}
+本章在意见角色标注任务（ORL）上探讨了依存句法的应用方法和作用.
+%本章探讨了利用依存句法信息来缓解ORL数据稀缺性的问题.
+首先，我们从BiaffineParser依存句法分析器的核心组成模块中抽取了三种不同形式的句法信息.
+%（句法树、句法森林和句法感知隐状态）；
+然后，我们采用不同的编码方法来表示句法信息，并以级联的方式融入到基于BiLSTM-CRF的ORL模型中；
+最后，为了减弱级联方式使用句法信息带来的错误传递问题，我们采用软参共享的多任务学习框架同时训练句法模型和ORL模型.
+此外，我们还进一步探讨了在预训练语言模型BERT的基础上，句法信息对于ORL模型的作用.
+
+\section{引言}
+意见挖掘和情感分析任务在现实生活中有很广泛的应用，比如社交媒体监控、票房预测和电子商务应用\upcite{bollen2011twitter,nguyen2015sentiment,cui-etal-2017-superagent}. 具体来说，细粒度的意见分析旨在识别文本中用户的意见成分，比如意见的措辞、意见的强度、意见的持有者和意见的目标等\upcite{marasovic2017srl4orl}. 这对于理解政治家的立场、营销趋势和客户评论来说起着关键作用. 意见角色标注（Opinion Role Labeling，ORL）是自然语言处理（NLP）中识别不同意见角色的任务之一. 如图\ref{fig:example-syntax}的例子所示，它旨在识别\textbf{意见措辞}（Expression）、\textbf{意见持有者}（Holder）和\textbf{意见目标}（Target），分别对应“says”、“Cardoso”和“challenge facing Chavez”.
+
+\begin{figure}[hb]
+    %\vspace{-0.5em}
+    \centering
+    \includegraphics[angle=0,width=0.65\textwidth]{img/orl-syntax-example-crop.pdf}
+    \caption{ORL实例及其依存句法结构. }
+    \label{fig:example-syntax}
+    %\vspace{-1.5em}
+\end{figure}
+
+由于缺乏大规模的人工标注数据，数据驱动的ORL模型仍然面临着很大的挑战. Marasovi{\'c}和Frank（2017）\upcite{marasovic2017srl4orl}、Zhang等（2019）\upcite{zhang2019enhancing}尝试用一个与之相似的任务，语义角色标注任务（Semantic Role Labeling，SRL），来帮助ORL任务. 因为SRL的人工标注数据是ORL的10倍多，并且性能上优于ORL任务约20\% (约80 \textasciitilde 90\% VS. 60 \textasciitilde 70\%). 但是研究\upcite{marasovic2017srl4orl}表明SRL还不能解决所有的情况，当意见措辞与意见角色之间存在复杂的句法结构时，像SRL这样的浅层语义表达，很难识别正确的意见角色.
+
+为了弥补数据驱动的ORL方法，研究者往往通过融入语法等语言学知识来提供人类对文本理解的结构信息. 依存句法指出了句子的句法成分和词语之间的句法依赖关系，有助于识别意见角色. 如图\ref{fig:example-syntax}所示，没有图上方的句法信息的帮助，意见目标角色往往会识别的不完整：要么会漏识别“challenge”，要么会漏识别“facing Chavez”.
+然而，几乎没有工作研究句法信息在基于神经网络的ORL模型中的作用.
+
+本文通过在基于BiLSTM-CRF (Bidirectional Long Short-term Memory, Conditional Random Field)的ORL模型中引入依存句法信息，来弥补ORL训练语料的稀缺性.
+%具体地，我们从文献[6]提出的目前性能最好的依存句法分析模型(本文称之为BiaffineParser)中获取句法信息. 我们从基于图的BiaffineParser的计算机制出发，获取并分析了其不同模块产生的不同形式的句法信息，包括句法树，句法森林和编码层产生的句法感知隐状态. 然后我们采用不同的编码方法表示句法信息并融入到基于BiLSTM-CRF (Bidirectional Long Short-term Memory, Conditional Random Field)的ORL模型中，以增强ORL模型的识别能力.
+我们采用Dozat和Manning（2017）\upcite{dozat2017deep}提出的目前性能最好的依存句法分析模型（BiaffineParser）提供所需的句法信息. 具体地，
+我们从基于图的BiaffineParser的计算机制出发，获取并分析了其核心模块产生的不同形式的句法信息，包括编码层产生的句法感知隐状态、双仿射得分层产生的句法森林和MST解码层产生的句法树.
+从形式上看，分别属于隐式的神经向量句法信息、显式的图结构句法信息和显式的树结构句法信息.
+然后我们采用不同的编码方法表示句法信息，并将其融入到基于BiLSTM-CRF 的ORL模型中，以增强ORL模型的识别能力.
+%其中，我们首次提出采用GCN编码句法森林信息，并尝试同时融合显式和隐式的句法信息.
+
+上述的做法可以总结为从一个训练好的句法模型中获取句法信息，然后再融入到ORL模型中，这是一种典型的基于级联的句法应用方式.
+%上述方法都是基于级联的句法应用方式，即先训练好一个句法模型，然后再利用该模型去解析ORL语料而获得句法信息.
+然而，级联方式往往会造成错误传递问题，即将句法模型带来的错误引入到了ORL模型的学习中. 为
+了减弱级联方式带来的错误传递问题，我们采用新颖的基于软参共享的多任务学习框架来同时训练依存句法模型和ORL模型，增强了两个任务之间的耦合性，使训练的句法模型更适应于ORL任务.
+
+此外，基于大规模无监督数据的预训练语言模型，如BERT（Bidirectional Encoder Representations from Transformers）\upcite{devlin2018bert}，编码了丰富的上下文信息，被广泛用于训练数据规模小的任务.
+%虽然这种预训练语言模型通过压缩大规模语料中蕴含的词的分布式语义，使局部文本表达流畅自然，但是，词之间的长距离依赖关系常常被忽略.
+虽然这种预训练语言模型具有强大的表征能力，能使文本的局部表达流畅自然，但是词之间的长距离依赖关系常常被忽略.
+与此同时，句法信息能拉近词之间的距离，可以更好地刻画词之间的长距离依赖关系.
+进一步地，本文同时使用句法和BERT信息，探究二者是否能互相弥补，使得NLP下游任务获得更好的效果.
+
+在意见挖掘标准数据集MPQA 2.0\upcite{ruppenhofer2008finding}上，我们构建了融入句法和BERT的实验. 为了增强实验结果和结论的可靠性，本文汇报了五折交叉验证实验结果的平均值.
+%实验结果表明：1）三种形式的依存句法信息都能有效地提升ORL模型的识别能力；
+%2）软参共享的多任务学习框架能有效地缓解错误传递问题；
+%3）BERT特征并不能完全取代句法信息的作用，二者从不同方向帮助了ORL模型.
+%此外，同时融合句法和BERT的实验在F1值上达到了68.08\%，超过了基线模型9.29\%，超过了目前的最好性能4.34\%.
+%引入BERT特征后，句法信息仍然能进一步提升ORL模型性能，F1值上提升了2.46\%，取得了目前最好的性能.
+%\input{data/example.tex}
+
+
+\section{ORL基线模型}
+遵循Marasovi{\'c}和Frank（2017）\upcite{marasovic2017srl4orl}、Zhang等（2019）\upcite{zhang2019enhancing}的工作，我们在给定意见措辞的条件下，预测意见持有者和意见目标两个角色. 该任务可以建模为序列标注任务：给每个词标上$\{BMES\}*\{Target, Holder\} + \{O\}$集合中的标签，然后找到得分最高的标签序列$\hat{y} = y_1,y_2,\cdots, y_n$.
+%最后通过标签序列来识别角色的文本片段.
+其中$y_n$是词$w_n$的标签, $n$是句子长度. 形式化,如公式\ref{eq:orl_define}所示，从所有合法的标签序列中找到分数最高的序列：
+\begin{equation}
+    \setlength{\abovedisplayskip}{9pt}
+    \setlength{\belowdisplayskip}{9pt}
+    \label{eq:orl_define}
+    \hat{y} = \mathop{\arg\max}_{y \in \psi(S)} \texttt{score}(S, y)
+\end{equation}
+其中$S$是待预测的句子，$\psi(S)$是句子S的所有合法的标签序列.
+
+\begin{figure}[hb]
+    %\vspace{-0.5em}
+    \centering
+    \includegraphics[angle=0,width=0.7\textwidth]{img/orl-model-crop.pdf}
+    \caption{基于BiLSTM-CRF的ORL模型结构}
+    \label{fig:orl_model}
+    %\vspace{-1.5em}
+\end{figure}
+
+为了计算标签序列的分数，我们采用经典的BiLSTM-CRF作为ORL的基线模型.
+如图\ref{fig:orl_model}所示，模型由输入层、BiLSTM编码层和CRF预测层组成.
+
+\textbf{输入层.  } ORL模型的输入为句子$S=w_1w_2\cdots w_n$和意见措辞片段$E=w_sw_{s+1}\cdots w_e$ （$1 \leq s\leq e \leq n$），其中我们用$0/1$标志来表明一个词$w_i$是否是意见措辞的一部分. 如图\ref{fig:orl_model}底部所示，“like”是意见措辞的一部分，所以标记为1，而“I”、“eating”和“apples”不属于意见措辞片段，所以标记为0.
+
+每个词的输入向量包括词的预训练向量和意见措辞标志向量（我们把0/1标志映射为向量形式，叫做意见措辞标志向量）. 公式\ref{eq:orl_input}展示了词$w_i$的输入特征$\mathbf{x}_i$，其中$\mathbf{e}_{w_i}^{\texttt{word}}$表示词$w_i$的预训练词向量， $s\leq i\leq e$是逻辑表达式，取值为0/1，$\mathbf{e}_1^{\texttt{exp}}$是意见措辞的标志向量，$\mathbf{e}_0^{\texttt{exp}}$是非意见措辞的标志向量.
+\begin{equation}
+    \setlength{\abovedisplayskip}{9pt}
+    \setlength{\belowdisplayskip}{9pt}
+    \label{eq:orl_input}
+    \mathbf{x}_i = \mathbf{e}_{w_i}^{\texttt{word}} \oplus \mathbf{e}_{s\leq i\leq e}^{\texttt{exp}}, \quad i \in [1,n]
+\end{equation}
+
+此外，当基线ORL模型引入BERT特征时，我们用BERT 12层编码器的最后一层的隐状态输出作为词的额外输入. 此时，如公式\ref{eq:bert_orl_input}所示，词$w_i$的输入特征$x_i$是预训练词向量$\mathbf{e}_{w_i}^{\texttt{word}}$，意见措辞标志向量$\mathbf{e}_{s\leq i\leq e}^{\texttt{exp}}$和基于BERT的词表示向量$\mathbf{e}_{w_i}^{\texttt{BERT}}$的拼接.
+
+\begin{equation}
+    \setlength{\abovedisplayskip}{9pt}
+    \setlength{\belowdisplayskip}{9pt}
+    \label{eq:bert_orl_input}
+    \mathbf{x}_i = \mathbf{e}_{w_i}^{\texttt{word}} \oplus \mathbf{e}_{s\leq i\leq e}^{\texttt{exp}} \oplus \mathbf{e}_{w_i}^{\texttt{BERT}}, \quad i \in [1,n]
+\end{equation}
+
+\textbf{BiLSTM编码层.  } 为了充分编码输入的句子，我们在输入层上堆叠了三层BiLSTM.
+通过正向/反向LSTM，抽取了丰富的文本信息，得到了BiLSTM输出的隐状态序列$\mathbf{h}_1 \mathbf{h}_2\dots \mathbf{h}_n$. 其中$\mathbf{h}_i=\stackrel{\leftarrow}{\mathbf{h}_i} \oplus \stackrel{\rightarrow}{\mathbf{h}_i}$，$\stackrel{\leftarrow}{\mathbf{h}_i}$和$\stackrel{\rightarrow}{\mathbf{h}_i}$分别是反向/正向LSTM的输出.
+%然后，我们将顶层BiLSTM的自左向右的LSTM的隐状态和自右向左的LSTM的隐状态拼接起来作为作为词$w_i$的表示向量$\mathbf{h}_i$.
+
+%\textbf{线性得分层.  }
+%以词$w_i$为例，我们将其在编码层的输出向量$\mathbf{h}_i$作为得分层的输入来计算文本中每个词对应每个标签的得分$\mathbf{p}_i$，如公式\ref{eq:orl_mlp}所示. 其中$\mathbf{W}$和$\mathbf{b}$是模型参数.
+%以词$w_i$为例，基于其在编码层的输出向量$\mathbf{h}_i$，我们采用线性运算和softmax操作来得到词$w_i$被分配标签的概率分布，记为$p(y_i|S,i)$. 如公式\ref{eq:orl_mlp}所示.
+\textbf{CRF预测层.  }
+最终，我们将编码层的输出序列$\mathbf{h}_1 \mathbf{h}_2\dots \mathbf{h}_n$输入到CRF预测层做解码运算. CRF是一个全局归一函数，旨在考虑连续标记之间的依赖性来找到最优输出序列，适用于ORL等序列标注问题：一个位置的输出标签强依赖于前一个位置的输出标签. 例如，“E-XX”之前的标签必须是“M-XX”或者是“B-XX”，且“XX”应该完全相同，表示是同一个角色.
+
+CRF预测层的计算分为两步. 首先，我们以$\mathbf{h}_i$为输入，通过线性运算得到每个词$w_i$的所有标签的得分$\mathbf{p}_i$（$\mathbf{p}_i$的维度为标签集合的大小）.
+然后，考虑到标签之间的依赖性，CRF通过引入状态转移矩阵$T$来定义标签序列的得分，如公式\ref{eq:orl_crf}所示：
+%\begin{equation}
+%\label{eq:orl_crf}
+%\begin{split}
+%p_i &= \mathbf{W}\mathbf{h}_i+\mathbf{b} \\
+%\texttt{score}(S, y) &= \sum_{i=1}^n \mathbf{T}_{y_{i-1}, y_i} + p_{i,y_i}
+%\end{split}
+%
+%\end{equation}
+\begin{equation}\label{eq:orl_crf}
+    \setlength{\abovedisplayskip}{9pt}
+    \setlength{\belowdisplayskip}{9pt}
+    \begin{split}
+        \mathbf{p}_i &= \mathbf{W}\mathbf{h}_i+\mathbf{b} \\
+        \texttt{score}(S, y) &= \sum_{i=1}^n \mathbf{T}_{y_{i-1}, y_i} + p_{i,y_i}
+        %p(y_i|S,i) &= \frac{e^{\texttt{\texttt{score}}(y_i)}}{\sum_{k} e^{\texttt{\texttt{score}}(y_k)}}
+    \end{split}
+\end{equation}
+其中$\mathbf{T}$是任意两个连续标签之间的转移矩阵，随着模型的训练进行更新， $p_{i,y_i}$表示词$w_i$标记为标签$y_i$的分数. 最后，如公式\ref{eq:orl_define}所示，我们通过维特比解码算法得到一个分数最高的合法标签序列.
+
+%经过线性得分层，我们得到了每个词的所有标签得分. 我们将得分输入到CRF预测层做解码计算.
+
+%
+%如公式\ref{eq:orl_crf}所示，我们根据CRF定义了标签序列的分数. 其中$\mathbf{T}$是任意两个连续标签之间的转移矩阵，随着模型的训练进行更新， $p_{i,y_i}$表示词$w_i$标记为标签$y_i$的分数.
+
+
+
+%经过线性得分层，我们得到了所有词的标签概率分布. 如公式\ref{eq:sum_sequence}所示，我们定义了整个序列的分数. 最后，我们通过维特比解码算法得到一个分数最高的合法标签序列.
+%\begin{equation}
+%\label{eq:sum_sequence}
+%\texttt{score}(S, y) = \sum_{i=1}^n log p(y_i|S,i)
+%\end{equation}
+%
+%训练时，考虑到标签序列之间的依赖性，如标签$M$的下一个标签只能是标签$M$或者$E$，我们采用CRF函数作为模型的损失函数.
+
+\section{三种形式的依存句法信息}
+BiaffineParser是由Dozat和Manning（2017）\upcite{dozat2017deep}提出的基于图的依存句法分析模型，在多份语料上取得了目前最好的句法分析性能.
+我们采用BiaffineParser句法分析器产生实验所需的依存句法信息——句法感知隐状态、句法森林和句法树.
+
+\begin{figure}[hb]
+    %\vspace{-0.5em}
+    \centering
+    \includegraphics[angle=0,width=0.8\textwidth]{img/syntax-information-crop.pdf}
+    \caption{基于BiaffineParser的三种形式的句法信息. }
+    \label{fig:syntax-information}
+    %\vspace{-1.5em}
+\end{figure}
+%我们认为在BiaffineParser的计算过程中，各个阶段都蕴含着不同类型的句法信息.
+%BiaffineParser是由文献[6]提出的基于图的依存句法分析器，在多份语料上取得了目前最好的句法分析性能.
+
+在BiaffineParser句法分析器的计算过程中，BiLSTM编码层、双仿射得分层和MST解码层分别产生了大量不同形式的句法信息.
+如图\ref{fig:syntax-information}所示，BiaffineParser通过多层BiLSTM编码输入的句子，
+输出每个词的隐状态向量$\mathbf{h}_1^{(l)}\mathbf{h}_2^{(l)}\cdots \mathbf{h}_n^{(l)}$ （ $\mathbf{h}_n^{(l)}$表示词$w_n$在第$l$层BiLSTM的输出）.  隐状态$\mathbf{h}_1^{(l)}\mathbf{h}_2^{(l)} \cdots \mathbf{h}_n^{(l)}$蕴含了大量隐晦的句法信息，我们把这种神经向量形式的句法信息称为\textbf{句法感知隐状态}（Syntax-aware Hidden States）.
+%如图xx所示，BiaffineParser通过多层BiLSTM编码句子. 编码层输出的隐状态$\mathbf{h}_1^{(l)},\mathbf{h}_2^{(l)},\cdots,\mathbf{h}_n^{(l)}$ （ $\mathbf{h}_n^{(l)}$表示词$w_n$在第$l$层BiLSTM的输出）蕴含了大量隐晦的句法信息，我们把它叫做句法感知的隐状态.
+
+然后，作为一个基于图的句法分析器，BiaffineParser采用双仿射（Biaffine）运算计算有向完全图中每条弧的得分. 由于任意弧的分数代表着两个词之间的句法依赖程度，因此带有分数的有向完全图（如图\ref{fig:syntax-information}所示，用邻接矩阵表示句法森林）蕴含了丰富的句法结构信息，相比于句法树结构，我们把它称为\textbf{句法森林}.
+%然后，作为基于图的句法分析模型，BiaffineParser采用双仿射运算计算有向完全图中每条弧的得分. 由于任意弧的分数代表着两个词之间的句法依赖程度，因此带有分数的有向完全图中蕴含了丰富的句法结构信息，我们把它叫做\textbf{句法森林}.
+
+最后，BiaffineParser通过MST（Minimum Spanning Tree）解码算法从句法森林中得到一棵最优的\textbf{句法树}——是最常见的句法信息的载体，表示了人类对文本理解的树结构信息.
+
+从句法信息存在的数据形式上看，句法树是树形式的结构信息，而句法森林是图结构的信息.
+句法森林中包含了所有可能的句法树，蕴含了比句法树更为丰富的句法结构信息.
+与句法树和句法森林中蕴含的显式的句法结构信息不同，句法感知隐状态是一种隐晦的神经向量句法信息，能一定程度上减弱句法分析带来的错误传递问题.
+
+
+\section{基于级联方式的句法增强方法}
+\label{sec:orl_pipeline}
+%上一节，我们介绍并比较了BiaffineParser模型中蕴含的不同形式的句法信息（句法隐状态，句法森林和句法树）以及基于BiLSTM-CRF的ORL模型结构. 本节我们将介绍不同的编码方法，将上述三种句法信息融入到ORL模型中. 值得注意的是，本节采用级联的方式融合句法信息，即三种句法信息均是从一个预先训练好的BiaffineParser中获取的.
+
+上一节介绍了基于BiLSTM-CRF的ORL模型，指出并比较了BiaffineParser句法分析器中蕴含的不同形式的句法信息(句法感知隐状态、句法森林和句法树).
+本节将介绍不同的编码方法表示句法信息，并融入到基于BiLSTM-CRF的ORL模型中.
+如图\ref{fig:orl_pipeline}所示，为了清晰地展示融合三种形式的句法信息的模型结构，我们利用ORL模型的简图进行解释说明. 其中“Input”、“Encoder”和“Decoder”分别对应ORL模型的输入层、BiLSTM编码层和CRF预测层，“DEP Encoder”是训练好的BiaffineParser的BiLSTM编码层.
+值得注意的是，三种句法信息均是从预先训练好的BiaffineParser句法分析器中获取的，是一种级联的句法应用方式.
+
+\begin{figure}[hb!]
+    %\vspace{-0.5em}
+    \centering
+    \includegraphics[angle=0,width=0.95\textwidth]{img/syntax-aware-orl-model-crop.pdf}
+    \caption{基于级联方式的句法增强的ORL. }
+    \label{fig:orl_pipeline}
+    %\vspace{-1.5em}
+\end{figure}
+\subsection{句法感知隐状态的编码及融合}
+融合句法感知隐状态类似于近期流行的预训练语言模型的思想. Peters等（2018）\upcite{peters2018deep}提出了一种通用的预训练语言模型ELMo（Embedding from Language Models），研究表明其多层编码器中的每一层刻画了不同程度的文本信息. 为了充分使用编码器抽取的文本信息，他们通过归一化的参数融合了每一层编码的器输出，并作为一种预训练的词向量拼接到NLP下游任务的输入层，有效地提升了许多NLP任务的性能.
+
+受此启发，BiaffineParser句法分析器编码层的每一层同样也蕴含了不同的句法信息，我们仿照ELMo的使用方法，将句法感知隐状态融合到ORL模型中，称为SAPWR (句法感知的预训练词表示，Syntax-aware Pretrained Word Representations)方法. 如图\ref{fig:orl_pipeline}-(a)所示，我们将句子输入到训练好的BiaffineParser的编码层中，获得其输出的隐状态向量序列$\mathbf{h}_1^{(l)}\mathbf{h}_2^{(l)} \cdots \mathbf{h}_n^{(l)}$，即句法感知隐状态. 如公式\ref{eq:sawr}所示，我们对各层的隐状态输出做一次加权求和，并乘上一个特定任务系数，来获得任意词$w_i$的句法感知的词表示$\mathbf{h}_i^{\texttt{syn}}$.
+
+%受此启发，BiaffineParser的每一个编码层同样也蕴含了不同的句法信息，我们仿照ELMo的做法，将句法隐状态融合到ORL模型中，记为SAPWR（句法感知的预训练词表示，Syntax-aware Pretrained Word Representations）方法.
+
+\begin{equation}
+    \setlength{\abovedisplayskip}{9pt}
+    \setlength{\belowdisplayskip}{9pt}
+    \label{eq:sawr}
+    \mathbf{h}_i^{\texttt{syn}} = \mathbf{W} \lambda \sum_{j=1}^{L}\alpha_j \mathbf{h}_i^j
+\end{equation}
+
+其中，$L$是编码层总数，$\mathbf{h}_i^j$表示词$w_i$在第$j$层编码层的输出隐状态，$\mathbf{W}$、$\lambda$和$\alpha$是可更新的模型参数，且$\lambda$是归一化系数，$\alpha$ 是特定任务系数.
+最后，如公式\ref{eq:orl_syntax_input}所示，我们将$\mathbf{h}_i^{\texttt{syn}}$与ORL模型中词$w_i$的原有输入拼接，作为ORL模型的输入. 模型的其他计算过程不变.
+\begin{equation}
+    \setlength{\abovedisplayskip}{9pt}
+    \setlength{\belowdisplayskip}{9pt}
+    \label{eq:orl_syntax_input}
+    \mathbf{x}_i = \mathbf{e}_{w_i}^{\texttt{word}} \oplus \mathbf{e}_{s\leq i\leq e}^{\texttt{exp}} \oplus \mathbf{h}_i^{\texttt{syn}}
+\end{equation}
+%至此，我们通过SAPWR方法将句法隐状态信息融合到ORL模型中，模型的其他计算过程不变.
+\subsection{句法森林的编码及融合}
+\label{sec:gcnforest}
+我们将句子输入到训练好的BiaffineParser模型中，获取其双仿射层的输出，即句法森林信息.
+相比于句法感知隐状态的神经向量形式，句法森林以图结构的形式存在，需要经过适合的编码器将其表示为向量形式，然后才能融入到ORL模型中.
+Kipf和Welling（2016）\upcite{kipf2016semi}提出了一种通用的编码图结构数据的方法GCN，近期许多工作表明了其有效性. 这里我们采用多层GCN来充分编码句法森林中蕴含的句法信息.
+
+对于一层GCN网络而言，图中每个节点的信息只流向其邻居节点. 多层GCN可以将一节点的信息流向任意节点（在两节点间存在路径的情况下）. 多层GCN的计算过程如公式\ref{eq:gcn}所示：
+\begin{equation}\label{eq:gcn}
+    \setlength{\abovedisplayskip}{9pt}
+    \setlength{\belowdisplayskip}{9pt}
+    \begin{split}
+        \mathbf{h}_i^{(l)} &= F\left(  \sum_{j=1}^n \mathbf{A}_{ij} \mathbf{W}^{(l)}\mathbf{h}_j^{(l-1)}+\mathbf{b}^{(l)} \right)
+    \end{split}
+\end{equation}
+其中$\mathbf{W}^{(l)}$和$\mathbf{b}^{(l)}$是第$l$层GCN的模型参数， $\mathbf{h}_i^{(l)}$表示词$w_i$在第$l$层GCN的输出， $\mathbf{h}_i^{(0)}$是第一层GCN的输入， $\mathbf{A}_{ij}$是邻接矩阵$\mathbf{A}$里用来表示节点$i$和节点$j$之间连接关系的取值， $F$是激活函数（这里选用sigmoid函数）.
+
+如图\ref{fig:orl_pipeline}-(b)所示，本文采用3层GCN来编码句法森林信息，称为GCNForest方法.
+我们将GCN层堆叠在BiLSTM层之上，把顶层BiLSTM的输出作为GCN的输入$h_i^0$，并且把句法森林作为邻接矩阵$A$.
+此外，参考Marcheggiani和Titov（2017）\upcite{marcheggiani2017encoding}，为了更好地编码句法信息，我们给每个节点添加一条自弧，即邻接矩阵$A$的主对角线取值为1. 否则，在多层GCN的计算下词本身的信息会不断被弱化. 最后，我们将GCN的输出作为CRF预测层的输入，模型的其他计算过程不变.
+
+%此外，densely 连接，残差连接.
+%至此，我们通过GCNForest方法将句法森林的结构信息融合到了ORL模型中. %增强ORL模型的识别能力.
+
+%
+\subsection{句法树的编码及融合}
+作为最常见的句法存在形式，许多工作探索了如何编码句法树. 如图\ref{fig:orl_pipeline}-(c-e)所示，本节介绍并对比了三种使用句法树的方法.
+
+\subsubsection{基于核心词的编码方法}
+
+%如图4的虚线所示， $n$条由核心词指向修饰词的依存弧组成了依存句法树（$n$为句子词数，例子中$n$为4）.
+依存弧$m \leftarrow h$指出了两个词的句法依赖关系，是依存句法树的基本单元，其中词$w_h$是词$w_m$唯一的核心词.
+最自然的想法就是加入每个词的核心词的信息，即只利用句法树中一条弧的信息.
+具体地，如图\ref{fig:orl_pipeline}-(c)所示，我们将每个词的核心词对应的词嵌入向量与该词的原有输入拼接，称为HeadEmb方法. 融合方法如公式\ref{eq:head_emb}所示：
+\begin{equation}
+    \setlength{\abovedisplayskip}{9pt}
+    \setlength{\belowdisplayskip}{9pt}
+    \label{eq:head_emb}
+    \mathbf{x}_i = \mathbf{e}_{w_i}^{\texttt{word}} \oplus \mathbf{e}_{H_i}^{\texttt{word}} \oplus \mathbf{e}_{s\leq i\leq e}^{\texttt{exp}}
+\end{equation}
+其中$\mathbf{e}_{H_i}^{\texttt{word}}$表示词$w_i$的核心词$w_{H_i}$的嵌入词向量. ORL模型的其他计算过程不变.
+
+\subsubsection{基于GCN的编码方法}
+
+树结构是图结构的特殊形式，我们同样采用GCN来编码句法树的信息，称为GCNTree方法.
+如图\ref{fig:orl_pipeline}-(d)所示，具体方法和\ref{sec:gcnforest}节融合句法森林的方法一样.
+不同的是，GCNTree方法的GCN输入是表示句法树的0/1邻接矩阵，而GCNForest方法的GCN输入是表示句法森林的实数值邻接矩阵.
+
+%不同的是，句法树对应的是0/1邻接矩阵，而句法森林对应的是实数值的邻接矩阵.
+
+从多层GCN的计算机制（公式\ref{eq:gcn}）上看，GCNTree方法本质上只编码了任意节点的周围节点的信息，即只利用了树的部分结构信息.
+
+\subsubsection{基于TreeLSTM的编码方法}
+%TreeLSTM是由Tai等（2015）\upcite{tai2015improved}提出的用于编码树结构数据的通用方法，常常用于编码句法树的信息. 研究表明采用TreeLSTM编码句法树能有效提升关系抽取，语义相关性等任务的性能.
+本节采用双向TreeLSTM来充分编码句法树信息，称为BiTreeLSTM方法. TreeLSTM的计算方法如公式\ref{eq:sum_treelstm}所示. 和\ref{sec:treelstm}节一样，我们将自顶向下的TreeLSTM输出和自底向上的TreeLSTM输出拼接到一起作为双向TreeLSTM的输出.
+%本节，我们采用双向TreeLSTM来充分编码句法树信息，叫做BiTreeLSTM方法. 如图4的实线所示，对于自底向上的TreeLSTM，信息从叶子节点开始，沿着依存弧的反方向一直流向根节点；如图4的虚线所示，对于自顶向下的TreeLSTM，信息从根节点开始，沿着依存弧的方向流向各个叶子结点.
+%
+%图5  基于BiTreeLSTM融合句法树的ORL模型
+%对于自底向上的TreeLSTM，每个节点的隐状态输出 由该节点的输入和它所有孩子的隐状态计算得到. 计算过程如公式8所示. 对于自顶向下的TreeLSTM，和自底向上的TreeLSTM计算过程一样. 我们将词 在自底向上的TreeLSTM的输出 和在自顶向下的TreeLSTM的输出 拼接到一起，作为词 的双向TreeLST的输出.
+%
+%(8)
+如图\ref{fig:orl_pipeline}-(e)所示，整体来看，我们将双向TreeLSTM层堆叠在ORL模型的BiLSTM层上，然后将其输出的隐状态输入到CRF预测层. 模型的其他部分计算不变.
+
+相比于HeadEmb和GCNTree方法只使用局部的部分树的信息，我们通过BiTreeLSTM方法全局的编码了整棵句法树的信息.
+
+\section{基于多任务学习框架的句法增强方法}
+\label{sec:orl_mtl}
+%
+%基于级联方式的句法应用方法不可避免地将句法模型带来的错误传递到了ORL模型中. 虽然使用隐晦的句法隐状态和句法森林信息一定程度上可以缓解句法模型的错误带来的负面影响，但是没有从根本上解决级联方式的缺陷. 如图xx所示，为了进一步缓解错误传递带来的问题，本节提出使用多任务学习方法来同时训练句法模型和ORL模型.
+上一节介绍了多种不同的基于级联方式的句法应用方法，
+%并使用隐晦的句法感知隐状态和句法森林来缓解句法模型的错误带来的负面影响.
+但是级联方式会将句法模型带来的错误传递到ORL模型中.
+%虽然使用隐晦的句法隐状态和句法森林信息一定程度上可以缓解句法模型的错误带来的负面影响，但是没有从根本上解决级联方式的缺陷.
+如图\ref{fig:orl_mtl}所示，为了缓解句法的错误传递问题，本节使用多任务学习框架来同时训练句法模型和ORL模型. 和\ref{sec:orl_pipeline}节使用ORL模型的简图一样，本节也将BiaffineParser句法模型简化为“Input”、“Encoder”和“Decoder”层，分别对应BiaffineParser中的输入层、BiLSTM编码层和MST解码层.
+
+\begin{figure}[hb!]
+    %\vspace{-0.5em}
+    \centering
+    \includegraphics[angle=0,width=0.9\textwidth]{img/orl_mtl-crop.pdf}
+    \caption{多任务学习框架下的句法增强的ORL模型. }
+    \label{fig:orl_mtl}
+    %\vspace{-1.5em}
+\end{figure}
+%\footnote{为了清晰地展示融合句法的模型结构，我们利用ORL模型和BiaffineParser依存句法器的简图说明我们的方法. }
+
+图\ref{fig:orl_mtl}-(a)展示了最常见的多任务学习框架——硬参共享的多任务学习框架：任务间共享编码层，并且独立各自的输出层.
+然而，这种方法不能为每个任务维护足够的用于区分彼此的参数\upcite{xia2019mtl}，特别是在我们的场景中——依存句法分析任务的训练数据远远多于ORL任务的训练数据.
+
+受到Xia等（2019）\upcite{xia2019mtl}的启发，我们采用软参共享的多任务学习框架来同时训练句法模型和ORL模型：保持各个任务的参数完全独立，并将句法模型输出的句法信息输入到ORL模型中.
+具体地，如图\ref{fig:orl_mtl}-(b-d)所示，我们将融合句法感知隐状态的SAPWR方法、融合句法森林的GCNForest方法和融合句法树的GCNTree方法扩展到软参共享的多任务学习框架上，并和ORL模型同时训练.
+%和基于级联的方法不同的是，BiaffineParser句法分析模型不是预先训练好的，.
+%图xx，xx,xx分别是在多任务学习模型上融入句法隐状态信息，句法森林信息和句法树信息.
+
+训练时，我们根据句法模型和ORL模型的联合损失来更新模型参数. 如公式\ref{eq:xia_mlt_loss}所示，给定ORL的训练数据集$O$和依存句法的训练数据集$D$，联合模型的损失函数为两个任务的似然函数的和：
+\begin{equation}
+    \setlength{\abovedisplayskip}{9pt}
+    \setlength{\belowdisplayskip}{9pt}
+    \label{eq:xia_mlt_loss}
+    Loss = -\left(\sum_{(Y_o^*,X_o) \in O} log P(Y_o^*|X_o) + \alpha \sum_{(Y_d^*,X_d) \in D} log P(Y_d^*|X_d) \right)
+\end{equation}
+其中，$Y_o^*$和$Y_d^*$分别是ORL和依存句法的正确答案， $\alpha$是是权重系数，用于平衡两个任务的损失函数的贡献.
+
+与之前的级联方式相比，句法模型的参数没有经过预先训练并固定，而是根据ORL模型和依存句法模型的联合训练目标进行更新. 这样做的好处是训练出的句法模型更偏向于ORL模型，能更好地适应ORL任务.
+%\section{实验设置}
+
+%本文使用的数据来自于意见挖掘任务的标准数据集MPQA 2.0[8]语料. 为了能公平的比较，我们采用文献[5]的数据切分方式（132/350文档作为Dev集/Test集）和相同的五折试验数据. 从开发/Test集中，抽取了1509/4442个含有（意见，意见持有者，意见目标）的句子.
+%我们用精准率（Precision）、召回率（Recall）和F1 值（F-Measure）来评估识别性能. 且实验中汇报的结果是五折交叉验证实验的平均值.
+%3.2 句法和BERT
+%本文采用依存结构的PTB语料在BiaffineParser上训练一个句法模型，UAS/LAS为95.43%/93.92%. 实验中使用的句法信息（句法树，句法森林以及句法感知的隐状态）都由该模型产生.
+%本文使用的BERT预训练模型为“BERT-Base, uncased [7]”，基于Pytorch框架实现，由12层编码器，每一层隐状态输出的维度为768. 我们用最后一层的隐状态作为基于BERT的词表示.
+%3.3 参数设置
+%我们采用了文献[4-5]的网络参数设置. 具体的，我们使用了100维的glove预训练词向量[24]. 堆叠了三层BiLSTM，且输出维度为200，词向量和BiLSTM输出应用了0.33的dropout机制. 模型的优化方式采用Adam算法对参数进行更新和微调，初始学习率均为2e-5. 训练时采用批量训练的方法，且批量大小为50. 在训练集上每迭代一次，验证一下Dev集，最大迭代次数为40次. 然后根据Dev集上的最好模型来评估Test集.
+
+\section{实验结果及分析}
+\subsection{实验设置}
+\textbf{数据和评价指标. } 本文使用的数据来自于意见挖掘任务的标准数据集MPQA 2.0语料. 为了能公平的比较，我们采用Zhang等（2019）\upcite{zhang2019enhancing}的数据切分方式（132/350文档作为Dev/Test集）和相同的五折试验数据. 从Dev/Test集中，抽取了1509/4442个含有<意见措辞-意见持有者-意见目标>的句子.
+
+我们用精准率（Precision）、召回率（Recall）和F1值（F1-Measure）来评估识别性能. 且实验中汇报的结果是五折交叉验证实验的平均值.
+
+\textbf{句法和BERT. }
+本文采用依存结构的PTB语料在BiaffineParser上训练一个句法模型，UAS/LAS为95.43\%/93.92\%. 实验中使用的句法信息（句法树、句法森林以及句法感知隐状态）都由该模型产生.
+
+本文使用的BERT预训练模型为“BERT-Base, uncased”\upcite{devlin2018bert}，基于Pytorch框架实现，由12层编码器，每一层隐状态输出的维度为768. 我们用最后一层的隐状态作为基于BERT的词表示.
+
+\textbf{参数设置. }
+我们采用了Marasovi{\'c}和Frank（2017）\upcite{marasovic2017srl4orl}、Zhang等（2019）\upcite{zhang2019enhancing}的网络参数设置. 具体的，我们使用了100维的glove预训练词向量. 堆叠了三层BiLSTM，且输出维度为200，词向量和BiLSTM输出应用了dropout机制，dropout值为0.33. 模型采用Adam优化算法对参数进行更新和微调，初始学习率均为2e-5. 训练时采用批量训练的方法，且批量大小为50. 在训练集上每迭代一次，验证一下Dev集，最大迭代次数为40次. 然后根据Dev集上的最好模型来评估Test集.
+
+
+\subsection{基于级联方式融合句法信息的ORL模型性能}
+
+表\ref{tb:orl_rst_pipeline}给出了Dev集上句法信息对于ORL任务的作用. 其中，第2行“基线模型”是我们重现的不加句法信息的ORL模型，和Zhang等（2019）\upcite{zhang2019enhancing}汇报的结果持平. 总体来看，句法信息的加入一定程度上增强了ORL模型的识别能力，F1值上提升了约0.88\% \textasciitilde 4.43\%（57.90-57.02 \textasciitilde 62.58-57.02）.
+\begin{table}[hb!]
+    %\addtolength{\tabcolsep}{-1.5mm}
+    %\begin{center}
+    \centering
+    \caption{Dev集上基于级联方式的句法增强ORL模型的性能. }
+    \label{tb:orl_rst_pipeline}
+    \begin{tabular}{cc c c c  } \toprule
+                                               &                   & \textbf{P}     & \textbf{R}     & \textbf{F1 }   \\ \hline
+        %\textbf{w/o Syntax} & & & \\
+        \multicolumn{2}{c}{基线模型（无句法）} & 59.08             & 55.15          & 57.02                           \\ \midrule
+        \multirow{3}{*}{句法树}                & HeadEmb           & 60.82          & 55.30          & 57.91          \\
+                                               & BiTreeLSTM        & {60.85}        & {55.25}        & {57.90}        \\
+                                               & GCNTree           & 61.10          & 56.16          & 58.50          \\  \hline
+        %\textsc{DepGCN} & 61.53 & 57.26 & 59.28 \\
+        句法森林                               & GCNForest         & 61.53          & 57.26          & 59.28          \\  \midrule
+        句法感知隐状态                         & SAPWR             & 63.42          & 59.61          & 61.45          \\
+        \midrule
+        句法森林+句法感知隐状态                & GCNForest + SAPWR & \textbf{63.80} & \textbf{61.43} & \textbf{62.58} \\
+        \bottomrule
+
+        %\textbf{w/ Explicit Info.} & & & \\
+        %			\ \ \ \textsc{DepHead} & 60.82 & 55.30 & 57.91 \\
+        %			%\ \ \textsc{TPF} & \textbf{62.20} & \textbf{58.66} & \textbf{60.35} \\
+        %			%SDP & 60.726 \\ \hline
+        %			%TPF + SDP & 61.698 \\ \hline
+        %			%\ \textsc{TreeLSTM} & {61.92} & {56.74} & {59.16} \\
+        %			\ \ \ \textsc{BiTreeLSTM} & {60.85} & {55.25} & {57.90} \\
+        %			\ \ \ \textsc{DepGCN-Hard} & 61.10 & 56.16 &58.50 \\
+        %			\ \ \ \textsc{DepGCN} & 61.53 & 57.26 & 59.28 \\
+        %			\hline
+        %			\textbf{w/ Implicit Info.} & & & \\
+        %			\ \ \ \textsc{DepHDN} & 63.42 & 59.61 &  61.45 \\ \hline
+        %			\textbf{Explicit \& Implicit} & & & \\
+        %			\ \ \ \small{\textsc{DepGCN+DepHDN}} & \textbf{63.80} & \textbf{61.43} &  \textbf{62.58} \\ \hline
+    \end{tabular}
+    %\end{center}
+\end{table}
+
+第3-5行给出了融入句法树的实验结果. HeadEmb方法（加入核心词）性能提升不大，因为它只使用了句法树中的一条弧的信息，融入的句法信息非常有限. 虽然BiTreeLSTM方法编码了整棵树的信息，但是性能基本与HeadEmb方法持平. 可能的原因是：TreeLSTM对句法的错误非常敏感，而使用的自动句法树中存在不少错误，干扰了模型的学习. GCNTree方法取得了最好的性能，因为GCNTree只利用了和该结点最近的一些结点的信息，既更多地利用了句法信息，又缓解了句法错误带来的负面影响. 综上，不同句法树的编码方式，对ORL模型性能的提升存在较大差异.
+
+%第3-5行给出了三种融合句法树的实验结果.
+%HeadEmb方法，即只加入核心词，对ORL性能提升不大，因为它只使用了句法树中的一条弧的信息，编码的句法信息非常有限.
+%而BiTreeLSTM方法虽然编码了整棵句法树的信息，但是其性能基本与HeadEmb方法持平.
+%我们认为可能的原因是：TreeLSTM对于句法的错误非常敏感，而我们使用的句法树为自动句法树，且存在句法语料和ORL语料不是同一领域的情况，句法树中存在了大量的错误结构.
+%%无法进一步提升模型的识别能力.
+%GCNTree方法取得了最好的性能，因为从计算机制上看，GCNTree只利用了和该结点最近的一些结点的信息，既更多地利用了句法信息，又不过度依赖整棵树的正确性.
+%%缓解了句法错误带来的负面影响.
+%综上可以看出，同样是使用句法树的信息，不同的编码方式，性能存在较大差异.
+
+第6行给出了编码句法森林的GCNForest方法的实验结果. 相比于句法树，句法森林含有更多的结构信息.
+实验结果也表明了句法森林信息更能提升ORL模型的识别能力：在F1值上，GCNForest比GCNTree提升了0.78\%（59.28-58.50）.
+
+第7行给出了使用句法感知隐状态的SAPWR方法的实验结果.
+SAPWR方法大幅提升了ORL模型的识别能力，相比于GCNForest方法，F1值上进一步提升了2.17\%（61.45-59.28）.
+原因有以下两点：1）预训练的BiaffineParser是通用领域的句法分析器，而ORL语料来源于新闻文件，旅游指南和谈话记录等. 跨领域的情况下，本文的句法分析器准确率会有所降低，产生的句法森林/树存在不少错误.
+2）SAPWR方法使用的句法感知隐状态是一种隐晦的神经特征，能有效地减弱了句法错误带来的负面影响.
+
+进一步地，我们同时使用显式的句法森林和隐式的句法感知隐状态（使用句法森林作为显式信息的代表是因为GCNForest方法性能更好），即结合GCNForest方法和SAPWR方法. 从第8行可以看出，GCNForest+SAPWR方法能更加充分地使用句法信息，在性能更好的SAPWR方法的基础上，F1值进一步提升了1.13\%（62.58-61.45）.
+
+总之，三种句法信息的引入都提升了ORL模型的性能，其中融入句法感知隐状态的SAPWR方法的提升最大，并且和融入句法森林的GCNForest方法结合后进一步提升了ORL模型的F1值.
+
+\subsection{基于多任务学习框架融合句法信息的ORL模型性能}
+
+%为了缓解错误传递问题和探索更好的句法融合方式，我们将多任务学习框架应用到上述基于级联方式的句法增强的ORL模型中.
+%具体地，根据级联方式的实验结果，我们挑选了一些具有代表性的方法扩展到基于软参共享的多任务学习框架上，即. 此外，我们还实现了基于硬参共享的多任务学习模型来同时训练句法模型和ORL模型（两个任务共享编码器），作为多任务学习模型的基线模型.
+为了缓解错误传递问题，我们根据表\ref{tb:orl_rst_pipeline}给出的实验结果，挑选了一些有代表性的基于级联方式的句法应用方法扩展到多任务学习框架上.
+如表\ref{tb:orl_rst_mtl}所示，“MTL-GCNTree”、“MTL-GCNForest”和“MTL-SAPWR”分别给出了多任务学习框架下GCNTree方法、GCNForest方法和SAPWR方法的实验结果，“MTL-GCNForest+SAPWR”是将GCNForest方法和SAPWR方法结合起来，在多任务学习框架下同时使用显式和隐式句法信息.
+此外，“MTL-baseline”是基于硬参共享的多任务学习模型（两个任务共享编码器）的实验结果，作为多任务学习模型的基线模型.
+
+从表\ref{tb:orl_rst_mtl}中，我们可以看出：
+首先，尽管共享句法模型和ORL模型的编码器已经带来了比不融入句法信息的基线（表\ref{tb:orl_rst_pipeline}中的基线模型）一定程度的性能提升，
+但比软参共享的多任务学习方法，甚至基于级联方式的SAPWR方法（表\ref{tb:orl_rst_pipeline}所示）都低得多.
+这可能是第\ref{sec:orl_mtl}节和Xia等（2019）\upcite{xia2019mtl}讨论的共享编码器参数的缺陷造成的.
+
+相比于表\ref{tb:orl_rst_pipeline}，多任务学习框架下的GCNTree方法、GCNForest方法和SAPWR方法，在F1值分别提升了5.00\%（63.50-58.50）、4.24\%（63.52-59.28）和3.23\%（64.68-61.45）. 这表明软参共享的多任务学习框架在缓解错误传递问题上非常有效.
+
+最后，在多任务学习框架下同时使用句法感知隐状态和句法森林信息的MTL-GCNForest+SAPWR方法，仍然是最有效的方法，比表\ref{tb:orl_rst_pipeline}中的无句法信息的基线模型在F1值上提升了8.01\%（65.03-57.02）.
+\begin{table}[hb!]
+    %\small
+    %\addtolength{\tabcolsep}{-0.8mm}
+    \caption{Dev集上基于多任务学习框架的实验结果}
+    \label{tb:orl_rst_mtl}
+    \centering
+    %\begin{center}
+    \begin{tabular}{ l  c c c }
+        \toprule
+        \textbf{多任务学习框架（MTL）} & \textbf{P}     & \textbf{R}     & \textbf{F1}    \\ % &\multicolumn{2}{c}{\textbf{Dep}}  \\
+        \midrule %& \textbf{UAS} &\textbf{ LAS} \\ \hline
+        \ \ \ MTL-baseline             & 62.23          & 56.84          & 59.39          \\
+        \midrule %& xx.xx & xx.xx \\ \hline %(+2.37)
+        %Hard GCN & 65.872 & 61.334 & 63.50 \\ \hline % & xx.xx & xx.xx \\ \hline
+        \ \ \ MTL-GCNTree              & 66.11          & 61.26          & 63.50          \\  % & xx.xx & xx.xx \\ \hline (\textbf{+4.24})
+        \ \ \ MTL-GCNForest            & 65.59          & 61.61          & 63.52          \\  % & xx.xx & xx.xx \\ \hline (\textbf{+4.24})
+        \ \ \ MTL-SAPWR                & 65.74          & 63.67          & 64.68          \\
+        \midrule % & xx.xx & xx.xx \\ \hline (+3.23)
+        \ \ \ MTL-GCNForest+SAPWR      & \textbf{65.94} & \textbf{64.15} & \textbf{65.03} \\
+        \bottomrule % & xx.xx & xx.xx \\ \hline
+    \end{tabular}
+    %\end{center}
+\end{table}
+
+\subsection{Test集上句法和BERT信息的影响}
+为了进一步探究句法对于ORL任务的作用, 我们在引入BERT的ORL模型的基础上，采用相同的方法引入句法信息.
+%我们将BERT特征作为额外的词表示引入到已有的ORL模型中.
+具体地，我们根据表\ref{tb:orl_rst_pipeline}和表\ref{tb:orl_rst_mtl} Dev集上的实验结果，挑选了三个有代表性的实验加入BERT信息：ORL基线模型，GCNForest + SAPWR方法（基于级联方式的最好模型），MTL-GCNForest+SAPWR（基于多任务学习框架的最好模型）.
+为了更深入地分析句法的影响，我们按照不同的角色来评价ORL模型性能.
+表\ref{tb:orl_Test_res}给出了Test集上相关实验的F1值，此外，我们还对比了Marasovi{\'c}和Frank（2017）\upcite{marasovic2017srl4orl}、Zhang等（2019）\upcite{zhang2019enhancing}的实验结果.
+
+\begin{table*}[hb!]
+    %\addtolength{\tabcolsep}{-0.8mm}
+    %\begin{center}
+    %\small
+    \caption{Test集上最终的实验结果. }
+    \label{tb:orl_Test_res}
+    \centering
+    \begin{tabular}{c c c c }
+        \toprule
+        %&  \multicolumn{3}{|c|}{\textbf{Exact F1}}
+        %\multirow{2}{*}{} & \textbf{Holder} & \textbf{Target} & \textbf{Overall }&  \hline
+                                                                  & Holder         & Target         & 全部           \\
+        %\textbf{Basic Model} & & & & & & & & \\
+        \midrule
+        基线模型                                                  & 73.05          & 44.21          & 58.79          \\
+        Zhang等（2019）\upcite{zhang2019enhancing}                & 73.07          & 42.70          & 58.30          \\
+        \midrule
+        %\textbf{w/ SRL} & & & & & & & & \\
+        Marasovi{\'c}和Frank（2017）\upcite{marasovic2017srl4orl} & 75.58          & 46.40          & 61.51          \\
+        Zhang等（2019）\upcite{zhang2019enhancing}                & 76.95          & 50.50          & 63.74          \\
+        \midrule
+        %	\textbf{w/ Syntax}  & & & & & & & &  \\
+        %\  \ \ \textsc{TPF} & 74.47 & 47.49 & 61.09 & 82.47 & 70.42 & 76.49 & 80.67 & 64.29 & 72.55  \\
+        GCNTree                                                   & 73.73          & 45.11          & 59.81          \\
+        GCNForest                                                 & 73.82          & 45.97          & 60.12          \\
+        SAPWR                                                     & 76.96          & 46.95          & 62.29          \\
+        GCNForest + SAPWR                                         & 76.21          & 49.38          & 63.12          \\
+        \midrule
+        %\textbf{w/ Syntax + MTL}  & & & & & & & &  \\
+        %MTL-GCNTree  &  & 50.78 & 64.28  \\
+        MTL-GCNTree                                               & 77.05          & 50.64          & 64.19          \\
+        MTL-GCNForest                                             & 77.50          & 50.78          & 64.28          \\
+        MTL-SAPWR                                                 & 77.36          & 50.81          & 64.31          \\
+        MTL-GCNForest+SAPWR                                       & 78.01          & 51.92          & 65.13          \\
+        \midrule
+        BERT+基线模型                                             & 76.74          & 52.61          & 64.73          \\
+
+        BERT+GCNForest + SAPWR                                    & 78.75          & 55.71          & 67.19          \\
+        BERT+MTL-GCNForest+SAPWR                                  & \textbf{79.51} & \textbf{56.61} & \textbf{68.08} \\
+        \bottomrule
+    \end{tabular}
+    %\end{center}
+    %\caption{Experimental results on the Test data.}
+
+\end{table*}
+
+第2、3两行分别给出了Test集上我们复现的ORL基线模型和Zhang等（2019）\upcite{zhang2019enhancing}的基线模型的实验结果，我们的基线模型性能略高于Zhang等（2019）\upcite{zhang2019enhancing}的基线模型的性能（58.79 VS.58.30）.
+
+第6-9行给出了Test集上，只融合句法信息的实验结果，整体趋势和Dev集上的一致.
+分别根据Holder和Target角色评价后，我们发现了一些有趣的现象.
+句法的结构信息对ORL模型的帮助更多地体现在增强Target角色的识别能力上：以GCNForest为例，Target角色上提升了1.76（45.97-44.21），而Holder角色上提升了0.77（73.82-73.05）.
+因为Target角色往往离意见措辞更远，而句法的结构信息能有效的缩短它们之间的物理距离.
+而隐晦的句法信息对模型性能的提升，则更多地体现在增强了Holder角色的识别能力：Holder角色上提升了3.89（76.96-73.07），而Target角色上提升了2.47（46.95-44.21）.
+
+第10-12行给出了基于软参共享的多任务框架下，句法信息对于ORL模型的作用，整体趋势和Dev上一致. 表明了基于软参共享的多任务学习能有效地缓解句法的错误传递问题，进一步提升了ORL模型的性能.
+
+最后三行给出了在BERT的基础上，句法信息对于ORL模型的作用.
+可以看出，在基线模型上引入BERT后F1值提升了5.94\%（64.73-58.79），表明了BERT预训练语言模型强大的表征能力.
+值得注意的是，在引入BERT的基础上，基于级联方式和基于多任务学习方式的融合句法的实验都进一步提升了ORL模型的识别能力，F1值上最多提升了3.35\%（68.08-64.73）.
+这表明了句法和BERT从不同的层面上增强了模型的识别能力，在强大的BERT特征的基础上，句法仍然有效.
+
+第4、5行给出了Marasovi{\'c}和Frank（2017）\upcite{marasovic2017srl4orl}、Zhang等（2019）\upcite{zhang2019enhancing}利用语义角色标注任务来帮助ORL模型的实验结果，
+我们最好的实验结果比目前最好的结果提升了3.45\%（68.08-63.74），取得了新的最高性能.
+
+综上，句法信息的引入有效地提升了ORL模型的性能，F1值上提升了6.34\%（65.13-58.79），同时使用句法和BERT信息后，达到了最新的最好性能68.08\%.
+
+\section{本章小结}
+本节针对意见角色标注任务训练数据规模小的缺点，提出引入依存句法这一语言学知识来弥补其训练数据的稀缺性.
+基于目前性能最好的依存句法分析器BiaffineParser，我们抽取了三种形式的句法信息，即显式的句法树，显式的句法森林，隐式的句法感知隐状态.
+随后，我们采用多种基于级联方式的方法表示句法信息，并进一步扩展到基于多任务学习的框架上.
+实验结果表明了句法信息能有效的提升ORL模型的识别能力，基于软参共享的多任务学习框架有效地缓解了句法的错误传递问题，进一步提升了ORL模型的性能. 细致的实验分析表明，句法的结构信息对模型的帮助主要体现在加强了对Target角色的识别能力，而隐晦的句法信息则更多地通过增强Holder角色的识别能力来提升ORL性能.
+我们还发现，显式和隐式句法信息的结合能给ORL模型带来更多的帮助.
+此外，我们在添加BERT特征的基础上以同样的方式引入句法信息，ORL模型的性能仍然有大幅的提升.
+%细致的实验分析表明相对于BERT，句法信息更擅长解决长距离依赖问题.
+最后，我们的最好的模型（结合句法和BERT）在F1值上超过基线模型9.29\%，超过了目前最好的模型4.34\%.
+%本章从BiaffineParser的计算机制出发，从不同模块中抽取出了三种不同形式的依存句法信息，即句法树，句法森林和句法感知隐状态. 然后，我们采用不同的编码方法表示这些句法信息，并分别采用级联的方法和多任务学习框架将这些句法信息融入到基于BiSLTM-CRF的ORL模型中，有效地缓解了训练数据的稀缺性，显著提升了ORL模型的性能. 细致的实验分析表明，句法的结构信息对模型的帮助主要体现在加强了对Target角色的识别能力，而隐晦的句法信息则更多地通过增强Holder角色的识别能力来提升ORL性能. 此外，在BERT的基础上加入句法信息的实验表明了BERT特征并不能完全取代句法信息的作用，二者从不同方向帮助了ORL模型. 同时融合句法和BERT的最优实验在F1值上达到了68.08\%，超过了基线模型9.29\%，超过了目前的最好性能4.34\%.
+%虽然本文同时融合了句法信息和BERT特征，但是二者只是通过简单的拼接操作融合到ORL模型中，没能去除二者之间的冗余信息. 如何更加合理的使用句法和BERT特征也是一个很有趣的研究课题.
+
+基于本章研究内容，我们在ACL-2020会议（CCF-A类）上投稿学术论文一篇（已录用）.
+
+
+
+

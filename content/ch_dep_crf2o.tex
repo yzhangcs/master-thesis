@@ -1,0 +1,450 @@
+% !Mode:: "TeX:UTF-8"
+%\chapter{多领域标注数据获取和NER系统构建}
+%第一章，我们构建了人工标注的双树对齐数据，并提出了两种性能相当的树库转化模型，即基于模式的树库转化方法和基于TreeLSTM的树库转化方法. 但是两种方法都存在一定的缺陷.
+%pattern：理论上浅层编码，实验表明了局限性.
+%treelstm： 1. lstm无法并行，treelstm更无法并行 2. 使用最短路径树时，n方
+%我们尝试了两种优化，一改进treelstm方法 二，基于可以并行的GCN方法
+%此外，考虑到对源端树库利用的不充分，我们的方法：
+%1. 概率， 2. treebank embedding 3. copus weighting 4. concate-finetune
+%最后我们提出基于多任务学习的依存句法-树库转化联合模型，尝试xxxx.
+
+%此外，现有的树库转化方式为级联的方式，即先经过源端句法树和目标端句法树
+\chapter{基于二阶树形条件随机场的高效依存句法分析}
+本章首先分析了第\ref{sec:super_tc}章提出的树库转化方法和树库融合方法的不足之处，然后针对这两方面进行改进.
+一方面，为了深度、高效地编码源端句法树，我们改进基于SP-TreeLSTM方法，并提出基于Full-TreeLSTM的树库转化方法，提升了转化模型的速度和性能；
+另一方面，为了缓解转化后树库中存在的噪音问题，我们尝试了两种简单有效的树库融合方法，即语料加权方法以及合并后微调方法，更加合理地使用了转化后树库，进一步提升了目标端句法模型的性能.
+%最后，相较于之前树库转化方法的级联模型，我们提出一种更为简洁的耦合性更强的基于多任务学习的依存句法-树库转化的联合模型.
+%除了利用上一章的转化数据$CODT^{\texttt{PCTB7}}$
+最后，为了得到更可靠的实验结果和结论，我们额外构建了一份双树对齐数据$CODT^{\texttt{PCTB7}}$，本章所有的方法均在两份转化语料上进行实验.
+%本章我们从速度，性能两方面对第一章提出的树库转化方法进行优化. 为了得到更可靠的实验结果和结论，我们额外构建了一份双树对齐数据PCTB7-CODT，本章所有的方法均在两份语料上进行实验.
+%首先，我们从实验角度表明了基于模式的树库转化方法是一种浅层的编码源端句法树的方式，具有很强的局限性.
+%其次，我们通过改进
+%本章我们经过实验表明了基于模式的树库转化方法的局限性，并通过改进基于TreeLSTM的树库转化方法实现了更快性能更好的树库转化方法. 在此高效的树库转化方法基础上，我们提出了一种基于多任务学习的依存句法-树库转化两个任务的联合模型，
+%为了高效、深度编码源端句法树信息，我们首次尝试并提出基于Full-Tree LSTM的树库转化方法. 进而，为了减弱转化后树库中包含的噪音问题，尝试并提出语料加权和合并后微调两种树库融合方法.
+%此外，考虑到第一章的树库转化任务由多任务学习模型和树库转化模型的级联操作来充分利用源端树库信息，本章我们提出一种基于多任务学习的树库句法-树库转化两个任务的联合模型，
+%最后提出了两种有监督的树库转化方法，即基于模式的树库转化方法和基于TreeLSTM的树库转化方法.
+
+\section{引言}
+第\ref{sec:super_tc}章采用有监督的树库转化方式来利用异构树库，有效地提升了目标端句法模型的性能. 其中存在两个关键的挑战，一是如何高质量地将源端树库转化为目标端树库（\textbf{树库转化任务}），二是如何利用转化后的源端树库提升目标端句法模型的性能（\textbf{树库融合任务}）. 本章分析了第\ref{sec:super_tc}章提出的树库转化和树库融合方法的不足之处，并尝试对其进行改进.
+
+\textbf{树库转化方面.  } 虽然基于模式嵌入的树库转化方法（The Patten Embedding Approach， 简记为PatEmb）和基于SP-TreeLSTM的树库转化方法（The Shortest Path TreeLSTM Approach，简记为SP-Tree）都高质量地将源端树库转化为了目标端树库，但是这两种方法都各自存在缺陷.
+
+\begin{enumerate}
+    \item PatEmb树库转化方法不能稳定、深度编码源端树信息，具有很强的局限性.
+          %其本质上是一种浅层次的基于离散特征的编码方法，无法穷举所有特征.
+
+          PatEmb树库转化方法通过自定义模式来刻画目标端句法结构和源端句法结构的对应关系. 具体而言，根据目标端弧$j \leftarrow i$在源端树中的依存结构以及路径长度共定义了9种模式，并将模式映射成嵌入向量，作为对源端树结构信息的表示. 但是，单凭9种模式是无法充分刻画源端结构和目标端结构的复杂对应关系的. 可以看出，其本质上是一种浅层的基于离散特征的编码方法，无法穷举所有特征.
+
+          此外，虽然在$CODT^{\texttt{HIT}}$转化语料上，PatEmb方法取得了和SP-Tree方法一致的转化性能，但是在最新构建的$CODT^{\texttt{PCTB7}}$转化语料上，PatEmb转化方法无法有效地完成从PCTB7到CODT数据的转化. 实验结果表明浅层的PatEmb方法的转化性能要远远低于深度的SP-Tree方法的转化性能. 通过统计分析两份转化数据各自的一致性，我们发现，PatEmb转化方法只有在高一致性的情况下，才能较好的利用源端树信息，达到一个较好的转化性能；在一致性较低的情况下，模式特征无法应对大量的复杂的结构对应关系，转化性能大幅下滑.
+
+          %	在原始的方法根据最常见且最相关的树结构的对应关系，定义了6种模式；之后我们考虑到依存路径的长度信息额外定义了3种模式，将模式扩展到了9种.
+          %	基于模式的树库转化方法，通过模式来刻画目标端句法结构和源端句法结构的对应关系. 具体而言，该方法根据最常见且最相关的树结构的对应关系，定义了6种模式；之后我们考虑到依存路径的长度信息额外定义了3种模式，将模式扩展到了9种. 虽然模式的定义同时考虑到了依存结构的对应关系和路径距离，但是单凭9种模式是无法充分刻画源端结构和目标端结构的复杂对应关系的.
+          %	虽然在HIT-CODT转化语料上，基于模式的树库转化方法取得了和深度编码方式TreeLSTM一致的性能，但是在最新构建的PCTB7-CODT转化语料上，基于模式的转化方法无法有效的完成从PCTB7到codt数据的转化，其性能要远远低于基于TreeLSTM的树库转化方法. 通过统计两份转化数据的源端-目标端结构的一致性，我们发现，基于模式的转化方法只有在高一致性的情况下，才能较好的利用源端树信息，达到一个较好的转化性能；在一致性较低的情况下，模式无法应对大量的复杂的结构对应关系，转化性能大幅下滑.
+          %通过分析两份语料的一致性，我们发现，在句法规范非常相似时(HIT和CODT, 83),基于模式的方法定义的9种模式涵盖了大部分对应关系，所以取得了可比较的结果；在句法规范差异较大的情况下，通过模式的编码方式无法涵盖的情况变多了, 无法处理.
+    \item SP-Tree树库转化方法是一种深度但低效的树库转化方法.
+
+          SP-Tree转化方法采用双向TreeLSTM来深度编码源端句法树的最短路径，并将构成弧的两个节点及其最近公共祖先节点的隐藏向量作为对源端树结构信息的表示. 然而，从计算量角度看，作为LSTM的一种树状扩展，TreeLSTM同样无法并行计算. 此外，当只考虑单向的TreeLSTM时，每计算一条弧的分数都需要执行一次最短路径TreeLSTM. 对于长度为$n$的句子来说，基于图的句法分析方法需要计算$n^2$条弧的分数，那就需要计算$n^2$次TreeLSTM. 如果将计算一次TreeLSTM的时间作为原子单位，那SP-Tree转化方法的复杂度为$O(n)$. 当面临句子较长的转化数据时，SP-Tree转化方法的训练和预测都是低效的.
+
+          %	\item 目前的树库转化方法是一种训练繁琐的低耦合的级联的方式. 为了充分利用源端句法树的信息（双树对齐数据外的源端树），我们首先基于源端句法分析任务和目标端句法分析任务训练一个多任务学习模型，然后用训练好的共享编码层作为转化模型的编码层. 这种级联的方式增加了模型训练的的复杂性，而且多任务学习模型预训练的编码层参数和转化模型的耦合性低.
+
+\end{enumerate}
+
+针对上述树库转化方法中存在的浅层编码和低效编码的问题，我们尝试并提出采用Full-TreeLSTM来深度、高效编码源端句法树信息.
+
+%利用训练好的树库转化模型，将源端数据转化为符合目标端规范的数据后，
+\textbf{树库融合方面.  } 对于转化后数据的利用，第\ref{sec:super_tc}章直接将人工标注的目标端树库和转化后的源端树库合并为一份训练数据，并在其上训练一个目标端句法模型（称为直接合并的方法）. 这种方法忽略了转化后树库中包含的噪音问题，噪音的存在会干扰目标端句法模型的学习.
+此外，考虑到转化后数据占合并后训练数据的绝大部分，这种做法则进一步加大了噪音给目标端句法模型带来的负面影响.
+
+针对转化后数据中存在噪音的问题，本章尝试并提出语料加权和合并后微调两种方法来增大人工标注数据的影响，更加合理地利用转化后数据.
+
+%pattern：理论上浅层编码，实验表明了局限性.
+%treelstm： 1. lstm无法并行，treelstm更无法并行 2. 使用最短路径树时，n方
+%我们尝试了两种优化，一改进treelstm方法 二，基于可以并行的GCN方法
+%此外，考虑到对源端树库利用的不充分，我们的方法：
+%1. 概率， 2. treebank embedding 3. copus weighting 4. concate-finetune
+%
+%
+%
+%采用自定义的模式来刻画目标端句法结构与源端句法结构的对应关系. 我们根据目标端弧在源端树中的依存关系以及路径长度定义了9种模式，通过将这9种向量映射成嵌入式向量来编码源端树信息. 理论上而言，通过9个特征来编码源端树和目标端复杂的对应关系，是远远不够的. 虽然在HIT-codt语料上，基于模式的树库转化方法取得了和深度编码方式TreeLSTM一致的性能，但是在我们后来构造的另一份转化数据PCTB7-codt上，基于模式的转化方法无法有效的完成从PCTB7到codt数据的转化，其性能要远远低于基于
+%我们通过实验发现，Jiang et al. (2018)[14]的转化方法存在两个问题：PatEmb方法不稳定、不能深入刻画源端树信息；SP-Tree方法计算量大，效率非常低. 为了解决这些问题，本文尝试并提出了基于Full-Tree LSTM（Full-Tree）的树库转化方法. 在引入简单的dropout技术后，Full-Tree方法可以达到甚至超过SP-Tree方法的转化性能.
+%树库融合方面，Jiang et al. (2018)[14]将目标端树库和转化后的源端树库直接合并为一个语料训练模型，忽略了转化后树库中包含的噪音问题. 本文提出语料加权和合并后微调两种融合方法，可以进一步提高句法分析的准确率.
+%我们在两个树库转化数据上做了大量实验，结果表明：1）相比jiang et al. (2018)[14]对源端树的编码方式，Full-Tree LSTM方法转化稳定性更强，效率更高；2）语料加权和合并后微调这两种方法都能充分利用转化后树库，减弱噪音带来的负面影响，进一步提升目标端句法模型性能；3）采用有监督树库转化方法使用异构树库明显优于基于多任务学习的基准融合方法.
+%
+%PatEmb方法采用自定义的模式编码源端树信息，模式用来刻画目标端句法结构与源端句法结构的对应关系. 根据目标端弧"j←i" 在源端树中的依存关系以及路径长度定义了9种模式，并将模式映射成嵌入向量，作为对源端树结构信息的表示. SP-Tree方法采用双向最短路径TreeLSTM来编码源端树信息. 该方法只考虑源端树中处在两个节点的最短路径上的节点信息，并把构成弧的两个节点及其最近公共祖先节点的隐藏向量作为对源端树结构信息的表示.
+%根据J的结果，这两种方法在HIT&SU数据上转化性能相当. 在早期调研实验中，我们发现，在句法规范差异较大的情况下，PatEmb方法的转化性能大幅下降，远远低于SP-Tree方法. 可见PatEmb方法是一种构造离散特征的浅层编码方法，稳定性差. SP-Tree方法转化性能虽好，但是计算量大，效率非常低. SP-Tree方法每预测一条弧都需要计算一次最短路径TreeLSTM. 对于长度为n的句子来说，基于图的句法分析方法需要计算n2条弧的分数，那就需要计算n2次TreeLSTM. 对于大量数据来说，SP-Tree方法效率低的缺点是致命的. 在树库融合方面，Jiang et al. (2018)[14]将大规模的转化后数据与小规模的人工标注数据直接合并为一份训练语料，转化后数据占绝大部分，加大了转化后数据中噪音给目标端句法模型带来的负面影响.
+
+%\section{基于TreeLSTM的树库转化方法的优化}
+%\subsection{数量级上的优化}
+\section{基于Full-TreeLSTM的树库转化方法}
+\label{sec:treelstm}
+为了解决PatEmb方法稳定性差和SP-Tree方法效率低的缺点，我们采用Full-TreeLSTM方法（简记为Full-Tree）对源端树进行编码. 相较浅层编码方法PatEmb，Full-Tree方法利用双向TreeLSTM深度编码源端树信息，稳定性强；相较SP-Tree方法，Full-Tree方法利用整棵句法树的信息，计算一次TreeLSTM就能得到蕴含源端树信息的词序列表示（SP-Tree方法需计算$n^2$次），大大减少了计算量，提高了效率.
+\begin{figure}[hb!]
+    %\vspace{-0.5em}
+    \centering
+    \includegraphics[angle=0,width=0.8\textwidth]{img/fig-crop.pdf}
+    \caption{基于Full-TreeLSTM的转化模型计算$\texttt{score}(j\leftarrow i)$. }
+    \label{fig:Full-Treelstm}
+    %\vspace{-1.5em}
+\end{figure}
+
+如图\ref{fig:Full-Treelstm}所示，总体来说，Full-Tree树库转化方法和第\ref{sec:super_tc}章提出的SP-Tree树库转化方法类似：
+1）二者都从自底向上和自顶向下这两个方向来充分编码源端树的信息；2）都将顶层BiLSTM的输出和源端句法树的依存关系标签向量拼接起来作为双向TreelSTM的输入.
+%都将双向TreeLSTM堆叠在BiaffineParser的BiLSTM层之上来利用丰富的文本信息，即以顶层BiLSTM的输出和源端句法树的依存关系标签向量的拼接作为双向TreelSTM的输入.
+
+相较SP-Tree方法，Full-Tree方法对源端树的编码方式和句法信息的利用上进行了改进，本节详细介绍Full-Tree转化方法.
+为了能更好的实现批量（batch）训练，我们修改了TreeLSTM的原始的计算方式（公式\ref{eq:sp_treelstm}所示），即每个节点输出的隐状态来自其所有孩子节点隐状态的向量之和，计算公式如\ref{eq:sum_treelstm}所示. 实验表明该改进不影响转化性能.
+\begin{equation}
+    \label{eq:sum_treelstm}
+    %\begin{small}
+    \setlength{\abovedisplayskip}{9pt}
+    \setlength{\belowdisplayskip}{9pt}
+    \begin{split}
+        %x_{t} &= r^{seqLstm}_t \oplus e^{label}_t \\
+        \Tilde{\mathbf{h}}_a &= \sum_{k \in \mathcal{C}(a)} \mathbf{h}_k, \quad \Tilde{\mathbf{c}}_a = \sum_{k \in \mathcal{C}(a)} \mathbf{c}_k \\
+        \mathbf{i}_a &= \sigma \left( \mathbf{U}^{(i)} \mathbf{x}_a + \mathbf{V}^{(i)} \Tilde{\mathbf{h}}_a + \mathbf{b}^{(i)} \right) \\
+        \mathbf{f}_{a} &= \sigma \left( \mathbf{U}^{(f)} \mathbf{x}_a +  \mathbf{V}^{(f)} \Tilde{\mathbf{h}}_a + \mathbf{b}^{(f)} \right)   \\
+        \mathbf{o}_{a} &= \sigma \left( \mathbf{U}^{(o)} \mathbf{x}_a + \mathbf{V}^{(o)} \Tilde{\mathbf{h}}_a + \mathbf{b}^{(o)} \right) \\
+        \mathbf{u}_{a} &= \tanh \left( \mathbf{U}^{(u)} \mathbf{x}_a + \mathbf{V}^{(u)} \Tilde{\mathbf{h}}_a + \mathbf{b}^{(u)} \right) \\
+        %\mathbf{c}_{a} &= \mathbf{i}_a \odot \mathbf{u}_a + \sum_{k \in \mathcal{C}(a)} \mathbf{f}_{a,k} \odot \mathbf{c}_k \\
+        \mathbf{c}_{a} &= \mathbf{i}_a \odot \mathbf{u}_a +  \mathbf{f}_{a} \odot \Tilde{\mathbf{c}}_a \\
+        \mathbf{h}_{a} &= \mathbf{o}_a \odot \tanh \big(\mathbf{c}_a\big) \\
+    \end{split}
+    %\end{small}
+\end{equation}
+
+如图\ref{fig:Full-Treelstm}的右半部分所示，我们用双向TreeLSTM来一次性编码整棵源端句法树的信息. 即只需计算一次双向TreeLSTM就可得到每个词蕴含源端句法信息的表示，分别为自顶向下的词序列表示$\mathbf{h}_1^\downarrow\mathbf{h}_2^\downarrow\cdots \mathbf{h}_n^\downarrow$，和自底向上的词序列表示$\mathbf{h}_1^\uparrow \mathbf{h}_2^\uparrow \cdots \mathbf{h}_n^\uparrow$. 其次，和SP-Tree方法不同（它将三个词的TreeLSTM输出拼接到一起作为源端树的表示，如公式\ref{eq:sp_treelstm_rep}所示），我们将每个词的自底向上的输出和自顶向下的输出拼接到一起，作为该词在双向TreeLSTM处的输出. 如词$w_k$的双向TreeLSTM的输出为$\mathbf{r}_k^{tree} = \mathbf{h}_k^\downarrow \oplus \mathbf{h}_k^\uparrow$，其中$\mathbf{h}_k^\downarrow$是和$\mathbf{h}_k^\uparrow$分别是词$w_k$在自顶向下TreeLSTM的输出和自底向上TreeLSTM的输出.
+
+以计算弧$j \leftarrow i$为例，如公式\ref{eq:full_treelstm_repre}所示，我们将词$w_i$和词$w_j$在源端树中的表示$\mathbf{r}_i^{tree}$，$\mathbf{r}_j^{tree}$分别和BiaffineParser顶层BiLSTM的输出$\mathbf{r}_i$，$\mathbf{r}_j$拼接作为$\texttt{MLP}$层的输入：
+\begin{equation}
+    \label{eq:full_treelstm_repre}
+    \setlength{\abovedisplayskip}{10pt}
+    \setlength{\belowdisplayskip}{10pt}
+    %\split{}
+    \begin{split}
+        %\mathbf{r}_i^D,\quad \mathbf{r}_j^H = \texttt{MLP}^H(\mathbf{r}_i \oplus \mathbf{r}_i^{tree}), \quad \texttt{MLP}^D(\mathbf{r}_j \oplus \mathbf{r}_j^{tree})
+        \mathbf{r}_i^H &= \texttt{MLP}^\texttt{H} \left(\mathbf{r}_i \oplus \mathbf{r}_i^{tree}\right) \\
+        \mathbf{r}_j^D &= \texttt{MLP}^\texttt{D} \left(\mathbf{r}_j \oplus \mathbf{r}_j^{tree}\right)
+    \end{split}
+\end{equation}
+
+至此，我们通过Full-Tree方法对源端树的编码向量$\mathbf{r}_i^{tree}$，$\mathbf{r}_j^{tree}$，将弧$j \leftarrow i$在源端树中的结构信息加入到了BiaffineParser中. 最后，我们将$\mathbf{r}_i^D$和$\mathbf{r}_j^H$输入到双仿射层（Biaffine层）中，按照公式\ref{eq:biaffine}计算弧$j \leftarrow i$的得分.
+
+然而Full-Tree树库转化方法虽然大大提升了速度（复杂度从$O(n)$降到了$O(1)$），但是伴随着一定程度上的性能下降. 我们通过实验分析发现，Full-Tree树库转化方法在Train集上的转化性能可达99\%，发生了过拟合现象. 我们通过引入dropout机制来解决转化模型的过拟合问题. dropout机制会随机去掉一个向量的某些维度的特征，即将该维度设置为0，是一种有效解决模型过拟合问题的方式. 我们尝试对TreeLSTM的输出引入dropout机制，dropout值的大小将作为超参在Dev集上进行调整.
+%我们尝试了在TreeLSTM的不同位置处引入dropout机制.
+%如图xx所示，每个节点的隐状态有两个去处，一是作为下一个节点的输入，即继续参与内部计算；一个是直接输出，作为该节点的表示，用于下一层网络的计算. 如公式xx所示，我们在TreeLSTM内部计算过程中，引入dropout机制. 如公式xx所示，我们对双向TreeLSTM的输出引入dropout机制.
+
+\section{树库融合的优化}
+在树库融合方面，即如何利用转化后的源端树库和人工标注的目标端树库提升目标端句法分析性能，关键的挑战在于如何缓解转化后源端树库中存在的噪音问题.
+如图\ref{fig:exploitation-approaches}-(b)的第一、二两步所示，第\ref{sec:super_tc}章先将目标端树库与转化后的源端树库直接合并为一个更大规模的目标端树库，然后再训练一个目标端句法模型. 这种直接合并的树库融合方法完全忽视了转化后数据中存在的大量噪音问题.
+%第\ref{sec:super_tc}章，我们直接将转化后源端树库和人工标注目标端树库直接合并为一份语料来训练目标端句法模型（称为直接合并的方法），忽视了转化后树库中存在的大量噪音，无法有效处理噪音给模型带来的负面影响. 此外，转化后树库在规模上远远大于人工标注树库（以HIT转CODT为例，人工标注的CODT有50,866个词，转化后的HIT有980,791个词），直接合并的方法一定程度上弱化了人工标注树库对模型的影响.
+%综上，
+为了减弱转化后树库包含的噪音问题，加大人工标注数据对模型的影响，我们采用了两种简单有效的方法，即语料加权方法以及合并后微调的方法.
+\begin{enumerate}
+    %	\item 基于预测概率的方法. 基于BiafineParser的树库转化模型会给出每条弧和依存关系标签的概率信息. 我们将二者的概率相乘并取根号作为该条弧的可信度，并设置阈值P,删除转化后数据中存在的不确定的弧的信息. 通过删除这些低可信度的依存弧，去除一部分噪音. 然后用得到的xx去训练最终的句法模型.
+    %	\item 基于treebank embedding的方法. treebank embedding是由xx提出的.
+    \item 基于语料加权的方法. 语料加权是由Li等（2014）\upcite{li2014ambiguity}提出的一种简单有效的通过平衡语料规模，来利用多份语料训练模型的方法. 本文采用语料加权方法来合理地利用包含噪音的转化后数据. 我们将人工标注树库和转化后树库视为两份训练语料，通过减少转化后树库在每次迭代中的占比来减弱噪音问题. 具体地，如图\ref{fig:exploitation-approaches}-(a)所示，在每次迭代之前，我们按照比例1 : M（人工标注句子数：转化后句子数），从转化后树库中随机抽取一次迭代需要的转化后数据，然后和人工标注数据直接合并作为训练语料，在随机打乱训练数据后开始一次迭代训练. 值得注意的是，每次迭代都会重新随机选取转化后数据，即每次训练语料都不相同. 从整个训练过程看，转化后语料将全部用于模型的训练，但是降低了其对句法模型的影响. M作为超参，会在Dev集上调整.
+    \item 基于合并后微调的方法. 合并后微调的方法分为三步，第一、二步将人工标注树库和转化后树库直接合并作为一份语料来训练句法模型，即直接合并的方法；当模型收敛后，进行第三步微调，即只使用人工标注树库来微调模型，试图加大人工标注树库的影响，从而减弱转化后树库包含的噪音带来的负面影响.
+\end{enumerate}
+
+\begin{figure}[hb]
+    %\vspace{-0.5em}
+    \centering
+    \includegraphics[angle=0,width=0.9\textwidth]{img/exploitation-cw-cf-crop.pdf}
+    \caption{语料加权方法以及合并后微调方法的训练流程. }
+    \label{fig:exploitation-approaches}
+    %\vspace{-1.5em}
+\end{figure}
+%\section{基于依存句法-树库转化的联合模型}
+%为了充分利用源端句法树的信息（双树对齐数据外的源端树），我们首先基于源端句法分析任务和目标端句法分析任务训练一个多任务学习模型，然后用训练好的共享编码层作为转化模型的编码层. 这种级联的方式增加了模型训练的的复杂性，而且多任务学习模型预训练的编码层参数和转化模型的耦合性低.
+
+
+
+
+
+%\section{数据}
+%
+%\begin{table}[t]
+%	\vspace{-0.em}
+%	\setlength{\abovecaptionskip}{0.cm}
+%	\setlength{\belowcaptionskip}{-0.cm}
+%	\centering
+%	\caption{数据统计}
+%	\label{tbl:HIT_data}
+%	\vspace{0.5em}
+%	% \begin{small}
+%	% \begin{center}
+%	\begin{tabular}{l|c|c|c|c|c|c}
+%		\hline
+%		&  Sent  & AvgLen  & Kappa  & Train & Dev & Test \\
+%		\hline
+%		DL-PS & 16,948   & 9.21 & 0.6033 & 47844 & 300 & 700 \\
+%		EC-MT & 2,337    & 34.97 & 0.7437 & 3874 & 100 & 300 \\
+%		EC-UQ & 2,300    & 7.69 & 0.7529 & 3800 & 100 & 300 \\
+%		\hline
+%	\end{tabular}
+%	% \end{center}
+%	% \end{small}
+%	\vspace{-0.5em}
+%\end{table}
+%
+%
+%\begin{table}[tb]
+%	\begin{footnotesize}
+%	\begin{center}
+%	\begin{tabular}{c *{3}{|r}  }
+%	%\hline
+%	 & \#Sent & \#Tok (HIT) & \#Tok (our) \\
+%	\hline
+%	\texttt{Train}  & 7,768 & 119,707 & 36,348 \\
+%	\texttt{Dev}  & 998 & 14,863 & 4,839 \\
+%	\texttt{Test} & 1,995 & 29,975 & 9,679 \\
+%	\hline
+%	\texttt{Train-HIT} & 52,450 & 980,791 & 36,348 \\ %All data
+%	\hline
+%	%\hline
+%	\end{tabular}
+%	\end{center}
+%	\end{footnotesize}
+%	\caption{Data statistics. Kindly note that sentences in \texttt{Train} are also in \texttt{Train-HIT}. } \label{tbl:data-stat}
+%	\end{table}
+%
+%\textbf{数据准备. }我们选用guo等人制定的codt规范作为目标端规范，选择CDT规范作为源端规范，并尝试将CDT树库转化为符合codt规范的树库.
+%首先，我们从CDT训练中随机选取部分的句子，借助peng等人的标注流程来快速标注高质量的codt依存句法树.
+%首先，我们通过训练好的CDT句法模型解析这11K的句子，并根据依存弧的预测概率，选取需要标注的依存弧.
+%然后，我们采用基于web的标注平台，句子的标注由两个标注人员和一个标注专家来共同标注. 通过局部标注的方式和科学的标注流程，
+%我们快速构建了约11K的双树对齐语料. 经过统计，时间约xxx.
+%
+%\textbf{数据统计和分析}如表xx所示，我们进行了数据统计.
+%表1的二三两列分别统计了语料的句子数和标注的弧数.
+%同时，如四五两列所示，为了直观地了解源端规范和目标端规范的相似程度，我们统计了源端树库与目标端树库的一致性，
+%包括依存弧和依存关系的一致性. 依存弧一致性：源端树库和目标端树库中相同依存弧的个数占总弧数的百分比.
+%依存关系一致性：我们将每一个源端依存关系标签严格映射到目标端（SU）依存关系标签上（源端标签只对应一个目标端标签，
+%目标端的标签可能对应多个源端的标签），然后选择一个使得一致性最大的对应关系，计算出此时依存关系的一致性. 可以看出 1)
+%通过局部标注的方式，我们只标注了约1/20的弧，得到了约1/5的CDT训练集规模的codt句法树，大大提升了效率.
+%2)  HIT\&codt语料依存弧一致性81.68\%，依存关系一致性73.73\%，一致性较高，即HIT规范和SU规范相似度高.
+
+\section{实验结果及分析}
+\subsection{数据}
+我们使用$CODT^{\texttt{HIT}}$，$CODT^{\texttt{PCTB7}}$这两个转化数据展开对比实验. 其中$CODT^{\texttt{HIT}}$是第\ref{sec:super_tc}章的实验数据，我们直接使用其Train/Dev/Test集；此外，我们也在宾大树库（PCTB7）上建立了一个转化数据$CODT^{\texttt{PCTB7}}$，我们随机选择1K/2K句作为Dev/Test集，剩下的约8K句子作为Train集（和第\ref{sec:super_tc}章一样，由于使用了Tree-CRF损失函数，我们删除了Train/Dev/Test集中的非投影树）.
+
+表\ref{tb:two_conversion_data}的2、3两列分别统计了两份语料的句子数和标注的弧数. 同时，如4、5两列所示，为了直观地比较源端规范和目标端规范的相似程度，我们统计了源端树库与目标端树库的一致性，包括依存弧和依存关系的一致性. %依存弧一致性：源端树库和目标端树库中相同依存弧的个数占总弧数的百分比. 依存关系一致性：我们将每一个源端依存关系标签严格映射到目标端（SU）依存关系标签上（源端标签只对应一个目标端标签，目标端的标签可能对应多个源端的标签），然后选择一个使得一致性最大的对应关系，计算出此时依存关系的一致性.
+可以看出，$CODT^{\texttt{HIT}}$语料依存弧一致性81.68\%，依存关系一致性73.73\%，一致性较高，即HIT规范和SU规范相似度高；$CODT^{\texttt{PCTB7}}$语料依存弧一致性66.37\%，依存关系一致性55.14\%，一致性较低，即PCTB7规范和SU规范相似度低. 同时，数据一致性也直观地反应了异构树库间存在着大量的共同句法信息，合理利用异构数据会一定程度提升目标端句法模型性能.
+\begin{table*}[hb!]
+    \addtolength{\tabcolsep}{+0.0mm}
+    %\begin{center}
+    \centering
+    \caption{两份双树对齐数据统计. }
+    \label{tb:two_conversion_data}
+    \begin{tabular}{l cc cc}
+        \toprule
+        %   \hline
+                                &        &            & \multicolumn{2}{c}{一致性}                              \\
+        \cmidrule(lr){4-5}
+        数据                    & 句子数 & 标注的弧数 & 弧一致性                   & 依存关系一致性             \\
+        \midrule
+        $CODT^{\texttt{HIT}}$   & 10,761 & 50,866     & \multirow{2}{1cm}{81.68\%} &
+        \multirow{2}{1cm}{73.73\%}                                                                              \\
+        HIT-Train               & 52,450 & 980,791    &                            &                            \\
+        \midrule
+        $CODT^{\texttt{PCTB7}}$ & 11,579 & 49,979     & \multirow{2}{1cm}{66.37\%} & \multirow{2}{1cm}{55.14\%} \\
+        PCTB7-Train             & 43,114 & 961,654    &                            &                            \\
+        \bottomrule
+    \end{tabular}
+
+    %\end{center}
+\end{table*}
+
+\subsection{参数设置及评价指标}
+实验实现中，我们采用Pytorch深度学习框架来实现BiaffineParser、多任务学习和转化模型. 为了让Full-Tree方法与PatEmb和SP-Tree方法公平对比，我们沿用了上一章的参数设置. 对于BiaffineParser，多任务学习和转化模型，编码层均采用两层BiLSTM，且BiLSTM的输出维度为300. 对于BiaffineParser和多任务学习模型，MLP的输出维度为200/100；对于转化模型，源端依存关系嵌入向量的维度为50，TreeLSTM的输出维度为100，双向TreeLSTM的输出维度为200，MLP的输出维度为300/200.
+
+训练时，为了充分利用GPU资源以及减少不必要的padding运算，我们采用了基于桶的批处理技术，即按句子长度对句子进行聚类（每一类即为一个桶），然后按照5,000个词一个batch对每个桶进行batch切分，迭代过程中既会打乱桶间顺序也会打乱桶内句子顺序. 每迭代一次都会在Dev集上评估一次模型，当Dev集上的性能达到最优之后50次迭代性能未增长，则停止训练.
+
+对于多任务学习，我们设置2,500个词一个batch，按照batch轮流训练源端语料和目标端语料，直至目标端batch全部参与训练，一次迭代结束. 模型评估和训练结束条件和上述一样.
+
+性能评价指标方面，我们同样采用UAS和LAS来评价句法模型、多任务学习模型和转化模型的性能.
+
+\subsection{Dev集上树库转化的实验结果}
+
+速度上，我们统计了三种方法编码1K句源端树所需的时间. 如表\ref{tb:speed}所示，PatEmb方法的编码时间要略短于Full-Tree方法（1 VS. 2），Full-Tree方法编码速度远比SP-Tree方法快（2 VS. 229）. 可见相比于SP-Tree方法，Full-Tree方法在编码速度上更占优势.
+
+%\begin{table}[hb!]
+%	%\addtolength{\tabcolsep}{+0.0mm}
+%	%\begin{center}
+%	\caption{PatEmb、SP-Tree和Full-Tree方法的编码速度}
+%	\label{tb:speed}
+%	\centering
+%	\begin{tabular}{cc}
+%		\toprule
+%		编码方法 & 编码1K个句子消耗的时间 (/s) \\
+%		\midrule
+%		PatEmb & 1 \\
+%		SP-Tree &229 \\
+%		Full-Tree &2 \\
+%		\bottomrule
+%	\end{tabular}
+%	%\end{center}
+%\end{table}
+
+\begin{table}[hb!]
+    %\addtolength{\tabcolsep}{+0.0mm}
+    %\begin{center}
+    \caption{PatEmb、SP-Tree和Full-Tree方法的编码速度}
+    \label{tb:speed}
+    \centering
+    \begin{tabular}{cc}
+        \toprule
+        编码方法  & 1s能编码的句子数 \\
+        \midrule
+        PatEmb    & 1000             \\
+        SP-Tree   & 4                \\
+        Full-Tree & 500              \\
+        \bottomrule
+    \end{tabular}
+    %\end{center}
+\end{table}
+
+\begin{table}[hb!]
+    \addtolength{\tabcolsep}{+1.0mm}
+    %\begin{center}
+    \centering
+    \caption{Dev集上Full-Tree LSTM输出的dropout对转化性能的影响}
+    \label{tb:Dev-dropout-results}
+    \begin{tabular}{c cc cc}
+        \toprule
+        %   \hline
+        \multirow{2}{*}{dropout值} & \multicolumn{2}{c}{$CODT^{\texttt{HIT}}$} & \multicolumn{2}{c}{$CODT^{\texttt{PCTB7}}$}                                   \\
+        \cmidrule(lr){2-3}
+        \cmidrule(lr){4-5}
+                                   & UAS                                       & LAS                                         & UAS            & LAS            \\
+        \midrule
+        0                          & 86.00                                     & 81.13                                       & 80.49          & 75.92          \\
+        0.1                        & 86.18                                     & 81.50                                       & 80.95          & 76.75          \\
+        0.2                        & 86.13                                     & 81.35                                       & 81.16          & 76.71          \\
+        0.3                        & 86.20                                     & 81.46                                       & 81.50          & 77.05          \\
+        0.4                        & 86.09                                     & 81.46                                       & 81.80          & 77.54          \\
+        0.5                        & 86.32                                     & 81.66                                       & 81.69          & 77.54          \\
+        0.6                        & 86.11                                     & 81.54                                       & 81.76          & 77.81          \\
+        0.7                        & \textbf{86.42}                            & \textbf{81.69}                              & 81.92          & 77.68          \\
+        0.8                        & 85.93                                     & 81.21                                       & \textbf{82.31} & \textbf{78.02} \\
+        0.9                        & 85.78                                     & 81.18                                       & 81.64          & 77.31          \\
+        \bottomrule
+    \end{tabular}
+    %\end{center}
+\end{table}
+
+Full-Tree转化性能方面，我们在Full-TreeLSTM层输出处引入了dropout机制，并对dropout大小进行调参. 如表\ref{tb:Dev-dropout-results}所示（dropout为0表示不进行dropout），
+在Full-Tree  TreeLSTM输出处引入dropout机制对转化性能有较大的积极影响. 具体而言，
+在$CODT^{\texttt{HIT}}$语料上，当dropout为0.7时，达到最优性能LAS=81.69\%，且比不用dropout要高0.56\%（81.69-81.13）；在$CODT^{\texttt{PCTB7}}$语料上，当dropout为0.8时，达到最优性能LAS=78.02\%，且比不使用dropout要高2.1\%（78.02-75.92）.
+
+从表\ref{tb:two_conversion_data}统计的转化数据的一致性看，数据一致性越低，dropout机制对转化性能的提升越明显. 我们从两个角度分析了Full-Tree LSTM输出层的dropout影响较大的原因. 1）相比SP-Tree只使用源端树最短路径上的节点信息，Full-Tree方法利用了整棵句法树的信息，而dropout能有效去除多余的源端句法信息. 2）从双仿射运算机制上来看，dropout将源端句法表示向量的一些位置变成0，一定程度上抑制了源端句法信息对弧得分的贡献，当一致性较低时，减弱源端树信息的影响是合理的.
+
+\subsection{Dev集上树库融合的实验结果}
+我们采用直接合并方法、语料加权方法和合并后微调三种方法来使用转化后数据，表\ref{tb:Dev-comb-results}给出了三种方法在Dev集上性能的对比.
+\begin{table*}[hb!]
+    \addtolength{\tabcolsep}{+1.0mm}
+    %\begin{center}
+    \centering
+    \caption{语料加权和合并后微调方法在Dev集上的性能影响}
+    \label{tb:Dev-comb-results}
+    \begin{tabular}{cc cc cc}
+        \toprule
+        %   \hline
+        \multicolumn{2}{c}{\multirow{2}{3.3cm}{方法}}
+                                     & \multicolumn{2}{c}{融合转化后的HIT} & \multicolumn{2}{c}{融合转化后的PCTB7}                                  \\
+        \cmidrule(lr){3-4}
+        \cmidrule(lr){5-6}
+                                     &                                     & UAS                                   & LAS      & UAS      & LAS      \\
+        \midrule
+        \multicolumn{2}{c}{直接合并} & 81.50                               & 76.30                                 & 79.73    & 75.09               \\
+        \midrule
+        \multirow{6}{2cm}{语料加权}
+                                     & $M=1$                               & 81.37                                 & 76.14    & 79.80    & 75.25    \\
+                                     & $M=2$                               & 82.10                                 & \bf76.97 & 79.89    & \bf75.46 \\
+                                     & $M=3$                               & 81.85                                 & 76.61    & \bf80.01 & 75.30    \\
+                                     & $M=4$                               & 81.66                                 & 76.55    & 79.50    & 75.31    \\
+        %   &$M=5$ &\bf82.14 &81.37	&76.84  &76.26 \\
+        %   &$M=6$ &79.34 &79.84	&74.77  &75.23 \\
+                                     & $M=5$                               & \bf82.14                              & 76.84    & 79.34    & 74.77    \\
+                                     & $M=6$                               & 81.37                                 & 76.26    & 79.84    & 75.23    \\
+        \midrule
+        \multicolumn{2}{c}{合并后微调}
+                                     & \bf82.24                            & \bf77.17                              & \bf80.56 & \bf76.11            \\
+        \bottomrule
+    \end{tabular}
+    %\end{center}
+\end{table*}
+
+第2行给出了直接合并目标端树库和转化后源端树库训练的目标端模型的性能，作为树库融合模型的基线模型. 我们对语料加权方法的比例值M进行了调参，第3-8行给出了不同M下，训练的目标端句法模型的性能；最后一行是合并后微调方法对应的目标端句法模型的性能. 从LAS来看，当M为2，即一次迭代人工标注语料数量：转化后语料数量=1：2时，在两个语料上达到了最好性能，分别比直接合并的做法要高0.67\%（76.97–76.30）和0.37\%（75.46-75.09）；更有效的方式是合并后微调的方法，在两份语料上，分别比直接合并方法高了0.87\%（77.17–76.30）和1.02\%（76.11-75.09）.
+
+可见，语料加权和合并后微调的方法都可以有效地利用包含噪音的转化后树库，进一步提升目标端句法模型性能. 同时我们也尝试了将两种方法结合到一起，即在最好的语料加权模型上进行只用人工数据微调的实验. 但是实验结果表明在语料加权的基础上再进行微调的操作并没有带来性能上的提升，我们认为最好的语料加权模型已经一定程度上减弱了噪音的影响且充分利用了人工标注数据，此时再利用人工标注数据微调，对模型的影响不大.
+
+\subsection{Test集上树库转化和树库融合的实验结果}
+表\ref{tb:Test-results}给出了三种转化方法在Test集上的性能对比. 在$CODT^{\texttt{HIT}}$数据上（表\ref{tb:two_conversion_data}所示，一致性高），Full-Tree方法较PatEmb和SP-Tree方法性能上几乎一样（82.04\% VS. 82.03\% VS. 82.09\%）；在$CODT^{\texttt{PCTB7}}$的Test集上（表\ref{tb:two_conversion_data}所示，一致性低），Full-Tree方法比SP-Tree方法转化性能高0.5\%（78.45-77.95），值得注意的是Full-Tree方法在LAS上比PatEmb方法的转化性能高了11.34\%（78.45-67.11）. 可见PatEmb方法非常依赖转化数据，无法稳定的利用源端树信息，具有很强的局限性；Full-Tree方法和SP-Tree方法一样可以深度编码源端树信息，稳定性强，且在一致性较低的数据上可以达到更好的转化性能. 综合速度考虑，Full-Tree方法是更优的树库转化方法.
+
+\begin{table}[hb!]
+    \addtolength{\tabcolsep}{+1.0mm}
+    \centering
+    \caption{Test集上PatEmb，SP-Tree，Full-Tree方法的转化性能}
+    \label{tb:Test-results}
+    %\begin{center}
+    \begin{tabular}{c cc cc}
+        \toprule
+        %   \hline
+        \multirow{2}{1.5cm}{转化模型} & \multicolumn{2}{c}{$CODT^{\texttt{HIT}}$} & \multicolumn{2}{c}{$CODT^{\texttt{PCTB7}}$}                       \\
+        \cmidrule(lr){2-3}
+        \cmidrule(lr){4-5}
+                                      & UAS                                       & LAS                                         & UAS      & LAS      \\
+        \midrule
+        PatEmb                        & 86.66                                     & 82.03                                       & 74.71    & 67.11    \\
+        SP-Tree                       & \bf86.69                                  & \bf82.09                                    & 81.94    & 77.95    \\
+        Full-Tree                     & 86.28                                     & 82.04                                       & \bf82.45 & \bf78.45 \\
+        \bottomrule
+    \end{tabular}
+    %\end{center}
+\end{table}
+
+最后，我们需要给出利用源端树库后对目标端句法模型的影响. 如表\ref{tb:Test-results-diff-parsers}所示，第2行“单树库句法模型”是只利用人工标注的目标端数据训练的句法模型，作为一个基线模型；第3行“多任务学习的句法模型”是采用多任务学习方法利用源端树库时训练的目标端句法模型；第4行“SP-Tree方法最终的句法模型”是采用第\ref{sec:super_tc}章的SP-Tree转化方法和直接合并的树库融合方法训练的目标端句法模型. 第5行“Full-Tree方法最终的句法模型”是采用基于Full-Tree树库转化方法将源端树库转化为目标端树库后，再通过合并后微调的方法，训练的目标端句法模型. 可以看出，添加额外的异构树库能有效的提升目标端句法模型性能. 在两个语料上，多任务学习方法分别提升了4.65\% (75.46-70.81), 2.13\% (74.61-72.48)，树库转化方法分别提升了6.46\% (77.27-70.81), 4.29\% (76.77-72.48)，可见异构树库包含的共同句法信息能有效提高目标端句法分析性能.
+
+进一步，树库转化方法能更大幅度的提高目标端句法模型性能，在两个语料上，分别比多任务学习方法高了1.81\%（77.27-75.46）和2.16\%（76.77-74.61）. 我们认为多任务学习仅仅通过编码层的共享参数来利用异构树库，无法充分利用异构数据. 而树库转化方法将转化后的异构树库直接作为额外的训练语料，能在训练和测试阶段直接帮助目标端句法树的构建，所以树库转化方法是一种更直接有效的异构树库利用方法.
+
+最后，相较于SP-Tree转化方法和直接合并的树库融合方法训练的目标端句法模型，本章的改进方法（Full-Tree转化方法和合并后微调的树库融合方法），能进一步提升目标端句法模型性能，两份语料在LAS上分别提升了0.54\%（77.27-76.73），0.74\%（76.77-76.03）. %这表明了提出的改进方法的有效性.
+
+\begin{table}[hb!]
+    \addtolength{\tabcolsep}{+1.0mm}
+    %\begin{center}
+    \centering
+    \caption{不同句法模型在Test集上的性能}
+    \label{tb:Test-results-diff-parsers}
+    \begin{tabular}{c ccc ccc}
+        \toprule
+        %   \hline
+        \multirow{2}{*}{目标端句法模型} & \multicolumn{2}{c}{$CODT^{\texttt{HIT}}$} & \multicolumn{2}{c}{$CODT^{\texttt{PCTB7}}$}                       \\
+        \cmidrule(lr){2-3}
+        \cmidrule(lr){4-5}
+                                        & UAS                                       & LAS                                         & UAS      & LAS      \\
+        \midrule
+        单树库句法模型                  & 75.57                                     & 70.81                                       & 76.78    & 72.48    \\
+        多任务学习的句法模型            & 80.08                                     & 75.46                                       & 78.80    & 74.61    \\
+        SP-Tree方法最终的句法模型       & 81.33                                     & 76.73                                       & 80.09    & 76.03    \\
+        Full-Tree方法最终的句法模型     & \bf81.86                                  & \bf77.27                                    & \bf80.90 & \bf76.77 \\
+        \bottomrule
+    \end{tabular}
+
+    %\end{center}
+\end{table}
+
+\section{本章小结}
+%本章首先分析了基于模式嵌入的树库转化方法无法充分利用源端树库，其性能受转化数据的一致性的影响很大，具有很强的局限性.
+本章分别从树库转化和树库融合两个方面分析了第\ref{sec:super_tc}章中相应方法的缺点. 然后，针对SP-Tree转化方法的低效性和PatEmb转化方法的不稳定性，提出使用Full-Tree转化方法来高效、深度地编码源端树. 接着，本章提出使用语料加权以及合并后微调两种树库融合方法来合理利用含有噪音的转化后源端树库. 最后，在两份双树对齐语料上的实验表明了：
+%本章首先指出了第\ref{sec:super_tc}章中树库转化方法和树库融合方法的不足之处.
+%然后，针对树库转化任务和树库融合任务提出了一些改进方法，并在两份双树对齐语料上进行实验.
+%实验结果表明了：
+1）Full-TreeLSTM方法能高效稳定、深度编码源端树信息，并且优于SP-Tree和PatEmb方法；
+2）语料加权以及合并后微调的方法可以有效的缓解转化后语料中包含的噪音问题，进一步提升了目标端句法模型性能.
+%3）本章提出的改进方法——Full-Tree转化方法和合并后微调的树库融合方法优于第\ref{sec:super_tc}章的SP-Tree转化方法和直接合并的树库融合方法，有效地提升了最终目标端句法模型的性能.
+此外，我们在实验中还发现了TreeLSTM输出层的dropout对Full-Tree方法影响较大，合理地设置dropout大小可以获得更高的转化性能.
+
+基于本章研究内容，我们在NLPCC-2019会议（CCF-C类）上发表学术论文一篇.
+
+
+

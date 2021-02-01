@@ -1,0 +1,96 @@
+% !Mode:: "TeX:UTF-8"
+
+% 中英文摘要
+\begin{cabstract}
+
+    % 序列标注任务是自然语言处理的基础研究，常受限于单个语料规模小和领域覆盖面窄的问题.
+    % 人工标注新的数据费时费力，而不同标注规范的其它资源的存在为缓解这些问题提供了新机遇.
+
+    % 人工标注数据的规模会直接影响受数据驱动的统计模型性能.
+    目前有指导的统计机器学习方法通常使用单个标注资源训练模型参数，
+    而单个标注资源的缺点是：规模小、领域覆盖面窄.
+    % 作为一个广泛应用的结构化分类问题，序列标注同样会受数据稀疏问题的影响.
+    人工标注新的数据费时费力，而不同标注规范的其它资源的存在为缓解这些问题提供了新机遇. 因此，本课题利用不同标注规范语料，以中文词性标注任务为案例，提出了以下解决方法：
+    % 因此，研究者们尝试额外利用遵守不同标注规范的源端资源，以提高模型在目标资源上的分析效果.
+    % 最有代表性的方法是Stacked Learning，然而该方法
+    % 存在两方面的问题：利用的语言现象有限和实际应用需两次解码效率低.
+    \begin{enumerate}
+        \item 多资源转化方法
+
+              多资源转化方法旨在将源端资源的标注进行转化，以符合目标端标注规范，进而将转化后的资源和目标资源合并，增大训练数据规模.
+              我们做了两方面创新尝试：在转化过程中额外利用指导特征的置信度信息和在转化后资源中用模糊标注表示方法减少错误标注. 实验表明利用置信度信息能有效帮助转化而模糊标注表示方法的影响不大.
+
+        \item 耦合序列标注方法
+
+              我们提出了耦合序列标注模型，直接学习和推断两种异构标记，更有效的利用异构标注的 多源数据. 其基本思想是将两个词性标记耦合在一起（例如：``$[NN,n]$''） ，借助模糊标注扩大耦合词性（Bundled tags）的空间，训练基于CRF的耦合词性标注模型. 为了在非重叠且只有一端词性标记的两数据集上训练模型，我们分析了一端词性和另一端词性之间所有可能的映射关系，得到耦合词性，推导出基于模糊标注的目标函数. 耦合模型的主要优势在于：1）便于学习耦合标记的联合特征以及隐含的异构标注之间的映射关系；2）便于研究词性的独立特征来解决只用耦合标记造成的数据稀疏问题. 实验结果表明，耦合模型能显著提高一端词性标记的准确率和词性标记转化的性能.
+
+        \item 基于在线剪枝的快速耦合序列标注方法
+
+              基于映射函数的耦合模型，能有效利用异构的多源数据，但同时也 存在因耦合标记空间太大造成的低效问题.
+              我们提出了一个上下文有关的在线剪枝策略，根据上下文信息更准确率的构建标记之间的映射关系，因此能够解决耦合模型在完全映射下的效率低下问题，让其能够达到基准模型的效率.
+              实验结果表明基于在线剪枝的耦合模型在一端词性标记上的准确率和标记转化的性能明显优于当前最好的基准模型.
+              % 实验结果表明，基于转化的方法能够提高词性标注性能但是不能充分利用异构资源的语言信息；耦合模型通过映射函数方式直接从异构资源上学习的方式能提高词性标注性能，并在剪枝方法的优化下，保证了模型效率，便于实际应用到其他的序列标注任务.
+              % 目前，学术界主要研究数据驱动的分析方法，即在人工标注的语料上自动训练模型. 然而，数据驱动的方法容易受人工标注数据的规模影响，存在数据稀疏问题，主要是因为单个标注资源规模小和覆盖面窄.
+              % 而人工标注新的语料扩大语料规模的方式耗时耗力. 而不同标注规范的其他资源的存在，为我们解决这个问题提供了一个契机.
+    \end{enumerate}
+
+    \vskip 21bp
+        {\heiti\zihao{-4} 关键词：} 词性标注，多源异构数据，条件随机场
+
+    \begin{flushright}
+        作~~~~~~~者：巢佳媛
+
+        指导老师：张~~~~民
+
+        ~~~~~~~~李正华
+    \end{flushright}
+
+
+\end{cabstract}
+
+\begin{eabstract}
+
+    % Supervised statistical machine learning methods usually make use of single manually annotated corpus, which suffer from limited scale and genre coverage.
+
+    The scale of available labeled data significantly affects the performance of statistical data-driven models. As a widely-used structural classification problem, sequence labeling is prone to suffer from the data sparseness issue.
+    However, the heavy cost of manual annotation typically limits one labeled resource in both scale and genre.
+    The existence of multiple annotated resources opens another door for alleviating data sparseness.
+    To facilitate discussion we use Chinese part-of- speech (POS) tagging as our case study.
+    % 利用遵守不同标注规范语料
+    % In order to effectively utilize multiple datasets with heterogeneous annotations.
+    We address this issue from the following points of view:
+
+    % Therefore, researchers try to exploit other existing source resources with different anntation standards to boost performance on target resources.
+    % Stacking Learning is the most representative method in this reseach line, but has two weak points. The first is that it can only make use of limited language phenomenon and the second is inefficient due to the need of twice decoding.
+    \begin{enumerate}
+        \item Conversion of Multiple Resources for POS Tagging
+
+              We propose a annotation conversion method using multiple resoures for POS tagging, aiming to
+              convert the source-side annotations into target-side and then combine the data to get larger training data.This paper propses two innovate strategies. The first strategy uses reliability information of guide features. The second strategy uses ambiguous labelings to improve the quality of converted data. Results demonstrate that our first strategy is helpful for annotation conversion while the second does little to conversion.
+
+              % acl
+              % In order to effectively utilize multiple datasets with heterogeneous annotations,
+        \item Coupled Sequence Labeling on Heterogeneous Annotations
+
+              We propose a coupled sequence labeling model that can directly learn and infer two heterogeneous annotations simultaneously, and to facilitate discussion we use Chinese part-of-speech (POS) tagging as our case study. The key idea is to bundle two sets of POS tags together (e.g. ``$[\textsl{NN},\textsl{n}$]''), and build a conditional random field (CRF) based tagging model in the enlarged space of bundled tags with the help of \emph{ambiguous labelings}. To train our model on two non-overlapping datasets that each has only one-side tags, we transform a one-side tag into a set of bundled tags by considering all possible mappings at the missing side and derive an objective function based on ambiguous labelings. The key advantage of our coupled model is to provide us with the flexibility of 1) incorporating joint features on the bundled tags to implicitly learn the loose mapping between heterogeneous annotations, and 2) exploring separate features on one-side tags to overcome the data sparseness problem of using only bundled tags.
+              Experiments on benchmark datasets show that our coupled model significantly outperforms the state-of-the-art baselines on both one-side POS tagging and annotation conversion tasks.
+
+        \item Fast Coupled Sequence Labeling on Heterogeneous Annotations via Context-aware Pruning
+
+              Our study shows that the coupled model with the complete mapping function achieves the best tagging accuracy, but is prohibitively inefficient in training and inference.
+              In order to improve the efficiency of the coupled model,
+              we propose a context-aware online pruning strategy that can more accurately capture mapping relationships between annotations based on contextual evidences and thus effectively solve the severe inefficiency problem with our coupled model under complete mapping, making it comparable with the baseline CRF model.
+              Experiments on benchmark datasets show that our coupled model significantly outperforms the state-of-the-art baselines on both one-side POS tagging and annotation conversion tasks.
+    \end{enumerate}
+
+    \vskip 21bp
+        {\bf\zihao{-4} Key words: } Part-of-Speech Tagging, Heterogeneous Data, Conditional Random Field
+\end{eabstract}
+
+\begin{flushright}
+    Written by Jiayuan Chao
+
+    Supervised by Min Zhang
+
+    ~~~~~~~~Zhenghua Li
+\end{flushright}

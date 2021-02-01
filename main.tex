@@ -1,0 +1,96 @@
+%!TEX program=xelatex
+%!TEX program=bibtex
+%!TEX program=xelatex
+%!TEX program=xelatex
+% !Mode:: "TeX:UTF-8"
+%\documentclass[master,openany,twoside,a4paper,AutoFakeBold]{sudathesis}
+\documentclass[master,openany,twoside,a4paper,AutoFakeBold]{sudathesis}
+\usepackage{tikz-dependency}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{tikz-qtree}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage{pgfplots}
+\usepackage{color}
+\usepackage{dashrule}
+%\usepackage{colortbl}
+%\usepackage{arydshln}
+%\usepackage{multirow}
+%\usepackage{multicol}
+%\usepackage[SlantFont,BoldFont,CJKchecksingle,CJKnumber]{xeCJK}
+%\setmainfont[BoldFont=SimHei ,ItalicFont=KaiTi_GB2312]{SimKai}
+%\newcommand\fontnamekai{KaiTi_GB2312}
+
+\usepackage{graphics}
+\usepackage{pdfpages}
+
+\begin{document}
+
+% 用户信息
+\include{content/com_info}
+%\includepdf{content/mangshen-fengmian.pdf}
+
+% 中英封面、提名页、授权书
+\maketitle
+
+% 正文前页码是大写罗马字母
+\pagenumbering{Roman}
+% 前言页眉页脚样式 % 摘要
+\pagestyle{cnfrontmatter}
+\include{content/abstract_cn}
+
+\pagestyle{enfrontmatter}
+\include{content/abstract_en}
+
+% 目录不设置页眉和页码
+\makeatletter
+\let \asas \ps@plain
+\let \ps@plain \ps@empty
+\makeatother
+\pagestyle{empty}
+
+% 生成目录
+\tableofcontents
+\setcounter{secnumdepth}{4}
+
+\makeatletter
+\let \ps@plain \asas
+\let\asas\relax
+\makeatother
+\clearpage  %目录3页以上，使用cleardoublepage
+
+% 正文页码样式
+\mainmatter
+% 正文页眉页脚样式
+\pagestyle{mainmatter}
+% 正文页码是阿拉伯数字
+\pagenumbering{arabic}
+
+% % 正文
+
+
+\include{content/ch_intro}
+\include{content/ch_con_crf}
+\include{content/ch_dep_crf2o}
+\include{content/ch_dep_vi}
+\include{content/ch_conclusion}
+
+
+% % 参考文献,4或者小4楷体
+\include{content/reference}
+
+% % 附录,4或者小4楷体
+% \begin{appendix}
+% \include{content/appendix1}
+% \include{content/appendix2}
+% \end{appendix}
+
+% 附页标题样式
+\backmatter
+% 附页
+\include{content/achievement}
+\include{content/thanks}
+
+\end{document}

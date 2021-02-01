@@ -1,0 +1,72 @@
+% !Mode:: "TeX:UTF-8"
+
+\begin{eabstract}
+
+	%Dependency parsing aims to convert the word sequence into a dependency tree, which is an important way for machine to understand natural language.
+	%As a key technology in natural language processing (NLP), how to improve the accuracy of dependency parsing and how to apply the information of dependency parsing has always been the focus of research community. On the one hand, a highly accurate dependency parser can provide a more reliable syntactic structure for NLP downstream tasks. On the other hand, the rational use of syntactic information can bring greater gains to NLP downstream tasks. This paper covers the above two aspects: 1) we employ the treebank conversion method to improve the performance of the target-side parser by taking advantage of the linguistic knowledge  contained in heterogeneous treebanks;
+	%2) we exploit different forms of syntactic information into opinion role labeling tasks.% by several methods.
+
+	%Dependency parsing aims to convert the word sequence into a dependency tree, which is a key technology in natural language processing (NLP).
+
+	As a key technology in natural language processing (NLP), dependency parsing aims to convert a word sequence into a tree structure and uses directed edges as the basic unit to describe the modification relationship between words.
+	At present, the academic community mainly focuses on improving parsing accuracy  by enhancing parsing models and algorithms. With the development of deep learning, neural network based dependency parsing has achieved significant progress.
+	From the perspective of data usage, this thesis tries to utilize multiple heterogeneous treebank to improve parsing accuracy,  in order to provide more reliable syntactic structures for downstream NLP  tasks.
+	Furthermore, we obtain different forms of syntactic information from a state-of-the-art parser, and then leverage such syntactic information for the task of opinion role labeling.
+	Specifically, this thesis has mainly conducted the following studies.
+
+	\begin{enumerate}
+		\item  Treebank Conversion Based on Pattern Embedding and SP-TreeLSTM
+
+		      As a method for utilizing multiple heterogeneous data, treebank conversion can directly and effectively utilize linguistic knowledge contained in heterogeneous treebanks to boost the performance of target-side parsing.
+		      We for the first time propose the task of supervised treebank conversion. First, we manually construct a bi-tree aligned dataset containing about 11K sentences. Then, we propose two simple yet effective treebank conversion approaches based on the state-of-the-art deep biaffine parser. Finally, we convert the source-side treebank into the target-side treebank by a well-trained conversion model and expand the scale of the target-side treebank, thus boosting parsing accuracy at the target side. Experimental results show that treebank conversion is superior to the widely used multi-task learning (MTL) framework in exploiting multiple heterogeneous treebanks and leads to significantly higher parsing accuracy.
+
+		\item Treebank Conversion and Exploitation Based on Full-TreeLSTM
+
+		      There are two main challenges for treebank exploitation via treebank conversion. One is how to convert  the source-side tree to the target-side tree with high quality (treebank conversion), and the other is how to eﬀectively exploit the converted treebank for higher parsing accuracy of target side (treebank exploitation).
+		      Based on the second chapter, we try to improve the methods of treebank conversion and  exploitation.
+		      In terms of treebank conversion, we for the first time propose the conversion method based on the Full-TreeLSTM to deeply and efficiently encode the source-side tree.
+		      In terms of treebank exploitation, the corpus weighting and concatenation with fine-tuning approaches are introduced to weaken the noise contained in the converted treebank. Experimental results on two benchmarks of bi-tree aligned data show that 1) compared with pattern embedding and SP-TreeLSTM approaches, the proposed Full-TreeLSTM approach is more fast and effective; 2) the corpus weighting and concatenation with fine-tuning approaches can both effectively exploit the converted treebank, which further improve the performance of target-side parsing.
+
+		      %
+		      %In order to efficiently and deeply encode the source-side tree, we for the first time investigate and propose to use full-tree LSTM as a tree encoder for treebank conversion based on supervised treebank conversion. Furthermore, the corpus weighting and concatenation with fine-tuning approaches are introduced to weaken the noise contained in the converted treebank. Experimental results on two benchmarks of bi-tree aligned data show that 1) the proposed Full-Tree LSTM approach is more effective than previous methods, 2) the corpus weighting and concatenation with fine-tuning approaches can both effectively exploit converted treebank, and 3) supervised treebank conversion can achieve higher pasring accuracy than multi-task learning approaches.
+
+		\item Syntax-Enhanced Opinion Role Labeling
+
+		      %We explore the application of dependency parsing on the opinion role labeling task (ORL).
+		      Opinion role labeling (ORL) is a ﬁne-grained opinion analysis task and aims to answer ``who expressed what kind of sentiment towards what", which has a wide range of real-world applications.
+		      Due to the small scale of labeled data, ORL remains challenging for data-driven methods.
+		      We alleviate the scarcity of labeled data by introducing the information of dependency parsing.
+		      Firstly, we extract three forms of syntactic information from the state-of-the-art parser.
+		      Then, we investigate and compare different encoding methods to represent the syntactic information, and incorporate them into the ORL model in a pipeline way.
+		      Finally, in order to reduce the error propagation problem caused by the pipeline way, we introduce a novel MTL framework to train the parser and ORL simultaneously.
+		      %Firstly, we obtain and analyze three forms of syntactic information based on a existing dependency parser.
+		      %Then, the syntactic information is integrated into the BiLSTM-CRF-based ORL model by several different methods.
+		      %In order to compensate parser inaccuracy and reduce error propagation, we introduce a novel multi-task learning (MTL) to train the parser and ORL simultaneously.
+		      We verify our methods on the benchmark MPQA corpus and experimental results show that 1) syntactic information is highly valuable and significantly strengthen the recognition ability of ORL; 2) the soft-parameter-sharing MTL framework effectively alleviates error propagation and further improves the performance of ORL.
+		      In addition, we confirm that the contribution from dependency parsing does not fully overlap with the popular contextualized word representations (BERT), and our best model outperform the current state of the art by 4.34\% in F1 score.
+
+		      % Due to the scarcity of labeled data, ORL remains challenging for data-driven methods. In this work, we try to enhance neural ORL models with syntactic knowledge by comparing and integrating different representations. We also propose dependency graph convolutional networks to encode parser information at different processing levels. In order to compensate parser inaccuracy and reduce error propagation, we introduce multi-task learning (MTL) to train the parser and ORL simultaneously. We verify our methods on the benchmark MPQA corpus and experimental results show that syntactic information is highly valuable for ORL and our overall MTL model is signiﬁcantly effective, improving F1 score by 9.29\%  than our syntax-agnostic baseline. Inaddition,we conﬁrm that the contribution from syntactic parsing does not fully overlap with the popular contextualized word representations (BERT), and our best model achieves 6.8\% higher F1 score than the current state of the art. (6.8这种提升中文怎么说？)
+
+	\end{enumerate}
+
+	In summary, this thesis presents an in-depth study on conversion and exploitation of multiple heterogeneous dependency treebanks, and then applies dependency parsing outputs to the ORL task.
+	%We hope that these research results will help the development of dependency parsing and other tasks in the field of natural language processing.
+	We hope that our preliminary progress will contribute to the development of dependency parsing and other tasks in the field of natural language processing.
+
+	%In conclusion, this thesis studies the exploitation of the various heterogeneous treebanks and the application of dependency parsing in the neural ORL model. And  we have obtain some primitive progress so far.
+	%We hope that these progress will contribute to the development of dependency parsing and other tasks in the field of natural language processing.
+
+	\vskip 21bp
+		{\bf\zihao{-4} Key words: }
+	Dependency Parsing,
+	Bi-tree Aligned Dataset,
+	Supervised Treebank Conversion,
+	Opinion Role Labeling,
+	Multi-task Learning
+\end{eabstract}
+
+\begin{flushright}
+	Written by Yu Zhang
+
+	Supervised by Zhenghua Li
+\end{flushright}
