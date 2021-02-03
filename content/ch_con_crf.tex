@@ -1,181 +1,84 @@
 % !Mode:: "TeX:UTF-8"
 \chapter{基于树形条件随机场的快速精准成分句法分析}
 \label{sec:super_tc}
-%\label{chap:annotation}
-%
-%\begin{enumerate}
-%	\item 公式格式对照
-%	\item pattern所有格式对照
-%	\item BiaaffineParse是否是否需要单独用一张介绍，并介绍依存句法相关内容，任务定义，评价指标，模型.
-%\end{enumerate}
 
+\section{引言}
+\input{figures/tree.tex}
+给定一个句子，成分句法分析旨在构建一个层次化的树结构. 如图\ref{fig:const-tree-full-figure}，其中每个叶子结点是输入句子的每个词，而非终端结点作为组块（Constituents），如\texttt{$VP_{3,5}$}.
 
-%本章我们首次提出有监督的树库转化任务.
-本章采用有监督的树库转化方法来利用异构树库提升目标端句法模型的性能.
-首先，我们人工构建了少量的双树对齐数据，首次提出了有监督的树库转化任务；
-然后，我们设计并实现了两种有监督的树库转化方法，即基于模式嵌入的树库转化方法和基于SP-TreeLSTM的树库转化方法；
-%基于SP-TreeLSTM的树库转化方法；
-最后，我们利用训练好的转化模型将源端树库转化为符合目标端规范的数据，并结合人工标注的目标端数据训练了一个目标端句法模型，大幅提升了其分析的准确率.
-%扩大了目标端树库规模，从而提升了目标端句法模型的性能.
-进一步地，与广泛使用的基于多任务学习的树库融合方法相比，有监督的树库转化方法是一种更直接、更有效的利用异构树库提升目标端句法模型性能的方式.
+As a fundamental yet challenging task in the natural language processing (NLP) field, constituency parsing has attracted a lot of research attention since large-scale treebanks were annotated,  such as Penn Treebank (PTB), Penn Chinese Treebank (CTB), etc.
+Parsing outputs are also proven to be extensively useful for a wide range of downstream applications \cite{akoury-etal-2019-syntactically,wang-etal-2018-tree}.
+% 暂时不加参考文献了，太多了。
+% like sematic parsing \cite{jiang-etal-2019-hlt,li-etal-2017-modeling,}, relation extraction \cite{qian-etal-2008-exploiting}, and machine translation .
+
+As one of the most influential works, \cite{collins-1997-three} extends methods from probabilistic context-free grammars (PCFGs) to lexicalized grammars.
+Since then, constituency parsing has been dominated by such generative models for a long time, among which
+the widely used Berkeley parser adopts an unlexicalized PCFG with latent non-terminal splitting annotations \cite{matsuzaki-etal-2005-probabilistic,petrov-klein-2007-improved}.
+As for discriminative models, there exist two representative lines of research.
+The first line adopts the graph-based view based on dynamic programming decoding, using either local max-entropy estimation \cite{kaplan-etal-2004-speed} or global max-margin training \cite{taskar-etal-2004-max}.
+The second group builds a tree via a sequence of shift-reduce actions based on greedy or beam decoding, known as the transition-based view \cite{sagae-lavie-2005-classifier,zhu-etal-2013-fast}.
+
 
 \input{figures/tree.tex}
-\section{引言}
-给定一个句子，成分句法分析旨在构建一个层次化的树结构. 如图\ref{fig:const-tree-full-figure}，其中输入句子的每个词作为叶子结点，
 
-% 在研究者的不断努力下，目前很多语言存在着多个遵守不同标注规范或语言学理论的树库，如德语的 Tiger\upcite{german-tiger-treebank} 和 T{\"u}ba-D/Z\upcite{german-tuba-D/Z-treebank}，瑞典语的 Talbanken\upcite{swedish-talbankens-treebank} 和 Syntag\upcite{swedish-syntag-treebank} ，意大利语的 ISST\upcite{italian-ISST-treebank}  和 TUT\footnote{http://www.di.unito.it/~tutreeb/} ，等等.
-表\ref{tb:treebanks}列出了一些中文的异构树库，包括了依存结构的树库和短语结构的树库.
-虽然这些树库存在明显的差异，但都是为了刻画某一语言的语法而构建的，包含了很多相同的标注结构，体现了不同规范之间的共性.
-如何利用多源异构数据提高句法分析的准确率，一直是研究界关注的方向.
+Recently, constituency parsing has achieved significant progress thanks to the impressive capability of deep neural networks in context representation.
+Two typical and popular works are respectively the transition-based parser of \cite{cross-huang-2016-span} and the graph-based parser of \cite{stern-etal-2017-minimal}.
+As discriminative models, the two parsers share several commonalities, both using 1) multi-layer BiLSTM as encoder; 2) minus features from BiLSTM outputs as span representations; 3) MLP for span scoring; 4) max-margin training loss.
+Most works \cite{gaddy-etal-2018-whats,kitaev-klein-2018-constituency} mainly follow the two parsers and achieve much higher parsing accuracy than traditional non-neural models, especially with contextualized word representations trained with language modeling loss on large-scale unlabeled data \cite{peters-etal-2018-deep,devlin-etal-2019-bert}.
 
-% 如图\ref{fig:conversion_pipeline}所示，树库转化方法是一种自然地利用源端异构树库的方式，它分为树库转化和树库融合两个任务. \textbf{树库转化任务}将异构的源端树库转化为符合目标端规范的树库；\textbf{树库融合任务}就是利用转化后树库和目标端树库训练一个目标端句法模型. 考虑到目标端树库和转化后树库都符合目标端句法规范，常见的融合方法是将二者直接合并为一份规模更大的目标端树库，作为目标端句法模型的训练语料. 理论上来讲，规模更大的数据集能得到一个更加稳定且分析准确率更高的句法分析模型.
+Despite the rapid progress, existing constituency parsing research suffers from two closely related drawbacks. First, parsing (also for training) speed is slow and can hardly satisfy the requirement of %for online parsing in
+real-life systems.
+Second, the lack of explicitly modeling tree/subtree probabilities may hinder the effectiveness of utilizing parsing outputs.
+On the one hand, estimating probability distribution is one of the core issues in the NLP field \cite{le-zuidema-2014-inside}. On the other hand, compared with unbounded tree scores, tree probabilities can better serve high-level tasks as soft features \cite{jin-etal-2020-relation},
+%are intuitively more useful than unbounded tree scores
+and marginal probabilities of subtrees can support
+the more sophisticated Minimum Bayes Risk (MBR) decoding \cite{smith-smith-2007-probabilistic}.
 
-\begin{figure}[hb]
-    %\vspace{-0.5em}
+In fact, \cite{finkel-etal-2008-efficient} and \cite{durrett-klein-2015-neural} both propose CRF-based constituency parsing by directly modeling the conditional probability. % $p(\boldsymbol{t}\mid\boldsymbol{x})$.
+However, both models are extremely inefficient due to
+the high time-complexity of the inside-outside algorithm for loss and gradient computation, especially the outside procedure.
+The issue becomes more severe in the DL era since all previous works perform the inside-outside computation on CPUs according to our knowledge and switching between GPU and CPU is expensive.
+%unmatched speed of CPU/GPU computations.
+
+%lafferty也得引用！ 2001
+
+This work proposes a fast and accurate CRF constituency parser by substantially extending the graph-based parser of \cite{stern-etal-2017-minimal}. The key contribution is that we batchify the inside algorithm for direct loss and gradient computation on GPU. Meanwhile, we find that the outside algorithm can be efficiently fulfilled by automatic back-propagation, which is shown to be equally efficient with the inside (forward) procedure, naturally verifying the great theoretical work of \cite{eisner-2016-inside}.
+Similarly, we batchify the Cocke–Kasami–Younger (CKY) algorithm for fast decoding.
+
+In summary, we make the following contributions.
+% \footnote{Our code is available at \url{https://github.com/yzhangcs/crfpar}}
+\begin{itemize}
+    \item We for the first time propose a fast and accurate CRF constituency parser for directly modeling (marginal) probabilities of trees and subtrees.
+          The efficiency issue, which bothers the community for a long time, is well solved by elegantly batchifying the inside and CKY algorithms for direct computation on GPU.
+          % CRF batchify fully utilize the GPU power, directly compute on GPU. We for the first time introduce CRF to deep neural networks for constituency parsing, outperforming the max-margin methods.
+          % \footnote{To our knowledge, this is the first BiLSTM-based CRF parser for constituency parsing.}
+
+          % We propose to batchify the inside method, which makes it possible for parallelized large tensor computation on GPU. We also show that the sophisticated outside algorithm is no longer necessary, and can be replaced by the equally efficient back-propagation process for the computation of gradients and marginal probabilities.
+
+    \item We propose a two-stage bracketing-then-labeling parsing approach that is more efficient and achieves slightly better performance than the one-stage method.
+
+          %We borrow the architecture from biaffine parser, and exploit their advantages in the constituency parsing. All of these contribute to the fast (over 1,000 sentences per second) and accurate parsing.
+
+    \item We propose a new span scoring architecture based on span boundary representation and biaffine attention scoring, which performs better than the widely used minus-feature method. %scoring  better scoring architecture (biaffine) and better parameter settings such as dropouts. substantially improve performance.
+          We also show that the parsing performance can be improved by a large margin via better parameter settings such as dropout configuration.
+
+    \item Experiments on three English and Chinese benchmark datasets show that our proposed two-stage CRF parser achieves new state-of-the-art parsing performance under both settings of w/o and w/ BERT \cite{devlin-etal-2019-bert}).
+          In terms of parsing speed, our parser can parse over 1,000 sentences per second.
+
+          %     %In the closed scenario that does not use any external resources, all of them achieve the state-of-the-art parsing results. Release code and models at github.
+          %     Speed: 1,000 sentences per second.
+          % new state-of-the-art results under several settings on three benchmark datasets of English and Chinese.
+
+\end{itemize}
+
+
+\begin{figure}[tb]
     \centering
-    \includegraphics[angle=0,width=0.9\textwidth]{img/conversion-pipeline-crop.pdf}
-    \caption{树库转化方法利用异构树库的流程. }
-    \label{fig:conversion_pipeline}
-    %\vspace{-1.5em}
+    \includegraphics [scale=0.8] {figures/framework.pdf}
+    \caption{Model architecture.
+    }
+    \label{fig:framework}
 \end{figure}
-
-然而，由于缺乏双树对齐数据，即一个句子存在两种不同规范的句法树（如图\ref{fig:example-su-vs-hit-cdt}所示，上方是HIT规范的标注结果，下方是CODT规范的标注结果. 其中存在很多相同的句法弧，直观展示了异构树库间存在的共同语法现象），
-前人所提出的利用异构树库的方法主要可以分为无监督的树库转化方法\upcite{magerman1994natural,nivre2004deterministic,niu2009exploiting,zhu2011better,li2013iterative}和间接的树库融合方法\upcite{li2012exploiting,guo2016universal,stymne2018parser}.
-但是，间接的树库融合方法往往不能直接刻画源端句法树和目标端句法树的对应关系，而无监督的树库转化方法往往性能提升不大.
-本章提出并采用有监督的树库转化方法来利用异构树库提升目标端句法模型性能.
-
-\begin{figure}[hb]
-    %\vspace{-0.5em}
-    \centering
-    \includegraphics[angle=0,width=0.7\textwidth]{img/sample-main-crop.pdf}
-    \caption{双树对齐数据的例子. 上方是CODT规范的句法结构，下方是HIT规范的句法结构. }
-    \label{fig:example-su-vs-hit-cdt}
-    %\vspace{-1.5em}
-\end{figure}
-
-%首先，我们给出树库转化的\textbf{任务定义}：树库转化旨在将源端句法标注结构转化为目标端句法标注结构，如图\ref{fig:example-su-vs-hit-cdt}所示，就是将下方的源端结构转化为上方的目标端结构.
-%形式化，
-%给定句子的词序列$S=w_1, w_2, \dots, w_n$，词性序列$T=t_1, t_2, \dots, t_n$
-%和源端句法树$d^{\texttt{src}}=\{(h,m,l) | 0 \leq h \leq n, 0 \textless m \leq n, l \in L^{\texttt{src}}\}$，
-%树库转化任务输出一棵符合目标端规范的句法树$d^{\texttt{tgt}}=\{(h,m,l)|0 \leq h \leq n, 0 \textless m \leq n, l \in L^{\texttt{tgt}} \}$，
-%其中$(h,m,l)$表示由核心词$w_h$指向修饰词$w_m$的依存弧$ m \leftarrow h$，依存关系是$l$，$L^{\texttt{src}}$是源端规范依存关系的集合，$L^{\texttt{tgt}}$是目标端规范依存关系的集合.
-%借助树库转化任务，源端树库被转化为目标端树库，从而扩大了目标端树库的规模.
-
-具体地，我们选取了HIT依存树库（作为源端树库）和CODT依存树库（作为目标端树库）作为案例并展开研究.
-首先，我们从HIT训练集中采样少量数据，按照CODT规范进行再次标注，形成双树对齐数据.
-然后，我们分别采用基于模式嵌入方法和基于SP-TreeLSTM的方法来编码源端树的信息，并融入到目标端句法模型中，得到两种树库转化模型.
-借助训练好的转化模型，我们将HIT转化为符合CODT规范的树库.
-最后，我们将人工标注的目标端树库和转化后的源端树库合并为一份数据，训练一个目标端句法模型.
-%实验结果表明，合理利用源端树库可以大幅提升目标端句法模型的性能，且相比于基于多任务学习的树库融合方式，有监督的树库转化方法更能充分利用源端树库，进一步提升了目标端句法分析的准确率.
-
-%.
-%首先，我们从HIT训练集中随机选取约11K的句子，并采用局部标注的方式，人工标注了CODT规范的句法结构. 从而一个句子，同时包含了两种规范的句法结构，形成了双树对齐数据.
-%然后，我们分别采用基于模式嵌入方法和基于SP-TreeLSTM的方法来编码源端树的信息，并融入到目标端句法模型中，得到两种树库转化模型.
-%最后，我们用训练好的转化模型将HIT转化为符合CODT规范的树库，并将其与人工标注的约11K的CODT语料合并，训练一个CODT规范的句法模型. 实验结果表明，合理利用源端树库可以大幅提升目标端句法模型的性能，且相比于基于多任务学习的树库融合方式，有监督的树库转化方法更能充分利用源端树库，进一步提升了目标端句法分析的准确率.
-%由于缺乏双树对齐数据，即一个句子存在两种不同规范的句法树（如图1所示），前人所提出的利用异构树库的方法主要可以分为无监督树库转化方法(Magerman et al., 1994[6]; Nivre et al., 2004[7]; Niu et al., 2009[8]; Zhu et al., 2011[9]; Li et al., 2013[10])和间接树库融合方法(Li et al., 2012[11]; Guo et al., 2016[12]; Stymne et al., 2018[13]). 无监督的方法，往往通过提取源端树库的
-
-%\begin{figure}[tb]
-%	\centering
-%	%\begin{center}
-%	%	\begin{small}
-%			\begin{dependency}[arc edge, arc angle=80, text only label, label style={above}]
-%				\begin{deptext} [row sep=0.2cm, column sep=.3cm]
-%					\$  \& 奶奶 \& 叫 \& 我  \& 快 \& 上学  \\
-%					\& Grandma \& asks \& me \& quickly \& go to school \\
-%				\end{deptext}
-%				\depedge[edge style={black,thick}]{3}{2}{\color{black}subj}
-%				\depedge[edge style={black,thick}]{1}{3}{\color{black}root}
-%				\depedge[edge style={black,thick}]{6}{5}{\color{black}adv}
-%				\depedge[edge style={black,thick}]{3}{4}{\color{black}obj}
-%				\depedge[edge style={blue,thick}]{4}{6}{\color{blue}pred}
-%
-%				\depedge[edge style={black,thick},edge below]{1}{3}{\color{black}HED}
-%				\depedge[edge style={black,thick},edge below]{3}{2}{\color{black}SBV}
-%				\depedge[edge style={black,thick},edge  below]{6}{5}{\color{black}ADV}
-%				\depedge[edge style={red,thick},edge  below]{3}{6}{\color{red}VOB}
-%				\depedge[edge style={black,thick},edge below]{3}{4}{\color{black}DBL}
-%			\end{dependency}
-%			\caption{双树对齐数据的例子. 上方是CODT规范的句法结构，下方是HIT规范的句法结构}
-%			\label{fig:example-su-vs-hit-cdt}
-%	%	\end{small}
-%	%\end{center}
-%\end{figure}
-
-
-
-
-% \section{双树对齐数据的构建和分析}
-
-%\begin{table}[t]
-%	\vspace{-0.em}
-%	\setlength{\abovecaptionskip}{0.cm}
-%	\setlength{\belowcaptionskip}{-0.cm}
-%	\centering
-%	\caption{数据统计}
-%	\label{tbl:HIT_data}
-%	\vspace{0.5em}
-%	% \begin{small}
-%	% \begin{center}
-%	\begin{tabular}{l|c|c|c|c|c|c}
-%		\hline
-%		&  Sent  & AvgLen  & Kappa  & Train & Dev & Test \\
-%		\hline
-%		DL-PS & 16,948   & 9.21 & 0.6033 & 47844 & 300 & 700 \\
-%		EC-MT & 2,337    & 34.97 & 0.7437 & 3874 & 100 & 300 \\
-%		EC-UQ & 2,300    & 7.69 & 0.7529 & 3800 & 100 & 300 \\
-%		\hline
-%	\end{tabular}
-%	% \end{center}
-%	% \end{small}
-%	\vspace{-0.5em}
-%\end{table}
-\textbf{双树对齐数据的构建.  } 树库转化的难点在于源端树库和目标端树库中的句子不重叠.
-换句话说，就是缺少如图\ref{fig:example-su-vs-hit-cdt}所示的双树对齐数据.
-因此，我们不能训练一个有监督的树库转化模型来直接学习这两个规范之间的对应关系.
-为了解决有监督树库转化方法没有训练语料的问题，我们人工构建了约11K的双树对齐数据. 图\ref{fig:data_anot}展示了我们构建双树对齐数据的流程. 首先，我们从公开发表的哈工大HIT树库（Train集）中采样了11K个句子；接着，按照郭等（2018）\upcite{郭丽娟2018适应多领域多来源文本的汉语依存句法数据标注规范}制定的CODT规范，对其进行人工标注，形成了一个11K的CODT树库. 然后，我们将抽取出的11K HIT树库和11K CODT树库，按照句子对齐，从而每个句子既有HIT规范的标注结构，又有CODT规范的标注结构. 最终，我们构建了一个包含10,783个句子的双树对齐数据集$CODT^{\texttt{HIT}}$.
-
-\begin{figure}[hb]
-    %\vspace{-0.5em}
-    \centering
-    \includegraphics[angle=0,width=0.7\textwidth]{img/data-anot-crop.png}
-    \caption{双树对齐数据的构建流程. }
-    \label{fig:data_anot}
-    %\vspace{-1.5em}
-\end{figure}
-
-此外，为了快速和高质量地完成数据标注工作，我们按照局部标注的方式只标注了每个句子中最难的一些弧；并且我们采用基于浏览器的标注平台给标注人员随机发放标注任务，按照一个句子由两个标注人员标注并由审核专家处理不一致情况的流程进行. %（引用郭师姐发的文章，再简单点？）
-%首先，我们从HIT训练集（HIT-train）中随机选取部分句子，并按照局部标注的方式只标注了每个句子中最难的一些弧. 为了保证句子标注的质量和一致性，我们采用基于web的标注平台给标注人员随机发放标注任务，按照一个句子由两个人标注并由审核专家处理不一致情况的流程进行标注. 最后，在科学的标注流程下，我们快速构建了含有10,783个句子的双树对齐数据集$CODT^{\texttt{HIT}}$.
-
-\textbf{数据统计和分析.  } 为了进一步了解数据的构成和特点，我们统计分析了双树对齐数据$CODT^{\texttt{HIT}}$和HIT训练集（HIT-train）. 如表\ref{tb:HIT-data-stat}所示，
-二三两列分别统计了语料的句子数和标注的弧数. 同时，如四五两列所示，为了直观地了解源端规范和目标端规范的相似程度，我们统计了源端树库与目标端树库的一致性，
-包括依存弧和依存关系的一致性. 依存弧一致性：源端树库和目标端树库中相同依存弧的个数占总弧数的百分比.
-依存关系一致性：我们将每一个源端（HIT）依存关系标签严格映射到目标端（CODT）依存关系标签上（源端标签只对应一个目标端标签，
-目标端的标签可能对应多个源端的标签），然后选择一个使得一致性最大的对应关系，计算出此时依存关系的一致性. 可以看出 1）通过局部标注的方式，我们只标注了约1/20的弧，得到了约1/5的CDT训练集规模的CODT句法树，大大减少了标注的工作量；
-2） $CODT^{\texttt{HIT}}$语料依存弧一致性81.68\%，依存关系一致性73.73\%，一致性较高，即HIT规范和CODT规范相似度较高.
-\begin{table}[hb]
-    %\addtolength{\tabcolsep}{+0.0mm}
-    %\begin{center}
-    \centering
-    \caption{数据统计和分析}
-    \label{tb:HIT-data-stat}
-    \begin{tabular}{l cc cc}
-        \toprule
-        %   \hline
-                              &        &                  & \multicolumn{2}{c}{ 一致性}                  \\
-        \cmidrule(lr){4-5}
-        数据                  & 句子数 & 标注的弧（词）数 & 弧一致性                    & 依存关系一致性 \\
-        \midrule
-        %\hline
-        $CODT^{\texttt{HIT}}$ & 10,761 & 50,866           & \multirow{2}{1cm}{81.68\%}  &
-        \multirow{2}{1cm}{73.73\%}                                                                       \\
-        HIT-train             & 52,450 & 980,791          &                             &                \\
-        %			\hline
-        %			$SU^{\texttt{PCTB}}$ &11,579 &49,979 &\multirow{2}{1cm}{66.37\%} &\multirow{2}{1cm}{55.14\%} \\
-        %			PCTB Train &43,114 &961,654 & & \\
-        \bottomrule
-    \end{tabular}
-    %\end{center}
-\end{table}
 
 \section{基线模型}
 

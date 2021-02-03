@@ -299,7 +299,7 @@ The LaTeX template for thesis of suda]
 
 \RequirePackage{graphicx}
 \DeclareGraphicsExtensions{.eps,.ps,.jpg,.bmp}
-\graphicspath{{figure/}}
+\graphicspath{{figures/}}
 \RequirePackage{pifont} % “秘级”后的五角星
 \RequirePackage{subcaption}
 
@@ -492,12 +492,12 @@ The LaTeX template for thesis of suda]
         }
         \vskip 20bp
         \begin{center}
-            \includegraphics[width=200bp]{figure/suda.ps}
+            \includegraphics[width=200bp]{figures/suda.ps}
             \vskip 20bp
             \centerline{\zihao{0}\songti 硕士学位论文}
             \vskip 10bp
             \centerline{\zihao{2}\songti （学术学位）}
-            \includegraphics[width=130pt]{figure/sudamark.jpg}
+            \includegraphics[width=130pt]{figures/sudamark.jpg}
             ~~\\
             \vskip 20bp
 

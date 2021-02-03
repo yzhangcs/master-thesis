@@ -11,6 +11,9 @@
 \usepackage{tikz-qtree}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithm, algorithmic, letltxmacro}
 
 \usepackage{pgfplots}
 \usepackage{color}
@@ -72,8 +75,8 @@
 
 
 \include{content/ch_intro}
+\include{content/ch_dep_crf}
 \include{content/ch_con_crf}
-\include{content/ch_dep_crf2o}
 \include{content/ch_dep_vi}
 \include{content/ch_conclusion}
 
@@ -82,10 +85,9 @@
 \include{content/reference}
 
 % % 附录,4或者小4楷体
-% \begin{appendix}
-% \include{content/appendix1}
+\appendix
+\include{content/appendix_mfvi}
 % \include{content/appendix2}
-% \end{appendix}
 
 % 附页标题样式
 \backmatter
