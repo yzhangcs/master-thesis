@@ -349,18 +349,15 @@ $\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用
     \label{fig:speed}
 \end{figure}
 
-图~\ref{fig:speed} compares the parsing speed of different models on PTB-test.
-For a fair comparison, we run all models on the same machine with Intel Xeon CPU (E5-2650v4, 2.20GHz) and GeForce GTX 1080 Ti GPU.
-``\textsc{Crf (cpu)}'' refers to the model that explicitly
-performs the inside-outside algorithm using Cython on CPUs.
-Multi-threading is employed since sentences are mutually independent.
-However, we find that using more than 4 threads does not further improve the speed.
+图~\ref{fig:speed}在PTB的测试集上比较了不同模型的解析速度.
+为了能够公平比较，我们在相同的机器上运行所有的模型，模型的配置为Intel Xeon CPU (E5-2650v4, 2.20GHz)以及GeForce GTX 1080 Ti GPU.
+``\textsc{Crf (cpu)}''表示直接在CPU运算Inside-Outside算法上，并利用Cython加速的模型.
+由于句子间是相互独立的，因此这里还利用的多线程.
+我们一共用了4个线程，并且进一步增加没有更多的提升速度.
 
-We can see that the efficiency of TreeCRF is greatly improved by batchifying the inside algorithm and implicitly
-realizing the outside algorithm by back-propagation on GPUs.
-For the first-order \textsc{Crf} model,
-our implementation can parse about 500 sentences per second, over 10 times faster than the multi-thread ``\textsc{Crf (cpu)}''.
-For the second-order \textsc{Crf2o}, our parser achieves the speed of 400 sentences per second, which is able to meet the requirements of a real-time system.
+可以看到通过批次化Inside算法以及用自动求导机制的反向传播代替Outside算法这两方面的改进，TreeCRF效率被极大的提升了.
+对于\textsc{Crf}模型，我们的实现可以解析超过500句每秒，大约十倍快于多线程的``\textsc{Crf (cpu)}''.
+对于二阶的\textsc{Crf2o}，我们的解析器达到了400句每秒的速度，达到了实时系统的需求.
 More discussions on efficiency are presented in Appendix~\ref{section:decoding-efficiency}.
 
 % In practice
