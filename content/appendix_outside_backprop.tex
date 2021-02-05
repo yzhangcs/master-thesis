@@ -1,0 +1,77 @@
+\chapter{关于Outside算法以及反向传播机制等价性的推导}
+
+\section{Outside算法与反向传播机制的等价性证明}\label{sec:outside-backprop}
+我们可以直接用$\log Z$（partition term）对每个位置的分值$\mathrm{s}(i, j)$（log potential）求偏导
+\begin{equation}
+    \label{eq:partial-derivative}
+    \begin{split}
+        \frac{\partial \log Z}{\partial \mathrm{s}(i, j)} & = \frac{\partial \log Z}{\partial Z} \cdot \frac{\partial Z}{\partial \mathrm{s}(i, j)}\\
+        & =\frac{1}{Z} \cdot \frac{\partial \sum_{\boldsymbol{y}} \exp \left(\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) \right)}{\partial \mathrm{s}(i, j)}\\
+        & =\frac{1}{Z} \cdot \frac{\partial \sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} \exp \left(\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) \right)}{\partial \mathrm{s}(i, j)}\\
+        & =\frac{1}{Z} \cdot \frac{\sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} \exp \left( \sum_{(i^{\prime}, j^{\prime}) \in \boldsymbol{y}\setminus (i,j)} \mathrm{s}(i^{\prime}, j^{\prime}) \right)\cdot \partial \exp(\mathrm{s}(i, j))}{\partial \mathrm{s}(i, j)}\\
+        & =\sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} \frac{\exp \left( \sum_{(i^{\prime}, j^{\prime}) \in \boldsymbol{y}\setminus (i,j)} \mathrm{s}(i^{\prime}, j^{\prime})\right)\cdot \exp(s(i,j))}{Z}\\
+        &= \sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} p(\boldsymbol{y}\mid\boldsymbol{x})\\
+    \end{split}
+\end{equation}
+因此偏导数等价于所有包含$(i,j)$的弧的句法树的概率之和，这正是边缘概率$p(i \rightarrow j\mid\boldsymbol{x})$的定义.
+
+\noindent$\blacksquare$
+
+
+\section{MBR解码}\label{sec:mbr-decoding}
+大体上讲，解码过程是将一个模型输出的概率分布转化为对应的系统输出.
+给定输入$\boldsymbol{x}$，理想情况下一个解码器将选择一个$\boldsymbol{y}$，使得$\ell(\boldsymbol{y},\boldsymbol{y}^{\ast})$最小化，其中$\ell(\boldsymbol{y},\boldsymbol{y}^{\ast})$称为代价函数，衡量$\boldsymbol{y}$与真实分配$\boldsymbol{y}^{\ast}$的差异性.
+由于通常情况下解码时不存在正确答案，因此我们转而用正确答案的所有可能取值$\boldsymbol{y}^{\prime}$的平均来代替
+\begin{equation}
+    \label{eq:mbr}
+    \boldsymbol{y}= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell(\boldsymbol{y},\boldsymbol{y}^{\prime})
+\end{equation}
+上述正是\textbf{最小贝叶斯风险}的内涵：给定输入$\boldsymbol{x}$及对应的后验分布，选择$\boldsymbol{y}$，使得\textit{期望}代价（即风险，\textit{Risk}）最小化\cite{stoyanov-eisner-2012-minimum}.
+
+对句法分析,或其他结构化预测任务而言，通常我们采用的是最大后验概率（Maximum \textit{A Posteriori}, MAP）解码，即寻求一个使得后验概率最大化的答。
+这可以是MBR解码的一个特例，代价函数$\ell^{MAP}(\cdot)$为一个简单的0-1指示函数，
+\begin{equation}
+    \ell^{MAP}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = -\mathbbm{1}(\boldsymbol{y}=\boldsymbol{y}^{\prime})
+\end{equation}
+代入到公式~\ref{eq:mbr}得到
+\begin{equation}
+    \label{eq:map}
+    \begin{split}
+        \boldsymbol{y}^{MAP}&= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell(\boldsymbol{y},\boldsymbol{y}^{\prime})\\
+        &=\arg\max_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\mathbbm{1}(\boldsymbol{y}=\boldsymbol{y}^{\prime})\\
+        &=\arg\max_{\boldsymbol{y}}p(\boldsymbol{y}\mid\boldsymbol{x})
+    \end{split}
+\end{equation}
+上式与MAP解码的选择概率最大的$\boldsymbol{y}$的目标等价.
+
+以基于弧分解假设的一阶句法分析模型为例，式~\ref{eq:map}的MAP解码进一步写为
+\begin{equation}
+    \label{eq:map-dep}
+    \begin{split}
+        \boldsymbol{y}^{MBR}&=\arg\min_{\boldsymbol{y}}p(\boldsymbol{y}\mid\boldsymbol{x})\\
+        &=\arg\min_{\boldsymbol{y}}\frac{\sum_{(i,j)\in \boldsymbol{y}}s(i,j)}{Z(\boldsymbol{x})\equiv \sum_{\boldsymbol{y}^{\prime}}\sum_{(i^{\prime},j^{\prime})\in \boldsymbol{y}^{\prime}}s(i^{\prime},j^{\prime})}\\
+        &=\arg\min_{\boldsymbol{y}}\sum_{(i,j)\in \boldsymbol{y}}s(i,j)
+    \end{split}
+\end{equation}
+去掉共同的分母，分子为对应句法树的分值，上式的含义是获取分值最大的句法树，这个目标可以通过常见的一些解码算法（如Eisner，MST等）达到.
+
+而对于MBR解码，我们定义代价函数为在每条弧上的指示函数，
+\begin{equation}
+    \ell^{MBR}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = -\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\mathbbm{1}(j=j^{\prime})
+\end{equation}
+代入到公式~\ref{eq:mbr}得到
+\begin{equation}
+    \label{eq:mbr-dep}
+    \begin{split}
+        \boldsymbol{y}^{MBR}&= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell(\boldsymbol{y},\boldsymbol{y}^{\prime})\\
+        &=\arg\max_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\mathbbm{1}(j=j^{\prime})\\
+        &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\mathbbm{1}(j=j^{\prime})\\
+        &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}:(i,j)\in \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\\
+        &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}p(i\rightarrow j\mid\boldsymbol{x})
+    \end{split}
+\end{equation}
+式~\ref{eq:mbr-dep}和式~\ref{eq:map-dep}的唯一区别在于要求和的项是边缘概率而非分值.
+因此，在一阶依存句法分析的场景下，MBR解码只需要给定弧的边缘概率，然后直接应用和MAP解码一样的解码算法即可\cite{smith-smith-2007-probabilistic, smith-2011-linguistic}.
+
+\noindent$\blacksquare$
+

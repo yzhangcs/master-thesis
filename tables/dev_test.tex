@@ -1,0 +1,51 @@
+\begin{table}[tb]
+\setlength{\tabcolsep}{4.2pt}
+\centering
+\begin{tabular}{lcccc}
+\toprule
+& \multicolumn{2}{c}{Dev} & \multicolumn{2}{c}{Test} \\
+& UAS & LAS & UAS & LAS \\[2pt]
+\hline
+\\[-8pt]
+\multicolumn{5}{c}{PTB} \\
+Biaffine17 & - & - & 95.74 & 94.08 \\
+F\&K19 & - &  -  & -     & 91.59 \\
+%    \citet{ma-hovy-2017-neural}        & 94.88 & 92.98 \\
+%    \citet{ma-etal-2018-stack}         & 95.87 & 94.19 \\
+Li19 & 95.76 &  93.97 & 95.93 & 94.19 \\
+Ji19 & 95.88 & 93.94 & 95.97 & 94.31 \\
+Zhang19 & - & - & -  & 93.96 \\[3pt]
+\textsc{Loc}             & 95.82          & 93.99          & 96.08          & 94.47 \\
+\textsc{Crf} w/o MBR     & 95.74          & 93.96          & 96.04          & 94.34 \\
+\textsc{Crf}             & 95.76          & 93.99          & 96.02          & 94.33 \\
+\textsc{Crf2o} w/o MBR   & \textbf{95.92} & \textbf{94.16} & \textbf{96.14} & \textbf{94.49} \\
+\textsc{Crf2o}           & 95.90          & 94.12          & 96.11          & 94.46 \\[2pt]
+\hline
+\\[-8pt]
+\multicolumn{5}{c}{CoNLL09} \\
+Biaffine17 & - & - & 88.90 & 85.38 \\
+Li19 & 88.68 & 85.47 & 88.77 & 85.58 \\[3pt]
+\textsc{Loc} & 89.07 & 86.10 & 89.15 & 85.98 \\
+\textsc{Crf} w/o MBR   &         89.04  &         86.04  &         89.14                    &         86.06 \\
+\textsc{Crf}           &         89.12  &         86.12  &         89.28                    &         86.18\rlap{$^\dagger$} \\
+\textsc{Crf2o} w/o MBR &         89.29  &         86.24  &         89.49                    &         86.39 \\
+\textsc{Crf2o}         & \textbf{89.44} & \textbf{86.37} & \textbf{89.63}\rlap{$^\ddagger$} & \textbf{86.52}\rlap{$^\ddagger$} \\[2pt]
+\hline
+\\[-8pt]
+\multicolumn{5}{c}{NLPCC19} \\
+\textsc{Loc}           &         77.01  &         71.14  &         76.92                    &         71.04 \\
+\textsc{Crf} w/o MBR   &         77.40  &         71.65  &         77.17                    &         71.58 \\
+\textsc{Crf}           &         77.34  &         71.62  &         77.53\rlap{$^\ddagger$}  &         71.89\rlap{$^\ddagger$} \\
+\textsc{Crf2o} w/o MBR &         77.58  &         71.92  &         77.89                    &         72.25 \\
+\textsc{Crf2o}         & \textbf{78.08} & \textbf{72.32} & \textbf{78.02}\rlap{$^\ddagger$} & \textbf{72.33}\rlap{$^\ddagger$} \\
+\bottomrule
+\end{tabular}
+\caption{Main results. We perform significance test against \textsc{Loc} on the test data, where ``$\dagger$'' means $\mathrm{p} < 0.05$ and ``$\ddagger$'' means $\mathrm{p} < 0.005$.
+Biaffine17: \citet{Timothy-d17-biaffine}; F\&K19: \citet{falenska-kuhn-2019-non};
+Li19: \citet{li-etal-2019-attentive}; Ji19: \citet{ji-etal-2019-graph};
+Zhang19: \citet{zhang-etal-2019-empirical}.
+}
+\label{table:dev-test}
+\end{table}
+
+

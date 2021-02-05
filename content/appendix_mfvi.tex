@@ -1,5 +1,5 @@
 \chapter{用于结构化预测的平均场变分推断的推导}
-\label{cha:mfvi-derivation}
+\label{appendix:mfvi-derivation}
 对于一个真正的后验分布$P(\boldsymbol{y})$，定义为
 \begin{equation}\label{eq:posterior}
     P(\boldsymbol{y}) =\frac{\prod_{i=1}^{N} \phi(\boldsymbol{y}_i)}{Z:=\sum_{\boldsymbol{y}}\prod_{i=1}^{N} \phi(\boldsymbol{y}_i)}
@@ -91,4 +91,5 @@ $C$代表常数项，因此
 \begin{equation}
     {Q^{\ast}_j(\boldsymbol{y}_j)}\propto \exp\left(s_u(\boldsymbol{y}_j) + \sum_{i\neq j}{\sum_{\boldsymbol{y}_i}Q_{i}(\boldsymbol{y}_i) s_b(\boldsymbol{y}_i,\boldsymbol{y}_j)} \right)
 \end{equation}
-$\blacksquare$
+
+\noindent$\blacksquare$

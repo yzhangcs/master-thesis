@@ -1,0 +1,66 @@
+% \begin{table*}[ht]
+%   % \setlength{\tabcolsep}{4pt}
+%   \centering
+%   \begin{tabular}{c l c c c c c c c c c}
+%   \hline
+%   & & \multicolumn{3}{c}{SIB}   & GRD & \multirow{2}{*}{UCM} &   \multirow{2}{*}{LCM}&   \multirow{2}{*}{UAS} & \multirow{2}{*}{LAS} \\
+%    &  & P & P & R & F &   &  & \\\hline
+%   \multirow{3}{*}{PTB}
+%    & {\textsc{Loc}}    & 90.39 & 90.46 & 90.43 & 92.47 & 61.06 & 47.94 & 95.82 & 93.99 \\
+%   %  & {\textsc{Crf} w/o marg}     & 90.24 & 90.43 & 90.33 & 92.23 & 61.59 & 48.06 & 95.74 & 93.96 \\
+%    & {\textsc{Crf}}      & 90.30 & 90.31 & 90.30 & 92.20 & 61.18 & 48.06 & 95.76 & 93.99 \\
+%   %  & {\textsc{Crf2o} w/o marg} & 63.27 & 69.43 & 66.21 & 78.46 & 30.35 & 25.76 & 85.50 & 84.02 \\
+%    & {\textsc{Crf2o}}  & \textbf{90.86} & \textbf{90.69} & \textbf{90.77} & \textbf{92.55} & \textbf{61.65} & \textbf{48.12} & \textbf{95.90} & \textbf{94.12} \\
+%    \hline
+%   \multirow{3}{*}{CoNLL09}
+%    & {\textsc{Loc}}    & 78.72 & 78.65 & 78.68 & 81.42 & 39.22 & 29.46 & 89.07 & 86.10 \\
+%   %  & {\textsc{Crf} w/o marg}     & 78.34 & 79.35 & 78.84 & 81.47 & 40.24 & 30.02 & 89.04 & 86.04 \\
+%   %  & {\textsc{Crf2o} w/o marg} & 43.19 & 52.73 & 47.48 & 59.31 & 19.41 & 16.69 & 73.31 & 71.24 \\
+%    & {\textsc{Crf}}      & 78.43 & 78.86 & 78.65 & 81.42 & 39.56 & 29.57 & 89.12 & 86.12\rlap{$^\ddagger$} \\
+%    & {\textsc{Crf2o}}  &\textbf{ 80.40} & \textbf{80.14} & \textbf{80.27} & \textbf{82.22} & \textbf{41.66 }& \textbf{30.59} & \textbf{89.44} & \textbf{86.37\rlap{$^\ddagger$}} \\
+%      \hline
+%   \multirow{3}{*}{NLPCC19}
+%    & {\textsc{Loc}}    & 19.46 & 57.81 & 29.12 & 44.62 & 44.92 & 35.31 & 77.01 & 71.14 \\
+%   %  & {\textsc{Crf} w/o marg}     & 20.13 & \textbf{60.13} & 30.16 & 45.29 & 46.93 & 37.36 & 77.40 & 71.65 \\
+%    & {\textsc{Crf}}      & 19.91 & 59.55 & 29.84 & 44.99 & 46.53 & 37.07 & 77.34 & 71.62\rlap{$^\dagger$} \\
+%   %  & {\textsc{Crf2o} w/o marg} & 17.40 & 55.16 & 26.45 & 41.62 & 39.04 & 30.77 & 73.40 & 67.97 \\
+%    & {\textsc{Crf2o}}  & \textbf{20.30} & 60.02 & \textbf{30.34} & \textbf{45.55} & \textbf{47.90} & \textbf{37.87} & \textbf{78.08} & \textbf{72.32\rlap{$^\ddagger$}} \\
+%      \hline
+%   \end{tabular}
+%   \caption{Results on Dev data of PTB, CoNLL09, NLPCC19 and CoNLL18. ``$\dagger$'' marks statistical significance with $\mathrm{p} < 0.05$ and ``$\ddagger$'' marks the significance with $\mathrm{p} < 0.005$.}
+%   \label{table:dev}
+% \end{table*}
+
+\begin{table}[htb]
+% \setlength{\tabcolsep}{2pt}
+\centering
+\begin{tabular}{lccc}
+\hline
+% & \multicolumn{2}{c}{PTB} & \multicolumn{2}{c}{CoNLL09} & \multicolumn{2}{c}{NLPCC19} \\
+& & UAS & LAS \\
+\hline
+\multirow{4}{*}{PTB}
+&\textsc{Loc}                & 95.82 & 93.99 \\
+&\textsc{Crf}                  & 95.76 & 93.99 \\
+&\textsc{Crf2o}\rlap{$^\ast$} & 95.82 & 94.11 \\
+&\textsc{Crf2o}               & \textbf{95.90} & \textbf{94.12} \\
+\hline
+\multirow{4}{*}{CoNLL09}
+&\textsc{Loc}                & 89.07 & 86.10 \\
+&\textsc{Crf}                  & 89.12 & 86.12  \\
+&\textsc{Crf2o}\rlap{$^\ast$} & 89.29 & 86.31  \\
+&\textsc{Crf2o}               & \textbf{89.44} & \textbf{86.37} \\
+\hline
+\multirow{4}{*}{NLPCC19}
+&\textsc{Loc}                & 77.01 & 71.14 \\
+&\textsc{Crf}                  & 77.65 & 71.91 \\
+&\textsc{Crf2o}\rlap{$^\ast$} & 77.67 & 72.11 \\
+&\textsc{Crf2o}               & \textbf{78.08} & \textbf{72.32} \\
+\hline
+\end{tabular}
+
+\caption{The parsing Performance on the dev data of PTB, CoNLL09, and NLPCC19. We also list the results of \textsc{Crf2o}$^\ast$ that uses the Triaffine adopted by \citet{wang-etal-2019-second}.}
+
+\label{table:dev}
+\end{table}
+
