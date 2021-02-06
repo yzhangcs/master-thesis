@@ -1,25 +1,22 @@
-\begin{table}[tb]
-\setlength{\tabcolsep}{5pt}
-\centering
-\begin{tabular}{lccccc}
-\toprule
-& \multicolumn{3}{c}{SIB} & \multirow{2}{*}{UCM} & \multirow{2}{*}{LCM} \\
-& P & R & F \\[2pt]
-\hline
-\\[-9pt]
-\multicolumn{6}{c}{PTB} \\
-\textsc{Loc}  & 91.16 & 90.80 & 90.98 & 61.59 & 50.66 \\
-\textsc{Crf}    & 91.24 & 90.92 & 91.08 & 61.92 & 50.33 \\
-\textsc{Crf2o} & \textbf{91.56} & \textbf{91.11} & \textbf{91.33} & \textbf{63.08} & \textbf{50.99} \\[2pt]
-\hline
-\\[-9pt]
-\multicolumn{6}{c}{CoNLL09} \\
-\textsc{Loc}  & 79.20 & 79.02 & 79.11 & 40.10 & 28.91 \\
-\textsc{Crf}    & 79.17 & 79.55 & 79.36 & 40.61 & 29.38 \\
-\textsc{Crf2o} & \textbf{81.00} & \textbf{80.63} & \textbf{80.82} & \textbf{42.53} & \textbf{30.09} \\
-\bottomrule
-\end{tabular}
-\caption{Sub- and full-tree performance on test data.}
-\label{table:dev-test-subtree}
-
+\begin{table}[tb!]
+    \setlength{\tabcolsep}{5pt}
+    \centering
+    \begin{tabular}{llccccc}
+        \toprule
+                                 &                & \multicolumn{3}{c}{SIB} & \multirow{2}{*}{UCM} & \multirow{2}{*}{LCM}                                   \\
+                                 &                & P                       & R                    & F                                                      \\[2pt]
+        \hline
+        \\[-15pt]
+        \multirow{3}{*}{PTB}     & \textsc{Loc}   & 91.16                   & 90.80                & 90.98                & 61.59          & 50.66          \\
+                                 & \textsc{Crf}   & 91.24                   & 90.92                & 91.08                & 61.92          & 50.33          \\
+                                 & \textsc{Crf2o} & \textbf{91.56}          & \textbf{91.11}       & \textbf{91.33}       & \textbf{63.08} & \textbf{50.99} \\[2pt]
+        \hline
+        \\[-15pt]
+        \multirow{3}{*}{CoNLL09} & \textsc{Loc}   & 79.20                   & 79.02                & 79.11                & 40.10          & 28.91          \\
+                                 & \textsc{Crf}   & 79.17                   & 79.55                & 79.36                & 40.61          & 29.38          \\
+                                 & \textsc{Crf2o} & \textbf{81.00}          & \textbf{80.63}       & \textbf{80.82}       & \textbf{42.53} & \textbf{30.09} \\
+        \bottomrule
+    \end{tabular}
+    \caption{test数据上子树和完全树的结果.}
+    \label{table:dev-test-subtree}
 \end{table}

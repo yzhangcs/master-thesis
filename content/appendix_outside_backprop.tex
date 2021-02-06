@@ -26,10 +26,10 @@
     \label{eq:mbr}
     \boldsymbol{y}= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell(\boldsymbol{y},\boldsymbol{y}^{\prime})
 \end{equation}
-上述正是\textbf{最小贝叶斯风险}的内涵：给定输入$\boldsymbol{x}$及对应的后验分布，选择$\boldsymbol{y}$，使得\textit{期望}代价（即风险，\textit{Risk}）最小化\cite{stoyanov-eisner-2012-minimum}.
+上述正是\textbf{最小贝叶斯风险}（Minimum Bayesian Risk, MBR）的内涵：给定输入$\boldsymbol{x}$及对应的后验分布，选择$\boldsymbol{y}$，使得\textit{期望}代价（即风险，\textit{Risk}）最小化\cite{stoyanov-eisner-2012-minimum}.
 
-对句法分析,或其他结构化预测任务而言，通常我们采用的是最大后验概率（Maximum \textit{A Posteriori}, MAP）解码，即寻求一个使得后验概率最大化的答。
-这可以是MBR解码的一个特例，代价函数$\ell^{MAP}(\cdot)$为一个简单的0-1指示函数，
+对句法分析,或其他结构化预测任务而言，通常我们采用的是最大后验概率（Maximum \textit{A Posteriori}, MAP）解码，即寻求一个使得后验概率最大化的答案.
+这可以是MBR解码的一个特例，代价函数$\ell^{MAP}(\cdot)$为一个简单的0-1指示函数，判断$\boldsymbol{y}$与$\boldsymbol{y}^{\prime}$是否一致
 \begin{equation}
     \ell^{MAP}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = -\mathbbm{1}(\boldsymbol{y}=\boldsymbol{y}^{\prime})
 \end{equation}
@@ -48,7 +48,7 @@
 \begin{equation}
     \label{eq:map-dep}
     \begin{split}
-        \boldsymbol{y}^{MBR}&=\arg\min_{\boldsymbol{y}}p(\boldsymbol{y}\mid\boldsymbol{x})\\
+        \boldsymbol{y}^{MAP}&=\arg\min_{\boldsymbol{y}}p(\boldsymbol{y}\mid\boldsymbol{x})\\
         &=\arg\min_{\boldsymbol{y}}\frac{\sum_{(i,j)\in \boldsymbol{y}}s(i,j)}{Z(\boldsymbol{x})\equiv \sum_{\boldsymbol{y}^{\prime}}\sum_{(i^{\prime},j^{\prime})\in \boldsymbol{y}^{\prime}}s(i^{\prime},j^{\prime})}\\
         &=\arg\min_{\boldsymbol{y}}\sum_{(i,j)\in \boldsymbol{y}}s(i,j)
     \end{split}

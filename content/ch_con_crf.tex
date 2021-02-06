@@ -83,7 +83,7 @@ In summary, we make the following contributions.
 \section{基线模型}
 
 \subsection{模型定义}
-本章所有方法都建立在目前性能最好的依存句法分析模型BiaffineParser\upcite{dozat2017deep}的基础上.
+本章所有方法都建立在目前性能最好的依存句法分析模型BiaffineParser\cite{dozat2017deep}的基础上.
 作为基于图的句法分析模型，BiaffineParser采用双仿射运算计算有向完全图中每条弧的得分，最后通过MST算法（Minimum Spanning Tree），得到一棵最大生成树.
 
 BiaffineParser采用如图\ref{fig:biaffineparser}所示的结构来计算弧$i \leftarrow j$的得分$\texttt{score}\left( i \leftarrow j \right)$，其中包含了BiLSTM编码层，MLP层（线性层）和Biaffine得分层.
@@ -139,7 +139,7 @@ BiaffineParser采用如图\ref{fig:biaffineparser}所示的结构来计算弧$i 
 \end{equation}
 
 训练时，原始的BiaffineParser采用局部的softmax损失函数作为优化目标.
-由于目标端句法数据为局部标注数据，为了得到更好的句法模型性能，受Li等（2016）\upcite{zhenghua-p16}启发，我们采用基于Tree-CRF的全局损失函数\upcite{ma-xuezhe-i17-non-proj-crf}来训练句法模型.
+由于目标端句法数据为局部标注数据，为了得到更好的句法模型性能，受Li等（2016）\cite{zhenghua-p16}启发，我们采用基于Tree-CRF的全局损失函数\cite{ma-xuezhe-i17-non-proj-crf}来训练句法模型.
 
 \begin{figure}[hb!]
     %\vspace{-0.5em}
@@ -152,9 +152,9 @@ BiaffineParser采用如图\ref{fig:biaffineparser}所示的结构来计算弧$i 
 
 \subsection{基于多任务学习的树库融合模型}
 为了充分挖掘相关任务的语料信息，多任务学习同时训练多个任务，让所有语料都能贡献到每一个任务上.
-Guo等（2016）\upcite{guo2016universal}第一次采用多任务学习框架利用异构数据提升句法模型性能，并且性能优于Li等（2012）\upcite{li2012exploiting}的无监督的树库转化方法.
+Guo等（2016）\cite{guo2016universal}第一次采用多任务学习框架利用异构数据提升句法模型性能，并且性能优于Li等（2012）\cite{li2012exploiting}的无监督的树库转化方法.
 
-受Guo等（2016）\upcite{guo2016universal}的启发，我们将BiaffineParser句法分析模型扩展成多任务学习模型来融合源端树库和目标端树库，并作为有监督树库转化的基线模型.
+受Guo等（2016）\cite{guo2016universal}的启发，我们将BiaffineParser句法分析模型扩展成多任务学习模型来融合源端树库和目标端树库，并作为有监督树库转化的基线模型.
 如图\ref{fig:mlt}所示，源端句法模型和目标端句法模型作为两个任务同时训练，共享词/词性向量表和多层BiLSTM层参数，独立MLP层和Biaffine层参数.
 其中，共享参数将学习源端规范和目标端规范的共同句法信息，独立参数将学习不同规范的独特之处.
 但是，多任务学习天然具有一个缺点：任务间的相互增益仅仅建立在底层共享的参数上，没能充分利用各个任务的数据信息.
@@ -189,12 +189,12 @@ Guo等（2016）\upcite{guo2016universal}第一次采用多任务学习框架利
 
 %$parser^{\texttt{src}}$
 \subsection{基于模式嵌入的树库转化方法}
-基于模式的树库转化方法主要是受Li等（2012）\upcite{li2012exploiting}工作的启发. 首先，他们使用源端树库训练一个源端句法模型；
+基于模式的树库转化方法主要是受Li等（2012）\cite{li2012exploiting}工作的启发. 首先，他们使用源端树库训练一个源端句法模型；
 然后利用该源端句法模型去解析目标端树库，从而构建了一份伪双树对齐数据；
 最后他们从伪双树对齐数据的源端树中抽取了基于模式的特征，作为目标端句法模型的额外指导特征，从而训练了一个准确率更高的目标端句法模型.
 
-然而，Li等（2012）\upcite{li2012exploiting}采用的是基于传统离散特征的句法模型，并且模式特征的定义仅仅考虑了句法的结构关系，没有考虑到源端树的依存关系.
-我们在神经网络的BiaffineParser句法分析器的基础上，实现了Li等（2012）\upcite{li2012exploiting}基于模式的思想. 此外，为了充分利用源端树的信息，我们进行了一些有用的扩展.
+然而，Li等（2012）\cite{li2012exploiting}采用的是基于传统离散特征的句法模型，并且模式特征的定义仅仅考虑了句法的结构关系，没有考虑到源端树的依存关系.
+我们在神经网络的BiaffineParser句法分析器的基础上，实现了Li等（2012）\cite{li2012exploiting}基于模式的思想. 此外，为了充分利用源端树的信息，我们进行了一些有用的扩展.
 
 \begin{table*}[hb]
     \centering
@@ -218,7 +218,7 @@ Guo等（2016）\upcite{guo2016universal}第一次采用多任务学习框架利
 
 以目标端弧$i \leftarrow j$为例，
 一方面，我们根据源端树中词$w_i$到词$w_j$的距离扩展了模式的种类；
-具体地， 我们将Li等（2012）\upcite{li2012exploiting}的模式“else”按照距离进行扩展，增加了四种模式，分别是距离3，4-5，6，$\geq 7$. 最终，如表\ref{tb:pattern_table}所示，共定义了9种模式.
+具体地， 我们将Li等（2012）\cite{li2012exploiting}的模式“else”按照距离进行扩展，增加了四种模式，分别是距离3，4-5，6，$\geq 7$. 最终，如表\ref{tb:pattern_table}所示，共定义了9种模式.
 %举个例子，如图xx为例，词$w_i$和词$w_j$在源端树中修饰关系相反，为模式，为爷孙关系，模式为，关系为模式"3".
 
 另一方面，除了编码源端树的结构特征，我们还引入了源端树的依存关系信息.
@@ -290,16 +290,16 @@ Guo等（2016）\upcite{guo2016universal}第一次采用多任务学习框架利
 不同于基于模式嵌入的浅层编码方式，
 %本节采用树状长短期记忆网络（TreeLSTM）从深层编码源端树的信息.
 本节采用树状LSTM（TreeLSTM）深度编码源端树的信息.
-TreeLSTM是由Tai等（2015）\upcite{tai2015improved}通过扩展LSTM设计而成的用于编码树结构数据的神经网络层.
+TreeLSTM是由Tai等（2015）\cite{tai2015improved}通过扩展LSTM设计而成的用于编码树结构数据的神经网络层.
 他们通过TreeLSTM来编码依存句法树，从而将句法信息融入到语义相关性任务和情感分析任务中.
-Miwa和Bansal（2016）\upcite{miwa-p16-treelstm-re}在关系抽取任务上比较了三种TreeLSTM的变种，其中编码最短路径树的SP-TreeLSTM方法取得了最好的性能.
+Miwa和Bansal（2016）\cite{miwa-p16-treelstm-re}在关系抽取任务上比较了三种TreeLSTM的变种，其中编码最短路径树的SP-TreeLSTM方法取得了最好的性能.
 %miwa等在关系抽取任务上比较了三种TreeLSTM的变种，
 %即用于编码整棵句法树的Full-tree TreeLSTM, 编码最小子树的Sub-tree TreeLSTM,以及编码最短路径树的SP-TreeLSTM.
 %其实验结果表明SP-TreeLSTM给模型性能带来了更大的提升.
 %% 此外在树库转化任务上，采用SP-Tree LSTM编码源端树信息同样取得了更优的性能，与miwa等的结论一致.
 %因此，我们采用SP-TreeLSTM来编码源端树信息，并融入到BiaffineParser中，完成源端树到目标端树的转化.
 
-借鉴Miwa和Bansal（2016）\upcite{miwa-p16-treelstm-re}，我们也采用SP-TreeLSTM来编码源端树信息，并融入到BiaffineParser句法分析器中.
+借鉴Miwa和Bansal（2016）\cite{miwa-p16-treelstm-re}，我们也采用SP-TreeLSTM来编码源端树信息，并融入到BiaffineParser句法分析器中.
 顾名思义，SP-TreeLSTM编码的不是一棵完整的树，而是只编码了由两个词确定的一棵最短路径树.
 这里我们给出最短路径树的定义：当给定一棵树和两个节点$i$和$j$时，我们能找到唯一确定的最近公共祖先节点$a$，
 那么最短路径树即为由从节点$i$到节点$a$,再从节点$a$到节点$j$的两条路径组成的一棵树（一般情况下由两条路径组成）.
@@ -343,7 +343,7 @@ $\mathbf{f}_{a,k}$是节点$k$的父亲节点$m$的遗忘向量.
 
 经过双向SP-TreeLSTM编码层之后，
 我们得到了最短路径树中每个词的自底向上TreeLSTM的隐状态向量$\mathbf{h}^{\uparrow}$和自顶向下TreeLSTM的隐状态向量$\mathbf{h}^{\downarrow}$.
-为了更好地表示最短路径树的信息，借鉴Miwa和Bansal（2016）\upcite{miwa-p16-treelstm-re}的做法，我们将词$w_i$的自顶向下TreeLSTM的输出$\mathbf{h}_i^{\downarrow}$，
+为了更好地表示最短路径树的信息，借鉴Miwa和Bansal（2016）\cite{miwa-p16-treelstm-re}的做法，我们将词$w_i$的自顶向下TreeLSTM的输出$\mathbf{h}_i^{\downarrow}$，
 词$w_j$的自顶向下的输出$\mathbf{h}_j^{\downarrow}$，和词$w_a$的自底向的输出$\mathbf{h}_a^{\uparrow}$拼接起来作为源端树的编码向量：
 \begin{equation}
     \label{eq:sp_treelstm_rep}
@@ -407,7 +407,7 @@ $\mathbf{f}_{a,k}$是节点$k$的父亲节点$m$的遗忘向量.
 
 \textbf{评价指标.  } 我们采用标准的UAS（unlabeled attachment score，只考虑依存弧的正确性）和LAS（labeled attachment score，同时考虑依存弧和依存关系的正确性）来评价句法模型、多任务学习模型和转化模型的性能.
 
-\textbf{参数设置.  } 对于BiaffineParser，我们遵循了Dozat和Manning（2017）\upcite{dozat2017deep}等的部分参数设置：使用100维的GloVe预训练词向量，100维的词性嵌入向量. 由于训练数据规模较小，为了训练更好的模型，我们将BiLSTM编码层的层数减小到2，输出维度减小为300，MLP层的维度减小为200和100.
+\textbf{参数设置.  } 对于BiaffineParser，我们遵循了Dozat和Manning（2017）\cite{dozat2017deep}等的部分参数设置：使用100维的GloVe预训练词向量，100维的词性嵌入向量. 由于训练数据规模较小，为了训练更好的模型，我们将BiLSTM编码层的层数减小到2，输出维度减小为300，MLP层的维度减小为200和100.
 
 对于转化模型，模式的嵌入向量维度为50，依存关系标签的维度为50（如公式\ref{eq:pattern}，所以$\mathbf{r}^{pat}_{i \leftarrow j}$维度为200），SP-TreeLSTM的输出维度为100（如公式\ref{eq:sp_treelstm_rep}，所以$\mathbf{r}^{tree}_{i \leftarrow j}$维度为300），MLP层维度为300和100.
 

@@ -7,7 +7,7 @@
 
 \section{引言}
 \input{figures/dep-example.tex}
-依存句法分析任务是NLP领域的一个基础性任务，由于其简洁性，以及可以方便的在多语言上获得句法和语义信息的特性，目前在这一任务上已经有了大量的研究. 如图\ref{fig:dep-tree-example}所示，给定一个句子$\boldsymbol{x}=w_0w_1\cdots w_n$，一棵依存树被定义为$\boldsymbol{y}=\{(i,j,l)，0\le i \le n，1 \le j \le n，l \in \mathcal{L}\}$，其中$(i,j,l)$是一条从头（head）$w_i$到修饰词（modifier）$w_j$的弧，弧的标签为$l \in \mathcal{L}$. 目前在依存句法分析任务上有两个主流方法，分别是基于转移（transition-based）的方法，和基于图（graph-based）的方法，这里我们的方法主要关注于基于图的解析方式.
+依存句法分析任务是NLP领域的一个基础性任务，由于其简洁性，以及可以方便的在多语言上获得句法和语义信息的特性，目前在这一任务上已经有了大量的研究. 如图\ref{fig:dep-tree-example}所示，给定一个句子$\boldsymbol{x}=w_0w_1\cdots w_n$，一棵依存树被定义为$\boldsymbol{y}=\{(i,j,l)\mid 0\le i \le n,1 \le j \le n,l \in \mathcal{L}\}$，其中$(i,j,l)$是一条从头（head）$w_i$到修饰词（modifier）$w_j$的弧，弧的标签为$l \in \mathcal{L}$. 目前在依存句法分析任务上有两个主流方法，分别是基于转移（transition-based）的方法，和基于图（graph-based）的方法，这里我们的方法主要关注于基于图的解析方式.
 
 在深度学习时代之前，基于图的解析依赖于很多手工特征的设计，比如词性、前缀、后缀等等.
 与神经网络方法相比，以前的方法有两个显著的不同.
@@ -35,7 +35,7 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 对于结构化学习而言，相比max-margin方法，我们采用更复杂且更不常用的TreeCRF.
 主要原因有两方面.
 首先，概率分布估计一直是当前数据驱动的NLP方法的一个核心的问题\cite{le-zuidema-2014-inside}.
-如果将解析器的输出应用到更高层的任务，一棵句法树的概率$p(\boldsymbol{y}\mid\boldsymbol{x})$比没有上下边界的分值$s (\boldsymbol{x}，\boldsymbol{y})$一般而言要更加有用.
+如果将解析器的输出应用到更高层的任务，一棵句法树的概率$p(\boldsymbol{y}\mid\boldsymbol{x})$比没有上下边界的分值$s (\boldsymbol{x},\boldsymbol{y})$一般而言要更加有用.
 其次，边缘概率是一种理论上比较可靠的方法来评估模型输出子树的置信度，可以用于最小贝叶斯风险（MBR）解码\cite{smith-smith-2007-probabilistic}，并且已经被证明了对于词级别基于局部标注句法树的主动学习（active learning）\cite{li-etal-2016-active}很有用.
 
 尽管很有用，但是TreeCRF不如max-margin那么留下，其中一个原因是由于inside-outside算法的高复杂度，尤其是outside算法.
@@ -279,7 +279,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
     \frac{\partial \log Z}{\partial \mathrm{s}(i, j)} = p(i \rightarrow j\mid\boldsymbol{x})
 \end{equation}
 这可以很方便的证明（见附录~\ref{sec:outside-backprop}）.
-对于TreeCRF解析器，我们可以通过将解码算法中的分值用边缘概率代替，进行最小贝叶斯风险（Minimum Bayesian Risk, MBR）解码\cite{smith-smith-2007-probabilistic}，从而带来一个稳定的提升，相关推导见附录~\ref{sec:mbr-decoding}.
+对于TreeCRF解析器，我们可以通过将解码算法中的分值用边缘概率代替，进行\textbf{最小贝叶斯风险}（Minimum Bayesian Risk, MBR）解码\cite{smith-smith-2007-probabilistic}，从而带来一个稳定的提升，相关推导见附录~\ref{sec:mbr-decoding}.
 
 \subsection{局部标注处理}
 \label{sub@section:partial-annotation}
@@ -308,6 +308,15 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 \end{equation}
 其中$Z(\boldsymbol{x}, {\boldsymbol{y}^p})$ 只包含所有与给定局部标注树兼容的和法术，并且可以以与$Z(\boldsymbol{x})$类似的方式进行高效的计算.
 
+\begin{figure}[tb]
+    \centering
+    \includegraphics[scale=1.2]{figures/speed.pdf}
+    \caption{
+        PTB的test数据上的速度比较.
+    }
+    \label{fig:speed}
+\end{figure}
+
 \section{实验结果及分析}
 \noindent\textbf{数据.}
 我们在13个语言的27个数据集上进行了实验和分析，包含两个广泛使用的数据集：英语的斯坦福依存规范\cite{chen-manning-2014-fast}的宾州树库（Penn Treebank, PTB）和中文的CoNLL09数据\cite{hajic-etal-2009-conll}.
@@ -320,6 +329,8 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 我们采用了\cite{zeman-etal-2018-conll}中使用的300维多语言预训练词向量，以及使用CharLSTM表示作为输入.
 对于UD2.2，为了和\cite{ji-etal-2019-graph}公平比较我们和CoNLL18任务一样\cite{zeman-etal-2018-conll}使用了毛文本，并且直接使用了他们的句子分割和符号化的结果.
 对于UD2.3，为了与\cite{zhang-etal-2019-empirical}比较，我们报告了使用正确词性的结果.
+
+\input{tables/dev_test.tex}
 
 \noindent\textbf{评价指标.}
 我们使用无标签/有标签附着分值(UAS/LAS)作为主要的评价指标.
@@ -340,15 +351,6 @@ $\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用
 
 \subsection{效率比较}
 
-\begin{figure}[tb]
-    \centering
-    \includegraphics[scale=1.2]{figures/speed.pdf}
-    \caption{
-        PTB的test数据上的速度比较.
-    }
-    \label{fig:speed}
-\end{figure}
-
 图~\ref{fig:speed}在PTB的测试集上比较了不同模型的解析速度.
 为了能够公平比较，我们在相同的机器上运行所有的模型，模型的配置为Intel Xeon CPU (E5-2650v4, 2.20GHz)以及GeForce GTX 1080 Ti GPU.
 ``\textsc{Crf (cpu)}''表示直接在CPU运算Inside-Outside算法上，并利用Cython加速的模型.
@@ -358,213 +360,117 @@ $\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用
 可以看到通过批次化Inside算法以及用自动求导机制的反向传播代替Outside算法这两方面的改进，TreeCRF效率被极大的提升了.
 对于\textsc{Crf}模型，我们的实现可以解析超过500句每秒，大约十倍快于多线程的``\textsc{Crf (cpu)}''.
 对于二阶的\textsc{Crf2o}，我们的解析器达到了400句每秒的速度，达到了实时系统的需求.
-More discussions on efficiency are presented in Appendix~\ref{section:decoding-efficiency}.
 
-% In practice
-% For the basic \textsc{Loc}, the parsing speed is 450.
-% Our \textsc{Crf} and \textsc{Crf2o} achieve the speed of about 300 and 180 sentences per second, respectively.
+\subsection{主要结果}
 
-%On both datasets, our implementation of \textsc{Crf} is 4 times faster than the cython one. Even after adding the siblings, \textsc{Crf2o} is still more efficient (3 times faster) than the first-order cython model.
+表~\ref{table:dev-test}列出了dev和test数据上的结果.
+两个数据上的结果趋势大部分是一致的.
+为了能够与前人的结果公平比较，我们只比较了不利用外部资源的工作，例如ELMo\cite{peters-etal-2018-deep}或BERT\cite{devlin-etal-2019-bert}.
+可以看到我们的基线模型\textsc{Loc}在PTB和CoNLL09相较于前人达到了最好的性能
 
-\input{tables/dev_test.tex}
+在PTB上，\textsc{Crf}和\textsc{Crf2o}没有能够进一步提升解析准确率，这部分是由于这两个数据上的结果已经很高了.
+然而，正如章节\ref{subsec:dep-analysis}所示，结构化学习和高阶建模仍然带来了一些正面的影响.
 
-\begin{figure*}[tb]
-    \centering
-    \includegraphics[width=\textwidth]{figures/convergency.pdf}
-    \caption{
-        Convergence curves (LAS vs. training epochs) on dev data of PTB, CoNLL09, and NLPCC19.
-    }
-    \label{fig:convergency}
-\end{figure*}
+\textsc{Crf}在CoNLL09上显著超越了\textsc{Loc}，并且\textsc{Crf2o}可以进一步提升性能.
 
-\subsection{Main Results}
+在局部标注数据NLPCC19上，\textsc{Crf}极大的超过了\textsc{Loc}，这表明了结构化学习在局部标注场景下的有效性.
+\textsc{Crf2o}通过显式地建模二阶子树的特征，进一步的提升了解析性能.
+这些结果验证了我们在章节~\ref{sub@section:partial-annotation}的直觉性讨论.
+需要注意的是，局部标注的结果看起来比较低，这里的原因是局部标注的词通常来说对于模型都是比较难的.
 
-
-% 这一段要改写一下。dev只要讲一下，和test规律比较一致即可。
-
-Table~\ref{table:dev-test} lists the main results on the dev and test data.
-The trends on dev and test are mostly consistent.
-For a fair comparison with previous works, we only consider those without using extra resources such as ELMo \cite{peters-etal-2018-deep} and BERT \cite{devlin-etal-2019-bert}.
-We can see that our baseline \textsc{Loc} achieves the best performance on both PTB and CoNLL09.
-%is highly competitive.% and achieve state-of-the-art performance.
-%We mainly report the results on the test.
-
-%The trends of results on dev are consistency with that on the test, and we ignore the repeat description.
-%dev和test趋势类似，说明比较稳定。
-
-On PTB, both \textsc{Crf} and \textsc{Crf2o} fail to improve the parsing accuracy further,
-probably because the performance is already very high.
-However, as shown by further analysis in Section \ref{section:analysis},
-the positive effect is actually introduced by structural learning and high-order modeling.
-%英文上性能提高不大，也不显著，我们认为很重要的原因是英文的性能已经很高。
-
-On CoNLL09, \textsc{Crf} significantly outperforms \textsc{Loc},
-and \textsc{Crf2o} can further improve the performance.
-%CoNLL09上提高更明显一些，CRF显著高于Local，而CRF2O进一步提高。
-
-On the partially annotated NLPCC19 data, \textsc{Crf} outperforms \textsc{Loc} by a very large margin,
-indicating the usefulness of structural learning in the scenario of partial annotation.
-\textsc{Crf2o} further improves the parsing performance by explicitly modeling second-order subtree features.
-These results confirm our intuitions discussed in Section \ref{sub@section:partial-annotation}.
-Please note that the parsing accuracy looks very low because the partially annotated tokens
-are usually difficult for models.
-%with words
-
-
-%NLPCC19性能很低是因为测试集局部标注最难的。
-
-%NLPCC19上CRF的提高很大，说明structural training很有用，而加入二阶分值后能进一步提高性能；和我们在第x节的讨论很契合。
-
-% Results show that the performance on \textsc{Crf} and \textsc{Crf2o} is very similar with \textsc{Loc} on PTB.
-% We believe this is mainly because we build a strong baseline based on biaffine parser, and further adding structural information can't bring additional benefits.
-% \textsc{Crf} is slightly better than \textsc{Loc} on CoNLL09 (0.13\%/0.20\%, $p < 0.05$), while \textsc{CrfBib} achieve a more significant ($p < 0.005$) improvement of 0.48\%/0.54\% than \textsc{Crf}.
-
-% Both \textsc{Crf} and \textsc{CrfBib} work well on NLPCC19, which lead to an improvement of 0.42\%/0.67\% and 1.10\%/0.62\% respectively.
-% This indicates that structural learning and higher-order information are more useful for partial annotation. We leave detailed analysis in the next section.
-
-% In general, \textsc{Crf2o} can bring significant improvement to the parsing performance over \textsc{Loc}, especially for partial-annotated data.
-% Results indicates that our second-order \textsc{Crf}-Based model can achieve very advanced performance and leads to competitive results compared with previous works.
-
-\subsection{Analysis}
-\label{section:analysis}
-
-%In this subsection, we try to look deeper into the results for more insights.
-
-\input{tables/test-subtree.tex}
+\subsection{分析}
+\label{subsec:dep-analysis}
 
 %In the following, we conduct detailed analysis on the test data, in order to explore the advantages of structural learning and high-order information.
 
-\paragraph{Impact of MBR decoding.} For \textsc{Crf} and \textsc{Crf2o}, we by default to perform MBR decoding, which employs the Eisner algorithm over marginal probabilities \cite{smith-smith-2007-probabilistic} to find the best tree.
+\begin{figure*}[tb!]
+    \centering
+    \includegraphics[width=\textwidth]{figures/convergency.pdf}
+    \caption{
+        PTB、CoNLL09和NLPCC19的dev数据的训练收敛曲线（LAS相对于训练迭代次数).}
+    \label{fig:convergency}
+\end{figure*}
+
+\noindent\textbf{MBR解码的影响.}
+对于\textsc{Crf}和\textsc{Crf2o}，我们默认进行MBR解码，也就是直接在边缘概率上应用Eisner算法\cite{smith-smith-2007-probabilistic}来找到最优的句法树.
 \begin{equation}
     \begin{split}
-        & {\boldsymbol{y}}^* = \arg\max_{\boldsymbol{y}} \left[\sum_{i \rightarrow j \in \boldsymbol{y}}{p(i \rightarrow j|\boldsymbol{x})} \right]
+        & {\boldsymbol{y}}^* = \arg\max_{\boldsymbol{y}} \sum_{i \rightarrow j \in \boldsymbol{y}}{p(i \rightarrow j|\boldsymbol{x})}
     \end{split}
 \end{equation}
-% against the Maximum A Posteriori (MAP) decoding used in Equation~\ref{equation:map-decoding}
-%To measure the impact of MBR decoding, in
-Table~\ref{table:dev-test} reports the results of directly finding 1-best trees according to dependency scores. %not using the marginal probabilities.
-%From the table, we can clearly see that
-Except for PTB, probably due to the high accuracy already, MBR decoding brings small yet consistent improvements for both \textsc{Crf} and \textsc{Crf2o}.
-% 传统模型上，MBR decoding的提高也不是特别大。
-%almost does not bring any improvement on PTB, and has  on CoNLL09 and NLPCC19.
-%These observations are not in line with the conclusion of \citet{smith-smith-2007-probabilistic}, indicating that MBR decoding is not as that useful as previous non-neural works when using deep neural networks like multi-layer BiLSTMs.
+表~\ref{table:dev-test}报告了MAP解码（即根据依存分值直接寻找最优句法树，关于与MBR解码的联系详见附录~\ref{sec:mbr-decoding}）.
+除了PTB数据集的结果已经比较高了之外，MBR解码对于\textsc{Crf}和\textsc{Crf2o}都带来了不多但是一致的提升.
 
-\paragraph{Convergence behavior.}
+\noindent\textbf{收敛行为.}
+图~\ref{fig:convergency}比较了不同模型的收敛曲线.
+清晰起见，我们每20次迭代选择一个结果最高的数据点放入到图里面.
+可以明显看到，结构化学习和高阶建模都带来了一致的提升.
+\textsc{Crf2o}稳定的达到了最好的结果，并且收敛要远远快于基本的\textsc{Loc}.
 
-% 我们想观察一下训练过程中dev上性能的变化和收敛速度，来进一步观察不同模型的性能。
-% 可以更清晰的看到CRF和CRF2O都能进一步提高模型的性能，而且很稳定。即使英文上最终性能差不多，但是其实从曲线上看，还是有优势的。
-% 总的来讲，structural learning和high-order modeling，可以帮助模型提高性能，或者至少能加速收敛（由于loss更多了？前面我写了一段话，应该能用上）
-% 两个方面来解释收敛速度变快、编号的原因。loss变多，结构化约束确实能够帮助模型，更有效的得到合适的gradient。哈哈哈！
+\input{tables/test-subtree.tex}
 
-图~\ref{fig:convergency} compares the convergence curves. % of \textsc{Loc}, \textsc{Crf2o}, and \textsc{Crf}.
-For clarity, we plot one data point corresponding to the peak LAS every 20 epochs.
-We can clearly see that both structural learning and high-order modeling
-consistently improve the model.
-\textsc{Crf2o} achieves steadily higher accuracy and converges much faster than the basic \textsc{Loc}.
-%Though the final performance is
+\noindent\textbf{子树和完全树的结果.}
+除了弧级别的准确率（UAS/LAS），我们还希望能够评估模型在子树和完全树上的性能.
+表~\ref{table:dev-test-subtree}展示了相关的结果.
+这里我们忽略了局部标注的NLPCC19数据.
+UCM（Unlabeled Complete Match）代表无标签完全匹配率，即所有对应无标签树完全正确的句子的比率，而LCM进一步要求树上的所有标签也是正确的.
 
-%We observe that of the three models, the later needs less epochs than the former to converge, and the \textsc{Crf}-based model achieve the peak performance in the very earlier epochs than \textsc{Loc}.
-%This shows that when using the structural learning, we are able to achieve higher performance without losing the training efficiency too much.
+对于SIB，我们评估了模型在邻接兄弟子树上的结果（系统输出和对应的正确子树）.
+根据公式~\ref{eq:score-definition-2o}，当且仅当词$w_k$和词$w_j$都是词$w_i$的同侧孩子，并且没有其他词$w_i$的孩子在这两者之间，才称$(i,k,j)$ 是一个邻接兄弟子树.
+给定两棵树，我们可以收集所有的邻接兄弟子树，然后组成一个三元组集合.
+之后我们评估相应的P/R/F值.
+请注意在局部标注下评估SIB是做不到的.
 
-\paragraph{Performance at sub- and full-tree levels.}
+可以明显看到，通过建模邻接兄弟子树的分值，SIB的性能相比于\textsc{Crf}和\textsc{Loc}得到了更大的提升，并且这进一步带来了进一步在完全树匹配率（UCM/LCM）上的进步.
 
-\begin{figure}[tb]
+\begin{figure}[tb!]
     \centering
-    \begin{subfigure}[b]{0.45\textwidth}
+    \begin{subfigure}[b]{0.4\textwidth}
         \centering
         \includegraphics[width=1.\textwidth]{figures/part-gap-ptb.pdf}
     \end{subfigure}
-    \begin{subfigure}[b]{0.45\textwidth}
+    \begin{subfigure}[b]{0.4\textwidth}
         \centering
         \includegraphics[width=1.\textwidth]{figures/part-gap-conll.pdf}
     \end{subfigure}
     \caption{
-        LAS on PTB (left) and CoNLL09-test (right) regarding the amount of training data (dependencies vs. sentences).
+        PTB（左）和CoNLL09（右）的测试集有关训练数据量（弧数以及句子数）变化之后的LAS比较.
     }
     \label{fig:part-gap}
 \end{figure}
 
+\noindent\textbf{学习局部标注树的能力.}
 
-\input{tables/ud2.3-test.tex}
-
-Beyond the dependency-wise accuracy (UAS/LAS), we
-would like to evaluate the models regarding performance at sub-tree and full-tree levels.
-Table~\ref{table:dev-test-subtree} shows the results. We skip the partially labeled NLPCC19 data.
-%虽然整体性能看到了，但是我们想得到更多的insights，by looking deeper.
-%To gain more insights on the influence on subtrees, we report the P/R/F value regarding to siblings and UCM/LCM on the test data of PTB and CoNLL09, as shown in Table~\ref{table:dev-test-subtree}. Results of NLPCC19 are ignored since the proper adjacent siblings can't be convinced in the partial-annotated data.
-UCM means unlabeled complete matching rate, i.e., the percent of sentences obtaining whole correct skeletal trees, while
-LCM further requires that all labels are also correct.
-
-
-For SIB, we evaluate the model regarding unlabeled adjacent-sibling subtrees % to see the effect of second-order modeling.
-(system outputs vs. gold-standard references). % See equation (6) for the definition of an adjacent-sibling subtree. For example,
-According to Equation~\ref{eq:score-definition-2o},
-$(i,k,j)$ is an adjacent-sibling subtree, if and only if $w_k$ and $w_j$ are both children of $w_i$ at the same side, and there are no other children of $w_i$ between them.
-Given two trees, we can collect all adjacent-sibling subtrees and compose two sets of triples.
-Then we evaluate the P/R/F values.
-Please note that it is impossible to evaluate SIB for partially annotated references.
-
-We can clearly see that by modeling adjacent-sibling subtree scores,
-the SIB performance obtains larger improvement than both \textsc{Crf} and \textsc{Loc},
-and this further contributes to the large improvement on full-tree matching rates (UCM/LCM).
-
-%Results show that, even the improvement of UAS/LAS on PTB is very modest, there still exists significant difference in the aspect of siblings.
-%Specifically, \textsc{Crf2o} achieve a improvement of 0.35\% over \textsc{Loc} on the F-value of siblings.
-%It is noted that the results of \textsc{Loc} and \textsc{Crf2o} on UAS/LAS are already distinguishable on CoNLL09, and such gap is further amplified if we look at the sibling structures.
-
-% Moreover, from the global perspective, \textsc{Crf2o} outperforms \textsc{Loc} by 0.59\%/0.16\% and 2.44\%/1.13\% on UCM/LCM of PTB and CoNLL09 respectively.
-% This indicates that even if the high-order can't bring more gains in the simple accuracy (UAS), it works much better than \textsc{Loc} from the whole sentence aspect.
-
-\paragraph{Capability to learn from partial trees.}
-
-%为了进一步分析为什么局部标注的NLPCC19性能非常好，我们设计了新的实验。
-%In order to further verify that the effectiveness of the \textsc{Crf2o} model
 To better understand why \textsc{Crf2o} performs very well on partially annotated NLPCC19,
-%in learning from partial trees,
 we design more comparative experiments by retaining either a proportion of random training sentences (full trees) or a proportion of random dependencies for each sentence (partial trees).
 图~\ref{fig:part-gap} shows the results.
-% on PTB-dev and conll09-dev?.
-%The curves on conll09 have very similar trends (omitted for saving space).
 
 We can see that the performance gap is quite steady
 when we gradually reduce the number of training sentences.
-% 其实挺怪的，一般baseline下降的话，会提高大一点的。不知道CoNLL情况如何。
 In contrast, the gap clearly becomes larger when each training sentence has less annotated dependencies.
 This shows that \textsc{Crf2o} is superior to the basic \textsc{Loc} in
 utilizing partial annotated data for model training.
-% The results also indicate that: 不是说baseline性能低，second-order就能产生更大的提高。这个是之前的一个错误的直觉。
-% in the scenario of partial annotation.
-% 此处得根据实验结果进行更新：full annotation下gap比较稳定，而partial annotation情况下gap变大。
 
-%为了进一步验证CRF2O可以更好的从局部标注数据中学习，我们做了一个对比试验。
-%一方面是随机删除一部分句子，另一组实验室随机删除句子中的一定比例的弧。
+\input{tables/ud-test.tex}
 
+\subsection{UD的结果}
 
-
-% To clarify in which scenario \textsc{Crf2o} is more useful compared with \textsc{Loc}, we turn the attention to the performance of models trained with partial data of PTB. Concretely, we reduce the training data size in two ways, one is masking the edges randomly to simulate the partial annotation, another is directly choosing a subset from the training data. We depict the trends of performance as the data size changes in 图~\ref{fig:part-gap}.
-
-% As illustrated in the figure, \textsc{Crf2o} does not reflect its advantages compared with \textsc{Loc} if we directly train on a small proportion of the training instances.
-% On the contrary, as we discard more edges from the full-annotated data, then the performance between \textsc{Crf2o} and \textsc{Loc} is magnified.
-% For example, the difference of LAS on 1/2 annotated PTB is only 0.2\%, while is 0.61\% on 1/16 annotated. We can observe from the figure that the gap between the two models is amplified in proportion to the number of retained edges.
-
-\subsection{Results on Universal Dependencies}
-
-Table~\ref{table:ud2.3-test}
+表~\ref{table:ud-test}
 compares different models on UD datasets, which contain a lot of non-projective trees.
 % To simplify comparison and significance test, we adopt the gold tokenization setting.
-% For ease of comparison, on UD2.2, we follow \citet{ji-etal-2019-graph} and report the results of \textsc{Crf2o} on the test data that auto-segmented on the raw text.
-% On UD2.3, we extra use the gold POS tag embeddings for \textsc{Crf2o} and compare it with \citet{zhang-etal-2019-empirical}.
+% For ease of comparison, on UD2.2, we follow \cite{ji-etal-2019-graph} and report the results of \textsc{Crf2o} on the test data that auto-segmented on the raw text.
+% On UD2.3, we extra use the gold POS tag embeddings for \textsc{Crf2o} and compare it with \cite{zhang-etal-2019-empirical}.
 %are kindly shared by
 %We directly adopt the data of
 %Here, We thank
 %for kindly sharing their data,
 %including tokenization results (by UDPipe)
 % including their multilingual pre-trained word embeddings.
-% \citet{ji-etal-2019-graph},
+% \cite{ji-etal-2019-graph},
 %For the raw text setting under automatic tokenization,
 %we use the official evaluation script.
 % under two settings, on raw texts with officially provided tokenization (by UDPipe), and on gold-standard tokenization.
-%Comparing with the recent results of \citet{ji-etal-2019-graph}, who also adopt the biaffine parser but use POS tag embeddings, we can see that our model is much stronger than theirs. 这句话就不说了。
+%Comparing with the recent results of \cite{ji-etal-2019-graph}, who also adopt the biaffine parser but use POS tag embeddings, we can see that our model is much stronger than theirs. 这句话就不说了。
 %Please refer to Section %\ref{section:relwork}
 %for detailed discussion.
 % Since this work focuses on projective dependency parsing,
@@ -585,12 +491,12 @@ More importantly, both \textsc{Crf} and \textsc{Crf2o} produce consistent improv
 On both UD2.2 and UD2.3, Our proposed \textsc{Crf2o} model achieves the highest accuracy for 10 languages among 12, and obtains significant improvement in more than 7 languages.
 Overall, the averaged improvement is 0.45 and 0.29 on UD2.2 and UD2.3 respectively, which is also significant at $p<0.005$.
 
-On average, our \textsc{Crf2o} parser outperforms \citet{ji-etal-2019-graph} by 2.30 on UD2.2 raw texts following CoNLL-2018 shared task setting, and \citet{zhang-etal-2019-empirical} by 0.91 on UD2.3 data with gold POS tags.
-It is noteworthy that the German (de) result is kindly provided by Tao Ji after rerunning their parser with predicted XPOS tags, since their reported result in \citet{ji-etal-2019-graph} accidentally used gold-standard sentence segmentation, tokenization, and XPOS tags.
+On average, our \textsc{Crf2o} parser outperforms \cite{ji-etal-2019-graph} by 2.30 on UD2.2 raw texts following CoNLL-2018 shared task setting, and \cite{zhang-etal-2019-empirical} by 0.91 on UD2.3 data with gold POS tags.
+It is noteworthy that the German (de) result is kindly provided by Tao Ji after rerunning their parser with predicted XPOS tags, since their reported result in \cite{ji-etal-2019-graph} accidentally used gold-standard sentence segmentation, tokenization, and XPOS tags.
 %mainly because we uniformly use CharLSTM in place of POS tags (XPOS in CoNLL18) as input.
-%Please note that the unusual result of German (de) reported in \citet{ji-etal-2019-graph}, which is even higher than ours with gold-standard sentence segmentation and tokenization, is caused by using gold POS tags.
+%Please note that the unusual result of German (de) reported in \cite{ji-etal-2019-graph}, which is even higher than ours with gold-standard sentence segmentation and tokenization, is caused by using gold POS tags.
 % We confirmed this by several communications with the author.
-%The new reported result of German in Table~\ref{table:ud2.3-test} is acquired by rerunning their released code.
+%The new reported result of German in 表~\ref{table:ud-test} is acquired by rerunning their released code.
 % 和纪焘交流过了，他正确的结果为77.09，换掉81.96
 % 对于Local，pseudo-projective和non-projective的性能相当。
 % 在state-of-thart模型的基础上，Crf2o可以提高大部分语言的性能，其中5个语言是显著的。平均而言，也是显著的。
@@ -610,8 +516,8 @@ Our \textsc{Crf2o} parser achieves an average LAS of 87.64 using their XPOS tags
 % All the three models are both trained on converted pseudo projective treebanks, thus we also list the results of the model trained on non-projective trees and decoded by the MST algorithm. Results show that using pseudo projective treebanks is slightly better than non-projective ones.
 
 % Second, for comparison, we compare our best results with previous works and system submissions of CoNLL18 on the auto-segmented data.
-% Based on the strong baseline of \textsc{CharLSTM}, our \textsc{Crf2o} outperforms \citet{ji-etal-2019-graph}'s GNN framework by a large margin.
-% \textsc{Crf2o} falls behind \citet{che-etal-2018-towards}, which ranks 1st in CoNLL18 shared task,  possibly because of the use of ELMo \cite{peters-etal-2018-deep}.
+% Based on the strong baseline of \textsc{CharLSTM}, our \textsc{Crf2o} outperforms \cite{ji-etal-2019-graph}'s GNN framework by a large margin.
+% \textsc{Crf2o} falls behind \cite{che-etal-2018-towards}, which ranks 1st in CoNLL18 shared task,  possibly because of the use of ELMo \cite{peters-etal-2018-deep}.
 
 %这段话明天根据情况进行更新吧。
 
