@@ -441,98 +441,38 @@ UCM（Unlabeled Complete Match）代表无标签完全匹配率，即所有对�
 
 \noindent\textbf{学习局部标注树的能力.}
 
-To better understand why \textsc{Crf2o} performs very well on partially annotated NLPCC19,
-we design more comparative experiments by retaining either a proportion of random training sentences (full trees) or a proportion of random dependencies for each sentence (partial trees).
-图~\ref{fig:part-gap} shows the results.
+为了更好的理解为什么\textsc{Crf2o}在局部标注的NLPCC19上表现的比较好，我们通过随机丢弃一定比例的训练数据来进行了更多的比较实验.
+我们要么随机丢弃了一部分的句子（完全树），要么每个句子随机丢弃一部分弧（局部树）.
+图~\ref{fig:part-gap}列出了结果.
 
-We can see that the performance gap is quite steady
-when we gradually reduce the number of training sentences.
-In contrast, the gap clearly becomes larger when each training sentence has less annotated dependencies.
-This shows that \textsc{Crf2o} is superior to the basic \textsc{Loc} in
-utilizing partial annotated data for model training.
+可以看到当我们渐渐地丢弃一定数量的训练句子的时候，性能差距相当稳定.
+与此相反的是，当每个训练句子有更少的标注弧时，性能差距明显变得更大了.
+这表明\textsc{Crf2o}在利用局部标注数据训练模型上要优于\textsc{Loc}.
 
 \input{tables/ud-test.tex}
 
 \subsection{UD的结果}
 
-表~\ref{table:ud-test}
-compares different models on UD datasets, which contain a lot of non-projective trees.
-% To simplify comparison and significance test, we adopt the gold tokenization setting.
-% For ease of comparison, on UD2.2, we follow \cite{ji-etal-2019-graph} and report the results of \textsc{Crf2o} on the test data that auto-segmented on the raw text.
-% On UD2.3, we extra use the gold POS tag embeddings for \textsc{Crf2o} and compare it with \cite{zhang-etal-2019-empirical}.
-%are kindly shared by
-%We directly adopt the data of
-%Here, We thank
-%for kindly sharing their data,
-%including tokenization results (by UDPipe)
-% including their multilingual pre-trained word embeddings.
-% \cite{ji-etal-2019-graph},
-%For the raw text setting under automatic tokenization,
-%we use the official evaluation script.
-% under two settings, on raw texts with officially provided tokenization (by UDPipe), and on gold-standard tokenization.
-%Comparing with the recent results of \cite{ji-etal-2019-graph}, who also adopt the biaffine parser but use POS tag embeddings, we can see that our model is much stronger than theirs. 这句话就不说了。
-%Please refer to Section %\ref{section:relwork}
-%for detailed discussion.
-% Since this work focuses on projective dependency parsing,
-We adopt the pseudo-projective approach \cite{nivre-nilsson-2005-pseudo} for handling the ubiquitous non-projective trees of most languages. % with non-projective trees.
-Basically, the idea is to transform non-projective trees into projective ones using more complex labels for post-processing recovery.
+表~\ref{table:ud-test}比较了UD数据上不同模型的结果.
+在UD数据中包含了大量的非投影树.
+我们采用了\cite{nivre-nilsson-2005-pseudo}的伪投影方法来将许多语言中大量存在的非投影树转换为投影树.
+基本的想法是将非投影树转换为投影树的时候利用更多更复杂的标签来标记，以方便后处理的时候能够恢复.
 
-% \input{tables/conll18-test.tex}
+可以看到在基础的局部模型上，直接的基于MST算法的非投影解析方法$\textsc{Loc}_{\textsc{mst}}$和伪投影方法\textsc{Loc}达到了非常相似的性能.
 
+更重要的是，\textsc{Crf}和\textsc{Crf2o}在大部分语言上相比于基线模型都出现了一致的提升.
+在UD2.2和UD2.3上，我们提出的\textsc{Crf2o}模型在12个语言中的10个上达到了最高的解析准确率，并且在超过7个语言上获得的提升是显著的.
+总体上，平均分别在UD2.2和UD2.3各自达到了0.45和0.29的提升，这同样是显著的（$p<0.005$）.
 
-%我们在正确分词上对Local和Crf2o进行了比较，
-% We then compare different models under the gold tokenization setting.
-
-We can see that for the basic local parsers,
-the direct non-projective $\textsc{Loc}_{\textsc{mst}}$ and the pseudo-projective \textsc{Loc}
-achieve very similar performance.
-
-More importantly, both \textsc{Crf} and \textsc{Crf2o} produce consistent improvements over the baseline in many languages.
-On both UD2.2 and UD2.3, Our proposed \textsc{Crf2o} model achieves the highest accuracy for 10 languages among 12, and obtains significant improvement in more than 7 languages.
-Overall, the averaged improvement is 0.45 and 0.29 on UD2.2 and UD2.3 respectively, which is also significant at $p<0.005$.
-
-On average, our \textsc{Crf2o} parser outperforms \cite{ji-etal-2019-graph} by 2.30 on UD2.2 raw texts following CoNLL-2018 shared task setting, and \cite{zhang-etal-2019-empirical} by 0.91 on UD2.3 data with gold POS tags.
-It is noteworthy that the German (de) result is kindly provided by Tao Ji after rerunning their parser with predicted XPOS tags, since their reported result in \cite{ji-etal-2019-graph} accidentally used gold-standard sentence segmentation, tokenization, and XPOS tags.
-%mainly because we uniformly use CharLSTM in place of POS tags (XPOS in CoNLL18) as input.
-%Please note that the unusual result of German (de) reported in \cite{ji-etal-2019-graph}, which is even higher than ours with gold-standard sentence segmentation and tokenization, is caused by using gold POS tags.
-% We confirmed this by several communications with the author.
-%The new reported result of German in 表~\ref{table:ud-test} is acquired by rerunning their released code.
-% 和纪焘交流过了，他正确的结果为77.09，换掉81.96
-% 对于Local，pseudo-projective和non-projective的性能相当。
-% 在state-of-thart模型的基础上，Crf2o可以提高大部分语言的性能，其中5个语言是显著的。平均而言，也是显著的。
-Our \textsc{Crf2o} parser achieves an average LAS of 87.64 using their XPOS tags.
-
-% 另外，我们也和最近的Ji的工作进行了比较，可以看到我们的结果比他们的高很多，说明我们的baseline很强。
-% 是否把Raw的结果放在左边？先说Raw，再说Correct Tokenization?
-
-% Finally, we report the LAS on 12 languages selected from CoNLL18, as shown in .
-% Considering that there exists a non-negligible proportion of non-projective trees in some languages of CoNLL18, we first convert them to pseudo projective ones and then recover from that using \hyperlink{http://www.maltparser.org/}{MaltParser} \cite{nivre-nilsson-2005-pseudo}.
-% Then, the results are two parts.
-
-% First, we report the results of all of our models on the corpora with gold-segmented texts.
-% Overall, \textsc{Crf} is slight better than \textsc{Loc} (0.18\%, $p < 0.05$), and \textsc{Crf2o} outperforms \textsc{Loc} by 0.30\% ($p < 0.005$).
-% Our model does not improve on some languages like de, it and ro.
-% While on some languages like es, fr and nl, the improvements are 0.51\%, 0.74\% and 1.19\%, which are much more obvious.
-% All the three models are both trained on converted pseudo projective treebanks, thus we also list the results of the model trained on non-projective trees and decoded by the MST algorithm. Results show that using pseudo projective treebanks is slightly better than non-projective ones.
-
-% Second, for comparison, we compare our best results with previous works and system submissions of CoNLL18 on the auto-segmented data.
-% Based on the strong baseline of \textsc{CharLSTM}, our \textsc{Crf2o} outperforms \cite{ji-etal-2019-graph}'s GNN framework by a large margin.
-% \textsc{Crf2o} falls behind \cite{che-etal-2018-towards}, which ranks 1st in CoNLL18 shared task,  possibly because of the use of ELMo \cite{peters-etal-2018-deep}.
-
-%这段话明天根据情况进行更新吧。
+在UD2.2上，我们和CoNLL18任务一样采用的是毛文本，并且我们的\textsc{Crf2o}解析器上比\cite{ji-etal-2019-graph}平均要高2.30.
+在UD2.3上，\cite{zhang-etal-2019-empirical}使用了正确词性作为输入，我们平均比他们高0.91.
+需要注意的是\cite{ji-etal-2019-graph}里德语（de）结果错误的使用了正确的句子分割，符号化以及词性，而表中的结果是用了预测的词性，并重新运行他们的解析器得到的.
+我们的\textsc{Crf2o}解析器在使用他们的词性之后平均的LAS达到了87.64.
 
 \section{本章小结}
-%本章首先分析了基于模式嵌入的树库转化方法无法充分利用源端树库，其性能受转化数据的一致性的影响很大，具有很强的局限性.
-本章分别从树库转化和树库融合两个方面分析了第\ref{sec:super_tc}章中相应方法的缺点. 然后，针对SP-Tree转化方法的低效性和PatEmb转化方法的不稳定性，提出使用Full-Tree转化方法来高效、深度地编码源端树. 接着，本章提出使用语料加权以及合并后微调两种树库融合方法来合理利用含有噪音的转化后源端树库. 最后，在两份双树对齐语料上的实验表明了：
-%本章首先指出了第\ref{sec:super_tc}章中树库转化方法和树库融合方法的不足之处.
-%然后，针对树库转化任务和树库融合任务提出了一些改进方法，并在两份双树对齐语料上进行实验.
-%实验结果表明了：
-1）Full-TreeLSTM方法能高效稳定、深度编码源端树信息，并且优于SP-Tree和PatEmb方法；
-2）语料加权以及合并后微调的方法可以有效的缓解转化后语料中包含的噪音问题，进一步提升了目标端句法模型性能.
-%3）本章提出的改进方法——Full-Tree转化方法和合并后微调的树库融合方法优于第\ref{sec:super_tc}章的SP-Tree转化方法和直接合并的树库融合方法，有效地提升了最终目标端句法模型的性能.
-此外，我们在实验中还发现了TreeLSTM输出层的dropout对Full-Tree方法影响较大，合理地设置dropout大小可以获得更高的转化性能.
+\label{sec:dep-conclusions}
 
-基于本章研究内容，我们在NLPCC-2019会议（CCF-C类）上发表学术论文一篇.
-
-
-
+本章首次在神经依存句法分析模型上提出了一个二阶TreeCRF的扩展，并提出使用Triaffine结构来为二阶子树打分.
+我们提出了批次化的Inside算法，以适应在GPU上的并行运算.
+我们同样从经验上验证了复杂的Outside算法可以隐式地通过高效的自动求导机制来完成，相应可以自然地产生梯度以及边缘概率.
+我们在13个语言的27个数据集上进行了大量的实验和详尽的分析，发现结构化学习和高阶建模可以进一步地从不同的方面提升当前最佳的Biaffine Parser：1）更好的收敛行为；2）在子树和完全树上更优越的性能；3）对局部标注数据更好的利用.
