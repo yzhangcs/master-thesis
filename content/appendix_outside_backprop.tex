@@ -29,7 +29,7 @@
 上述正是\textbf{最小贝叶斯风险}（Minimum Bayesian Risk, MBR）的内涵：给定输入$\boldsymbol{x}$及对应的后验分布，选择$\boldsymbol{y}$，使得\textit{期望}代价（即风险，\textit{Risk}）最小化\cite{stoyanov-eisner-2012-minimum}.
 
 对句法分析,或其他结构化预测任务而言，通常我们采用的是最大后验概率（Maximum \textit{A Posteriori}, MAP）解码，即寻求一个使得后验概率最大化的答案.
-这可以是MBR解码的一个特例，代价函数$\ell^{MAP}(\cdot)$为一个简单的0-1指示函数，判断$\boldsymbol{y}$与$\boldsymbol{y}^{\prime}$是否一致
+这是MBR解码的一个特例，而对应的代价函数$\ell^{MAP}(\cdot)$为一个简单的0-1指示函数，判断$\boldsymbol{y}$与$\boldsymbol{y}^{\prime}$是否一致
 \begin{equation}
     \ell^{MAP}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = -\mathbbm{1}(\boldsymbol{y}=\boldsymbol{y}^{\prime})
 \end{equation}
@@ -37,7 +37,7 @@
 \begin{equation}
     \label{eq:map}
     \begin{split}
-        \boldsymbol{y}^{MAP}&= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell(\boldsymbol{y},\boldsymbol{y}^{\prime})\\
+        \boldsymbol{y}^{MAP}&= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell^{MAP}(\boldsymbol{y},\boldsymbol{y}^{\prime})\\
         &=\arg\max_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\mathbbm{1}(\boldsymbol{y}=\boldsymbol{y}^{\prime})\\
         &=\arg\max_{\boldsymbol{y}}p(\boldsymbol{y}\mid\boldsymbol{x})
     \end{split}
@@ -48,9 +48,9 @@
 \begin{equation}
     \label{eq:map-dep}
     \begin{split}
-        \boldsymbol{y}^{MAP}&=\arg\min_{\boldsymbol{y}}p(\boldsymbol{y}\mid\boldsymbol{x})\\
-        &=\arg\min_{\boldsymbol{y}}\frac{\sum_{(i,j)\in \boldsymbol{y}}s(i,j)}{Z(\boldsymbol{x})\equiv \sum_{\boldsymbol{y}^{\prime}}\sum_{(i^{\prime},j^{\prime})\in \boldsymbol{y}^{\prime}}s(i^{\prime},j^{\prime})}\\
-        &=\arg\min_{\boldsymbol{y}}\sum_{(i,j)\in \boldsymbol{y}}s(i,j)
+        \boldsymbol{y}^{MAP}&=\arg\max_{\boldsymbol{y}}p(\boldsymbol{y}\mid\boldsymbol{x})\\
+        &=\arg\max_{\boldsymbol{y}}\frac{\sum_{(i,j)\in \boldsymbol{y}}s(i,j)}{Z(\boldsymbol{x})\equiv \sum_{\boldsymbol{y}^{\prime}}\sum_{(i^{\prime},j^{\prime})\in \boldsymbol{y}^{\prime}}s(i^{\prime},j^{\prime})}\\
+        &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in \boldsymbol{y}}s(i,j)
     \end{split}
 \end{equation}
 去掉共同的分母，分子为对应句法树的分值，上式的含义是获取分值最大的句法树，这个目标可以通过常见的一些解码算法（如Eisner，MST等）达到.
@@ -63,7 +63,7 @@
 \begin{equation}
     \label{eq:mbr-dep}
     \begin{split}
-        \boldsymbol{y}^{MBR}&= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell(\boldsymbol{y},\boldsymbol{y}^{\prime})\\
+        \boldsymbol{y}^{MBR}&= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell^{MBR}(\boldsymbol{y},\boldsymbol{y}^{\prime})\\
         &=\arg\max_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\mathbbm{1}(j=j^{\prime})\\
         &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\mathbbm{1}(j=j^{\prime})\\
         &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}:(i,j)\in \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\\
