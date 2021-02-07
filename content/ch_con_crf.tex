@@ -12,7 +12,7 @@
 \section{引言}\label{sec:con-intro}
 
 \input{figures/con-tree.tex}
-给定一个句子，成分句法分析旨在构建一个层次化的树结构. 如图\ref{fig:con-tree-full-figure}，其中每个叶子结点是输入句子的每个词，而非终端结点作为组块（Constituents），如\texttt{$VP_{3,5}$}.
+给定一个句子，成分句法分析旨在构建一个层次化的树结构. 如图\ref{fig:con-tree-full-figure}，其中每个叶子结点是输入句子的每个词，而非终端结点作为区块（Constituents），如\texttt{$VP_{3,5}$}.
 
 成分句法分析是自然语言处理领域一个基础但是富有挑战性的任务.
 由于诸如宾州树库（Penn Treebank，PTB）、中文宾州树库（Penn Chinese Treebank，CTB）等大规模树库的标注，成分句法分析吸引了一大批研究者的关注.
@@ -112,7 +112,7 @@
 \noindent\textbf{时间复杂度分析.}
 CKY的时间复杂度为$O(n^3)$.
 因此，我们两阶段解析方法的总时间复杂度为$O(n^3+n|\mathcal{L}|)$.
-相对应的，对于一阶段解析的CKY而言，算法需要为所有$n^2$个区块决定最优的标签，因此需要$O(n^3+n^2|\mathcal{L}|)$，其中$|\mathcal{L}|$通常来说都很大（比如对于表~\ref{table:statistics}中的英语来说为138）.
+相对应的，对于一阶段解析的CKY而言，算法需要为所有$n^2$个区块决定最优的标签，因此需要$O(n^3+n^2|\mathcal{L}|)$，其中$|\mathcal{L}|$通常来说都很大（比如对于表~\ref{table:con-statistics}中的英语来说为138）.
 
 \subsection{打分架构}
 
@@ -145,7 +145,7 @@ CKY的时间复杂度为$O(n^3)$.
 \end{equation}
 $\mathbf{h}_i$的维度为800.
 
-不同于直接应用一个单一的MLP层到$\mathbf{h}_i$上，我们发现一个词在一棵给定树的所有的组块中都必须作为其左边界或右边界.
+不同于直接应用一个单一的MLP层到$\mathbf{h}_i$上，我们发现一个词在一棵给定树的所有的区块中都必须作为其左边界或右边界.
 因此，我们应用来两个MLP层来做这样的区分，并且分别获取左边界和右边界的表示向量.
 \begin{equation}
     \label{mlp-borlders}
@@ -239,43 +239,42 @@ $\mathbf{r}_i^{l/r}$的维度$d$为500.
 然而，我们发现这在成分句法上带来了很微弱的提升.
 
 \input{tables/con-statistics.tex}
-\input{tables/con-dev.tex}
 
 \section{实验}
 \label{sec:con-experiments}
 \noindent\textbf{数据.}
-We conduct experiments on three English and Chinese datasets.
-The first two datasets，i.e.，PTB and CTB5.1，are widely used in the community.
-We follow the conventional train/dev/test data split.
-Considering that both CTB5.1-dev/test only have about 350 sentences,
-we also use the larger CTB7 for more robust investigations，following the data split suggested in the official manual.
-Table~\ref{table:statistics} shows the data statistics.
-We can see that CNF introduces many new constituent label types， most (about 75\%) of which are from the collapsing process of consecutive unary rules.
+我们主要在三个中文和英文的数据集上进行实验.
+前两个数据集，即PTB和CTB5.1，是句法分析社区中比较常用的两个数据集.
+我们遵循了传统的train/dev/test数据的分割.
+考虑到CTB5.1的dev/test都只有大约350句，为了得到更加稳定一致的结果，我们同样在更大的CTB7数据上进行了实验，相关的数据分割设置参考了官方手册建议.
+表~\ref{table:con-statistics}列出了相关数据的统计信息.
+可以看到CNF转换引入了很多新的区块标签，其中大部分（大约75\%）是源于连续单链的折叠过程.
 
 \noindent\textbf{评价.}
-As mentioned earlier，we convert 1-best CNF trees into \textit{n}-ary trees after parsing for evaluation.
-Here，it may be useful to mention a small detail.
-The predicted 1-best CNF tree may contain inconsistent productions since the decoding algorithm does not have such constraints.
-Taking 图~\ref{fig:con-binaried-tree} as an example，the model may output $\texttt{VP}_{3,5} \rightarrow \texttt{PP}^{\ast}_{3,3} ~ \texttt{NP}_{4,5}$，where $\texttt{VP}$ is incompatible with $\texttt{PP}^{\ast}$.
-During the \textit{n}-ary post-processing，we simply ignore the concrete label string $\texttt{PP}$ before the ``$\mathtt{\ast}$'' symbol.
-In view of this，performance may be slightly improved by adding such constraints during decoding.
+正如前面提到的，在解析之后，我们将最佳的CNF树转化为了\textit{n}-ary树再进行评价.
+这里有必要提及一些有用的细节.
+由于解码算法没有相应的约束，预测的最佳CNF树可能包含很多不合法的产生式.
+以图~\ref{fig:con-binaried-tree}为例，模型可能输出$\texttt{VP}_{3,5} \rightarrow \texttt{PP}^{\ast}_{3,3} ~ \texttt{NP}_{4,5}$，其中 $\texttt{VP}$和$\texttt{PP}^{\ast}$是不兼容的.
+在\textit{n}-ary后处理过程中，我们直接忽略了``$\mathtt{\ast}$''符号之前具体的字符串$\texttt{PP}$.
+有鉴于此，如果解码的时候增加一定的约束，结果有可能进一步提高，这里我们留待后续的工作.
 
-We use the standard constituent-level labeled precision，recall，F-score (P/R/F) as the evaluation metrics with the \texttt{EVALB} tool\footnote{\url{https://nlp.cs.nyu.edu/evalb}}.
-Specifically，a predicted constituent such as $\texttt{VP}_{3,5}$ is considered correct if it also appears in the gold-standard tree.\footnote{
-    Since some researchers may implement their own evaluation scripts，some details about \texttt{EVALB} need to be clarified for fair comparison:
-    1) Empty constituents like \{-NONE-\} are removed during data pre-processing.
-    2) Root constituents (\{TOP，S1\} for English and an empty string for Chinese) are ignored for evaluation.
-    3) Constituents spanning a English punctuation mark like \{:，``，''，.，?，!\} are also ignored. Please note that Chinese punctuation marks are evaluated as normal words.
-    4) Some label sets like \{ADVP，PRT\} are regarded as equivalent.}
+我们使用了标准的区块级别的准确率、召回率和F值（P/R/F）作为评价指标，并使用\texttt{EVALB}工具\footnote{\url{https://nlp.cs.nyu.edu/evalb}}来评价.
+特别地，一个诸如$\texttt{VP}_{3,5}$的预测区块如果出现在了正确树中，那就被认为是正确的.\footnote{
+    由于一些研究者可能会实现他们自己的评价叫门，为了比较的公平，需要澄清一些细节：
+    1）一些诸如\{-NONE-\}的空区块在预处理的时候被移除了.
+    2）评价的时候作为根结点的区块（英语里是\{TOP，S1\}，中文里是空字符串) 被忽略了.
+    3）包含一些例如\{:，``，''，.，?，!\}这些标点的区块也被忽略了. 请注意中文标点会作为正常的字符被评价.
+    4）一些在同一集合中的标签，例如\{ADVP，PRT\}，被认为是等价的.}
 
 \noindent\textbf{参数设置.}
-We directly adopt the same hyper-parameter settings of the dependency parser of \cite{Timothy-d17-biaffine} without further tuning.
-The only difference is the use of CharLSTM word representations instead of POS tag embeddings.
-The dimensions of char embedding，word embedding，and CharLSTM outputs are
-50，100，100，respectively.
-All dropout ratios are 0.33.
-The mini-batch size is 5,000 words.
-The training process continues at most 1,000 epochs and is stopped if the peak performance on dev data does not increase in 100 consecutive epochs.
+我们直接采用\cite{Timothy-d17-biaffine}的依存句法分析器里面的大部分参数设置，没有进一步的改动.
+唯一的区别是我们用了CharLSTM词表示，而非词性embedding.
+CharLSTM里自向量、词向量以及CharLSTM输出向量的维度分别为50、100和100.
+所有Dropout的比率为0.33.
+一个批次数据的大小约为5,000个词.
+训练过程持续至多不超过1,000次迭代，并且如果Dev数据上的最高结果连续100次不提示，那么训练就会提前停止.
+
+\input{tables/con-dev.tex}
 
 \subsection{Dev数据上的模型比较}
 
