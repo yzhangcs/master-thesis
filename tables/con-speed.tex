@@ -1,0 +1,23 @@
+\begin{table}[tb]
+    \setlength{\tabcolsep}{15pt}
+    \centering
+    \begin{tabular}{lr}
+        \toprule
+                                                             & Sents/sec     \\
+        \midrule
+        % \\[-8pt]
+        \cite{petrov-klein-2007-improved}  (Berkeley Parser) & 6             \\
+        \cite{zhu-etal-2013-fast} (ZPar)                     & 90            \\
+        \cite{stern-etal-2017-minimal}                       & 76            \\
+        \cite{shen-etal-2018-straight}                       & 111           \\
+        \cite{kitaev-klein-2018-constituency}                & 332           \\
+        \cite{gomez-rodriguez-vilares-2018-constituent}      & 780           \\[3pt]
+        CRF (one-stage)                                      & 990           \\
+        CRF (two-stage) w/ MBR                               & 743           \\
+        CRF (two-stage) w/o MBR                              & \textbf{1092} \\
+
+        \bottomrule
+    \end{tabular}
+    \caption{PTB的test数据上的解析速度比较.}
+    \label{table:speed}
+\end{table}

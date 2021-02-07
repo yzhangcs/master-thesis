@@ -3,7 +3,7 @@
 %本章探讨了利用依存句法信息来缓解ORL数据稀缺性的问题.
 首先，我们从BiaffineParser依存句法分析器的核心组成模块中抽取了三种不同形式的句法信息.
 %（句法树、句法森林和句法感知隐状态）；
-然后，我们采用不同的编码方法来表示句法信息，并以级联的方式融入到基于BiLSTM-CRF的ORL模型中；
+然后，我们采用不同的编码方法来表示句法信息，并以级联的方式融入到基于双向LSTM-CRF的ORL模型中；
 最后，为了减弱级联方式使用句法信息带来的错误传递问题，我们采用软参共享的多任务学习框架同时训练句法模型和ORL模型.
 此外，我们还进一步探讨了在预训练语言模型BERT的基础上，句法信息对于ORL模型的作用.
 
@@ -24,12 +24,12 @@
 为了弥补数据驱动的ORL方法，研究者往往通过融入语法等语言学知识来提供人类对文本理解的结构信息. 依存句法指出了句子的句法成分和词语之间的句法依赖关系，有助于识别意见角色. 如图\ref{fig:example-syntax}所示，没有图上方的句法信息的帮助，意见目标角色往往会识别的不完整：要么会漏识别“challenge”，要么会漏识别“facing Chavez”.
 然而，几乎没有工作研究句法信息在基于神经网络的ORL模型中的作用.
 
-本文通过在基于BiLSTM-CRF (Bidirectional Long Short-term Memory, Conditional Random Field)的ORL模型中引入依存句法信息，来弥补ORL训练语料的稀缺性.
-%具体地，我们从文献[6]提出的目前性能最好的依存句法分析模型(本文称之为BiaffineParser)中获取句法信息. 我们从基于图的BiaffineParser的计算机制出发，获取并分析了其不同模块产生的不同形式的句法信息，包括句法树，句法森林和编码层产生的句法感知隐状态. 然后我们采用不同的编码方法表示句法信息并融入到基于BiLSTM-CRF (Bidirectional Long Short-term Memory, Conditional Random Field)的ORL模型中，以增强ORL模型的识别能力.
+本文通过在基于双向LSTM-CRF (Bidirectional Long Short-term Memory, Conditional Random Field)的ORL模型中引入依存句法信息，来弥补ORL训练语料的稀缺性.
+%具体地，我们从文献[6]提出的目前性能最好的依存句法分析模型(本文称之为BiaffineParser)中获取句法信息. 我们从基于图的BiaffineParser的计算机制出发，获取并分析了其不同模块产生的不同形式的句法信息，包括句法树，句法森林和编码层产生的句法感知隐状态. 然后我们采用不同的编码方法表示句法信息并融入到基于双向LSTM-CRF (Bidirectional Long Short-term Memory, Conditional Random Field)的ORL模型中，以增强ORL模型的识别能力.
 我们采用Dozat和Manning（2017）\upcite{dozat2017deep}提出的目前性能最好的依存句法分析模型（BiaffineParser）提供所需的句法信息. 具体地，
 我们从基于图的BiaffineParser的计算机制出发，获取并分析了其核心模块产生的不同形式的句法信息，包括编码层产生的句法感知隐状态、双仿射得分层产生的句法森林和MST解码层产生的句法树.
 从形式上看，分别属于隐式的神经向量句法信息、显式的图结构句法信息和显式的树结构句法信息.
-然后我们采用不同的编码方法表示句法信息，并将其融入到基于BiLSTM-CRF 的ORL模型中，以增强ORL模型的识别能力.
+然后我们采用不同的编码方法表示句法信息，并将其融入到基于双向LSTM-CRF 的ORL模型中，以增强ORL模型的识别能力.
 %其中，我们首次提出采用GCN编码句法森林信息，并尝试同时融合显式和隐式的句法信息.
 
 上述的做法可以总结为从一个训练好的句法模型中获取句法信息，然后再融入到ORL模型中，这是一种典型的基于级联的句法应用方式.
@@ -68,13 +68,13 @@
     %\vspace{-0.5em}
     \centering
     \includegraphics[angle=0,width=0.7\textwidth]{img/orl-model-crop.pdf}
-    \caption{基于BiLSTM-CRF的ORL模型结构}
+    \caption{基于双向LSTM-CRF的ORL模型结构}
     \label{fig:orl_model}
     %\vspace{-1.5em}
 \end{figure}
 
-为了计算标签序列的分数，我们采用经典的BiLSTM-CRF作为ORL的基线模型.
-如图\ref{fig:orl_model}所示，模型由输入层、BiLSTM编码层和CRF预测层组成.
+为了计算标签序列的分数，我们采用经典的双向LSTM-CRF作为ORL的基线模型.
+如图\ref{fig:orl_model}所示，模型由输入层、双向LSTM编码层和CRF预测层组成.
 
 \textbf{输入层.  } ORL模型的输入为句子$S=w_1w_2\cdots w_n$和意见措辞片段$E=w_sw_{s+1}\cdots w_e$ （$1 \leq s\leq e \leq n$），其中我们用$0/1$标志来表明一个词$w_i$是否是意见措辞的一部分. 如图\ref{fig:orl_model}底部所示，“like”是意见措辞的一部分，所以标记为1，而“I”、“eating”和“apples”不属于意见措辞片段，所以标记为0.
 
@@ -95,9 +95,9 @@
     \mathbf{x}_i = \mathbf{e}_{w_i}^{\texttt{word}} \oplus \mathbf{e}_{s\leq i\leq e}^{\texttt{exp}} \oplus \mathbf{e}_{w_i}^{\texttt{BERT}}, \quad i \in [1,n]
 \end{equation}
 
-\textbf{BiLSTM编码层.  } 为了充分编码输入的句子，我们在输入层上堆叠了三层BiLSTM.
-通过正向/反向LSTM，抽取了丰富的文本信息，得到了BiLSTM输出的隐状态序列$\mathbf{h}_1 \mathbf{h}_2\dots \mathbf{h}_n$. 其中$\mathbf{h}_i=\stackrel{\leftarrow}{\mathbf{h}_i} \oplus \stackrel{\rightarrow}{\mathbf{h}_i}$，$\stackrel{\leftarrow}{\mathbf{h}_i}$和$\stackrel{\rightarrow}{\mathbf{h}_i}$分别是反向/正向LSTM的输出.
-%然后，我们将顶层BiLSTM的自左向右的LSTM的隐状态和自右向左的LSTM的隐状态拼接起来作为作为词$w_i$的表示向量$\mathbf{h}_i$.
+\textbf{双向LSTM编码层.  } 为了充分编码输入的句子，我们在输入层上堆叠了三层双向LSTM.
+通过正向/反向LSTM，抽取了丰富的文本信息，得到了双向LSTM输出的隐状态序列$\mathbf{h}_1 \mathbf{h}_2\dots \mathbf{h}_n$. 其中$\mathbf{h}_i=\stackrel{\leftarrow}{\mathbf{h}_i} \oplus \stackrel{\rightarrow}{\mathbf{h}_i}$，$\stackrel{\leftarrow}{\mathbf{h}_i}$和$\stackrel{\rightarrow}{\mathbf{h}_i}$分别是反向/正向LSTM的输出.
+%然后，我们将顶层双向LSTM的自左向右的LSTM的隐状态和自右向左的LSTM的隐状态拼接起来作为作为词$w_i$的表示向量$\mathbf{h}_i$.
 
 %\textbf{线性得分层.  }
 %以词$w_i$为例，我们将其在编码层的输出向量$\mathbf{h}_i$作为得分层的输入来计算文本中每个词对应每个标签的得分$\mathbf{p}_i$，如公式\ref{eq:orl_mlp}所示. 其中$\mathbf{W}$和$\mathbf{b}$是模型参数.
@@ -156,10 +156,10 @@ BiaffineParser是由Dozat和Manning（2017）\upcite{dozat2017deep}提出的基�
 %我们认为在BiaffineParser的计算过程中，各个阶段都蕴含着不同类型的句法信息.
 %BiaffineParser是由文献[6]提出的基于图的依存句法分析器，在多份语料上取得了目前最好的句法分析性能.
 
-在BiaffineParser句法分析器的计算过程中，BiLSTM编码层、双仿射得分层和MST解码层分别产生了大量不同形式的句法信息.
-如图\ref{fig:syntax-information}所示，BiaffineParser通过多层BiLSTM编码输入的句子，
-输出每个词的隐状态向量$\mathbf{h}_1^{(l)}\mathbf{h}_2^{(l)}\cdots \mathbf{h}_n^{(l)}$ （ $\mathbf{h}_n^{(l)}$表示词$w_n$在第$l$层BiLSTM的输出）.  隐状态$\mathbf{h}_1^{(l)}\mathbf{h}_2^{(l)} \cdots \mathbf{h}_n^{(l)}$蕴含了大量隐晦的句法信息，我们把这种神经向量形式的句法信息称为\textbf{句法感知隐状态}（Syntax-aware Hidden States）.
-%如图xx所示，BiaffineParser通过多层BiLSTM编码句子. 编码层输出的隐状态$\mathbf{h}_1^{(l)},\mathbf{h}_2^{(l)},\cdots,\mathbf{h}_n^{(l)}$ （ $\mathbf{h}_n^{(l)}$表示词$w_n$在第$l$层BiLSTM的输出）蕴含了大量隐晦的句法信息，我们把它叫做句法感知的隐状态.
+在BiaffineParser句法分析器的计算过程中，双向LSTM编码层、双仿射得分层和MST解码层分别产生了大量不同形式的句法信息.
+如图\ref{fig:syntax-information}所示，BiaffineParser通过多层双向LSTM编码输入的句子，
+输出每个词的隐状态向量$\mathbf{h}_1^{(l)}\mathbf{h}_2^{(l)}\cdots \mathbf{h}_n^{(l)}$ （ $\mathbf{h}_n^{(l)}$表示词$w_n$在第$l$层双向LSTM的输出）.  隐状态$\mathbf{h}_1^{(l)}\mathbf{h}_2^{(l)} \cdots \mathbf{h}_n^{(l)}$蕴含了大量隐晦的句法信息，我们把这种神经向量形式的句法信息称为\textbf{句法感知隐状态}（Syntax-aware Hidden States）.
+%如图xx所示，BiaffineParser通过多层双向LSTM编码句子. 编码层输出的隐状态$\mathbf{h}_1^{(l)},\mathbf{h}_2^{(l)},\cdots,\mathbf{h}_n^{(l)}$ （ $\mathbf{h}_n^{(l)}$表示词$w_n$在第$l$层双向LSTM的输出）蕴含了大量隐晦的句法信息，我们把它叫做句法感知的隐状态.
 
 然后，作为一个基于图的句法分析器，BiaffineParser采用双仿射（Biaffine）运算计算有向完全图中每条弧的得分. 由于任意弧的分数代表着两个词之间的句法依赖程度，因此带有分数的有向完全图（如图\ref{fig:syntax-information}所示，用邻接矩阵表示句法森林）蕴含了丰富的句法结构信息，相比于句法树结构，我们把它称为\textbf{句法森林}.
 %然后，作为基于图的句法分析模型，BiaffineParser采用双仿射运算计算有向完全图中每条弧的得分. 由于任意弧的分数代表着两个词之间的句法依赖程度，因此带有分数的有向完全图中蕴含了丰富的句法结构信息，我们把它叫做\textbf{句法森林}.
@@ -173,11 +173,11 @@ BiaffineParser是由Dozat和Manning（2017）\upcite{dozat2017deep}提出的基�
 
 \section{基于级联方式的句法增强方法}
 \label{sec:orl_pipeline}
-%上一节，我们介绍并比较了BiaffineParser模型中蕴含的不同形式的句法信息（句法隐状态，句法森林和句法树）以及基于BiLSTM-CRF的ORL模型结构. 本节我们将介绍不同的编码方法，将上述三种句法信息融入到ORL模型中. 值得注意的是，本节采用级联的方式融合句法信息，即三种句法信息均是从一个预先训练好的BiaffineParser中获取的.
+%上一节，我们介绍并比较了BiaffineParser模型中蕴含的不同形式的句法信息（句法隐状态，句法森林和句法树）以及基于双向LSTM-CRF的ORL模型结构. 本节我们将介绍不同的编码方法，将上述三种句法信息融入到ORL模型中. 值得注意的是，本节采用级联的方式融合句法信息，即三种句法信息均是从一个预先训练好的BiaffineParser中获取的.
 
-上一节介绍了基于BiLSTM-CRF的ORL模型，指出并比较了BiaffineParser句法分析器中蕴含的不同形式的句法信息(句法感知隐状态、句法森林和句法树).
-本节将介绍不同的编码方法表示句法信息，并融入到基于BiLSTM-CRF的ORL模型中.
-如图\ref{fig:orl_pipeline}所示，为了清晰地展示融合三种形式的句法信息的模型结构，我们利用ORL模型的简图进行解释说明. 其中“Input”、“Encoder”和“Decoder”分别对应ORL模型的输入层、BiLSTM编码层和CRF预测层，“DEP Encoder”是训练好的BiaffineParser的BiLSTM编码层.
+上一节介绍了基于双向LSTM-CRF的ORL模型，指出并比较了BiaffineParser句法分析器中蕴含的不同形式的句法信息(句法感知隐状态、句法森林和句法树).
+本节将介绍不同的编码方法表示句法信息，并融入到基于双向LSTM-CRF的ORL模型中.
+如图\ref{fig:orl_pipeline}所示，为了清晰地展示融合三种形式的句法信息的模型结构，我们利用ORL模型的简图进行解释说明. 其中“Input”、“Encoder”和“Decoder”分别对应ORL模型的输入层、双向LSTM编码层和CRF预测层，“DEP Encoder”是训练好的BiaffineParser的双向LSTM编码层.
 值得注意的是，三种句法信息均是从预先训练好的BiaffineParser句法分析器中获取的，是一种级联的句法应用方式.
 
 \begin{figure}[hb!]
@@ -228,7 +228,7 @@ Kipf和Welling（2016）\upcite{kipf2016semi}提出了一种通用的编码图�
 其中$\mathbf{W}^{(l)}$和$\mathbf{b}^{(l)}$是第$l$层GCN的模型参数， $\mathbf{h}_i^{(l)}$表示词$w_i$在第$l$层GCN的输出， $\mathbf{h}_i^{(0)}$是第一层GCN的输入， $\mathbf{A}_{ij}$是邻接矩阵$\mathbf{A}$里用来表示节点$i$和节点$j$之间连接关系的取值， $F$是激活函数（这里选用sigmoid函数）.
 
 如图\ref{fig:orl_pipeline}-(b)所示，本文采用3层GCN来编码句法森林信息，称为GCNForest方法.
-我们将GCN层堆叠在BiLSTM层之上，把顶层BiLSTM的输出作为GCN的输入$h_i^0$，并且把句法森林作为邻接矩阵$A$.
+我们将GCN层堆叠在双向LSTM层之上，把顶层双向LSTM的输出作为GCN的输入$h_i^0$，并且把句法森林作为邻接矩阵$A$.
 此外，参考Marcheggiani和Titov（2017）\upcite{marcheggiani2017encoding}，为了更好地编码句法信息，我们给每个节点添加一条自弧，即邻接矩阵$A$的主对角线取值为1. 否则，在多层GCN的计算下词本身的信息会不断被弱化. 最后，我们将GCN的输出作为CRF预测层的输入，模型的其他计算过程不变.
 
 %此外，densely 连接，残差连接.
@@ -271,7 +271,7 @@ Kipf和Welling（2016）\upcite{kipf2016semi}提出了一种通用的编码图�
 %对于自底向上的TreeLSTM，每个节点的隐状态输出 由该节点的输入和它所有孩子的隐状态计算得到. 计算过程如公式8所示. 对于自顶向下的TreeLSTM，和自底向上的TreeLSTM计算过程一样. 我们将词 在自底向上的TreeLSTM的输出 和在自顶向下的TreeLSTM的输出 拼接到一起，作为词 的双向TreeLST的输出.
 %
 %(8)
-如图\ref{fig:orl_pipeline}-(e)所示，整体来看，我们将双向TreeLSTM层堆叠在ORL模型的BiLSTM层上，然后将其输出的隐状态输入到CRF预测层. 模型的其他部分计算不变.
+如图\ref{fig:orl_pipeline}-(e)所示，整体来看，我们将双向TreeLSTM层堆叠在ORL模型的双向LSTM层上，然后将其输出的隐状态输入到CRF预测层. 模型的其他部分计算不变.
 
 相比于HeadEmb和GCNTree方法只使用局部的部分树的信息，我们通过BiTreeLSTM方法全局的编码了整棵句法树的信息.
 
@@ -283,7 +283,7 @@ Kipf和Welling（2016）\upcite{kipf2016semi}提出了一种通用的编码图�
 %并使用隐晦的句法感知隐状态和句法森林来缓解句法模型的错误带来的负面影响.
 但是级联方式会将句法模型带来的错误传递到ORL模型中.
 %虽然使用隐晦的句法隐状态和句法森林信息一定程度上可以缓解句法模型的错误带来的负面影响，但是没有从根本上解决级联方式的缺陷.
-如图\ref{fig:orl_mtl}所示，为了缓解句法的错误传递问题，本节使用多任务学习框架来同时训练句法模型和ORL模型. 和\ref{sec:orl_pipeline}节使用ORL模型的简图一样，本节也将BiaffineParser句法模型简化为“Input”、“Encoder”和“Decoder”层，分别对应BiaffineParser中的输入层、BiLSTM编码层和MST解码层.
+如图\ref{fig:orl_mtl}所示，为了缓解句法的错误传递问题，本节使用多任务学习框架来同时训练句法模型和ORL模型. 和\ref{sec:orl_pipeline}节使用ORL模型的简图一样，本节也将BiaffineParser句法模型简化为“Input”、“Encoder”和“Decoder”层，分别对应BiaffineParser中的输入层、双向LSTM编码层和MST解码层.
 
 \begin{figure}[hb!]
     %\vspace{-0.5em}
@@ -321,7 +321,7 @@ Kipf和Welling（2016）\upcite{kipf2016semi}提出了一种通用的编码图�
 %本文采用依存结构的PTB语料在BiaffineParser上训练一个句法模型，UAS/LAS为95.43%/93.92%. 实验中使用的句法信息（句法树，句法森林以及句法感知的隐状态）都由该模型产生.
 %本文使用的BERT预训练模型为“BERT-Base, uncased [7]”，基于Pytorch框架实现，由12层编码器，每一层隐状态输出的维度为768. 我们用最后一层的隐状态作为基于BERT的词表示.
 %3.3 参数设置
-%我们采用了文献[4-5]的网络参数设置. 具体的，我们使用了100维的glove预训练词向量[24]. 堆叠了三层BiLSTM，且输出维度为200，词向量和BiLSTM输出应用了0.33的dropout机制. 模型的优化方式采用Adam算法对参数进行更新和微调，初始学习率均为2e-5. 训练时采用批量训练的方法，且批量大小为50. 在训练集上每迭代一次，验证一下Dev集，最大迭代次数为40次. 然后根据Dev集上的最好模型来评估Test集.
+%我们采用了文献[4-5]的网络参数设置. 具体的，我们使用了100维的glove预训练词向量[24]. 堆叠了三层双向LSTM，且输出维度为200，词向量和双向LSTM输出应用了0.33的dropout机制. 模型的优化方式采用Adam算法对参数进行更新和微调，初始学习率均为2e-5. 训练时采用批量训练的方法，且批量大小为50. 在训练集上每迭代一次，验证一下Dev集，最大迭代次数为40次. 然后根据Dev集上的最好模型来评估Test集.
 
 \section{实验结果及分析}
 \subsection{实验设置}
@@ -335,7 +335,7 @@ Kipf和Welling（2016）\upcite{kipf2016semi}提出了一种通用的编码图�
 本文使用的BERT预训练模型为“BERT-Base, uncased”\upcite{devlin2018bert}，基于Pytorch框架实现，由12层编码器，每一层隐状态输出的维度为768. 我们用最后一层的隐状态作为基于BERT的词表示.
 
 \textbf{参数设置. }
-我们采用了Marasovi{\'c}和Frank（2017）\upcite{marasovic2017srl4orl}、Zhang等（2019）\upcite{zhang2019enhancing}的网络参数设置. 具体的，我们使用了100维的glove预训练词向量. 堆叠了三层BiLSTM，且输出维度为200，词向量和BiLSTM输出应用了dropout机制，dropout值为0.33. 模型采用Adam优化算法对参数进行更新和微调，初始学习率均为2e-5. 训练时采用批量训练的方法，且批量大小为50. 在训练集上每迭代一次，验证一下Dev集，最大迭代次数为40次. 然后根据Dev集上的最好模型来评估Test集.
+我们采用了Marasovi{\'c}和Frank（2017）\upcite{marasovic2017srl4orl}、Zhang等（2019）\upcite{zhang2019enhancing}的网络参数设置. 具体的，我们使用了100维的glove预训练词向量. 堆叠了三层双向LSTM，且输出维度为200，词向量和双向LSTM输出应用了dropout机制，dropout值为0.33. 模型采用Adam优化算法对参数进行更新和微调，初始学习率均为2e-5. 训练时采用批量训练的方法，且批量大小为50. 在训练集上每迭代一次，验证一下Dev集，最大迭代次数为40次. 然后根据Dev集上的最好模型来评估Test集.
 
 
 \subsection{基于级联方式融合句法信息的ORL模型性能}

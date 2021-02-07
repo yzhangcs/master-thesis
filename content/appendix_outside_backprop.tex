@@ -1,7 +1,7 @@
 \chapter{关于Outside算法以及反向传播机制等价性的推导}
 
 \section{Outside算法与反向传播机制的等价性证明}\label{sec:outside-backprop}
-我们可以直接用$\log Z$（partition term）对每个位置的分值$\mathrm{s}(i, j)$（log potential）求偏导
+我们可以直接用$\log Z(\boldsymbol{x})$（partition term）对每个位置的分值$\mathrm{s}(i, j)$（log potential）求偏导
 \begin{equation}
     \label{eq:partial-derivative}
     \begin{split}
@@ -9,7 +9,7 @@
         & =\frac{1}{Z} \cdot \frac{\partial \sum_{\boldsymbol{y}} \exp \left(\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) \right)}{\partial \mathrm{s}(i, j)}\\
         & =\frac{1}{Z} \cdot \frac{\partial \sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} \exp \left(\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) \right)}{\partial \mathrm{s}(i, j)}\\
         & =\frac{1}{Z} \cdot \frac{\sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} \exp \left( \sum_{(i^{\prime}, j^{\prime}) \in \boldsymbol{y}\setminus (i,j)} \mathrm{s}(i^{\prime}, j^{\prime}) \right)\cdot \partial \exp(\mathrm{s}(i, j))}{\partial \mathrm{s}(i, j)}\\
-        & =\sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} \frac{\exp \left( \sum_{(i^{\prime}, j^{\prime}) \in \boldsymbol{y}\setminus (i,j)} \mathrm{s}(i^{\prime}, j^{\prime})\right)\cdot \exp(s(i,j))}{Z}\\
+        & =\sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} \frac{\exp \left( \sum_{(i^{\prime}, j^{\prime}) \in \boldsymbol{y}\setminus (i,j)} \mathrm{s}(i^{\prime}, j^{\prime})\right)\cdot \exp(\mathrm{s}(i,j))}{Z}\\
         &= \sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} p(\boldsymbol{y}\mid\boldsymbol{x})\\
     \end{split}
 \end{equation}
@@ -31,14 +31,15 @@
 对句法分析,或其他结构化预测任务而言，通常我们采用的是最大后验概率（Maximum \textit{A Posteriori}, MAP）解码，即寻求一个使得后验概率最大化的答案.
 这是MBR解码的一个特例，而对应的代价函数$\ell^{MAP}(\cdot)$为一个简单的0-1指示函数，判断$\boldsymbol{y}$与$\boldsymbol{y}^{\prime}$是否一致
 \begin{equation}
-    \ell^{MAP}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = -\mathbbm{1}(\boldsymbol{y}=\boldsymbol{y}^{\prime})
+    \ell^{MAP}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = \mathbbm{1}(\boldsymbol{y}\neq\boldsymbol{y}^{\prime})
 \end{equation}
 代入到公式~\ref{eq:mbr}得到
 \begin{equation}
     \label{eq:map}
     \begin{split}
         \boldsymbol{y}^{MAP}&= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell^{MAP}(\boldsymbol{y},\boldsymbol{y}^{\prime})\\
-        &=\arg\max_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\mathbbm{1}(\boldsymbol{y}=\boldsymbol{y}^{\prime})\\
+        &=\arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\mathbbm{1}(\boldsymbol{y}\neq\boldsymbol{y}^{\prime})\\
+        &=\arg\min_{\boldsymbol{y}} 1-p(\boldsymbol{y}\mid\boldsymbol{x})\\
         &=\arg\max_{\boldsymbol{y}}p(\boldsymbol{y}\mid\boldsymbol{x})
     \end{split}
 \end{equation}
@@ -49,23 +50,25 @@
     \label{eq:map-dep}
     \begin{split}
         \boldsymbol{y}^{MAP}&=\arg\max_{\boldsymbol{y}}p(\boldsymbol{y}\mid\boldsymbol{x})\\
-        &=\arg\max_{\boldsymbol{y}}\frac{\sum_{(i,j)\in \boldsymbol{y}}s(i,j)}{Z(\boldsymbol{x})\equiv \sum_{\boldsymbol{y}^{\prime}}\sum_{(i^{\prime},j^{\prime})\in \boldsymbol{y}^{\prime}}s(i^{\prime},j^{\prime})}\\
-        &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in \boldsymbol{y}}s(i,j)
+        &=\arg\max_{\boldsymbol{y}}\frac{\sum_{(i,j)\in \boldsymbol{y}}\mathrm{s}(i,j)}{Z(\boldsymbol{x})\equiv \sum_{\boldsymbol{y}^{\prime}}\sum_{(i^{\prime},j^{\prime})\in \boldsymbol{y}^{\prime}}\mathrm{s}(i^{\prime},j^{\prime})}\\
+        &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in \boldsymbol{y}}\mathrm{s}(i,j)
     \end{split}
 \end{equation}
 去掉共同的分母，分子为对应句法树的分值，上式的含义是获取分值最大的句法树，这个目标可以通过常见的一些解码算法（如Eisner，MST等）达到.
 
 而对于MBR解码，我们定义代价函数为在每条弧上的指示函数，
 \begin{equation}
-    \ell^{MBR}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = -\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\mathbbm{1}(j=j^{\prime})
+    \ell^{MBR}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = \sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\mathbbm{1}(j\neq j^{\prime})
 \end{equation}
 代入到公式~\ref{eq:mbr}得到
 \begin{equation}
     \label{eq:mbr-dep}
     \begin{split}
         \boldsymbol{y}^{MBR}&= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell^{MBR}(\boldsymbol{y},\boldsymbol{y}^{\prime})\\
-        &=\arg\max_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\mathbbm{1}(j=j^{\prime})\\
-        &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\mathbbm{1}(j=j^{\prime})\\
+        &=\arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\mathbbm{1}(j\neq j^{\prime})\\
+        &=\arg\min_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\mathbbm{1}(j\neq j^{\prime})\\
+        &=\arg\min_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}:(i,j)\notin \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\\
+        &=\arg\min_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}\left(1-\sum_{\boldsymbol{y}^{\prime}:(i,j)\in \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\right)\\
         &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}:(i,j)\in \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\\
         &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}p(i\rightarrow j\mid\boldsymbol{x})
     \end{split}

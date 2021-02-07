@@ -4,7 +4,7 @@
 \begin{equation}\label{eq:posterior}
     P(\boldsymbol{y}) =\frac{\prod_{i=1}^{N} \phi(\boldsymbol{y}_i)}{Z:=\sum_{\boldsymbol{y}}\prod_{i=1}^{N} \phi(\boldsymbol{y}_i)}
 \end{equation}
-其中$Z$为partition term，我们定义未归一化的分布$\tilde{P}(\boldsymbol{y})=\prod_{i=1}^{N} \phi(\boldsymbol{y}_i)$，$\phi(\cdot)=\exp(s(\cdot))$
+其中$Z$为partition term，我们定义未归一化的分布$\tilde{P}(\boldsymbol{y})=\prod_{i=1}^{N} \phi(\boldsymbol{y}_i)$，$\phi(\cdot)=\exp(\mathrm{s}(\cdot))$
 
 变分推断建模一个近似分布$Q(\boldsymbol{y})$，并最小化与真实分布的KL散度（KL Divergence）
 \begin{equation}

@@ -1,0 +1,17 @@
+\begin{table}[tb]
+% \setlength{\tabcolsep}{7.4pt}
+\centering
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrr|ccc}
+\toprule
+       & \multirow{2}{*}{\#Train} & \multirow{2}{*}{\#Dev} & \multirow{2}{*}{\#Test} & \multicolumn{2}{c}{\#labels} \\
+       & & & & original & CNF \\[1pt]
+       \midrule
+       % \\[-8pt]
+PTB    &  39,832 & 1,700 &  2,416 & 26 &  138 \\
+CTB5.1 &  18,104 &   352 &    348 & 26 &  162 \\
+CTB7   &  46,572 & 2,079 &  2,796 & 28 &  265 \\
+\bottomrule
+\end{tabular*}
+\caption{Data statistics, including the number of sentences and constituent labels. For ``\#labels'', we list the number of labels in both original and converted CNF trees.}
+\label{table:statistics}
+\end{table}
