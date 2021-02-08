@@ -322,7 +322,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 我们在13个语言的27个数据集上进行了实验和分析，包含两个广泛使用的数据集：英语的斯坦福依存规范\cite{chen-manning-2014-fast}的宾州树库（Penn Treebank, PTB）和中文的CoNLL09数据\cite{hajic-etal-2009-conll}.
 
 我们还采用了公开于NLPCC19跨领域句法分析任务的中文数据集\cite{peng2019overview}，其中一共包含四个源领域和三个目标领域.
-方便起见，我们直接分别合并了四个领域的train/dev/test数据到更大的数据集.
+方便起见，我们直接分别合并了四个领域的Train/Dev/Test数据到更大的数据集.
 这些数据的一个特征是大部分句子都是基于主动学习的局部标注.
 
 最后，遵循\cite{ji-etal-2019-graph}和\cite{zhang-etal-2019-empirical}，我们在Universal Dependencies (UD) v2.2和v2.3上进行了实验.
@@ -363,7 +363,7 @@ $\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用
 
 \subsection{主要结果}
 
-表~\ref{table:dev-test}列出了dev和test数据上的结果.
+表~\ref{table:dev-test}列出了Dev和Test数据上的结果.
 两个数据上的结果趋势大部分是一致的.
 为了能够与前人的结果公平比较，我们只比较了不利用外部资源的工作，例如ELMo\cite{peters-etal-2018-deep}或BERT\cite{devlin-etal-2019-bert}.
 可以看到我们的基线模型\textsc{Loc}在PTB和CoNLL09相较于前人达到了最好的性能
@@ -380,8 +380,6 @@ $\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用
 
 \subsection{分析}
 \label{subsec:dep-analysis}
-
-%In the following, we conduct detailed analysis on the test data, in order to explore the advantages of structural learning and high-order information.
 
 \begin{figure*}[tb!]
     \centering
