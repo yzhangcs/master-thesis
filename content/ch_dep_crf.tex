@@ -23,7 +23,7 @@
 他们的工作表明引入二阶邻接兄弟子树的分值显著提高了性能。
 随后，\cite{wang-chang-2016-graph}和\cite{kiperwasser-goldberg-2016-simple}都建议使用双向LSTM作为编码器和，以及在一阶模型中利用minus-feature来对单条弧打分.
 这三个代表性方法都采用了全局的max-margin方法.
-\cite{Timothy-d17-biaffine}提出了一种强大而高效的Biaffine Parser，并在各种数据集和语言上获得了最先进的精度.
+\cite{dozat-etal-2017-biaffine}提出了一种强大而高效的Biaffine Parser，并在各种数据集和语言上获得了最先进的精度.
 Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head selection）的方式\cite{zhang-etal-2017-dependency-parsing}，采用了更简单、更有效的非结构化训练方法.
 
 基于这些对比，我们尝试在基于图的分析器的基础上，将前深度学习时代的一些方法与神经网络模型做一下连接.
@@ -58,7 +58,7 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 \section{基线模型}
 \label{sec:dep-basic-model}
 
-我们复现了当前最好的Biaffine Parser\cite{Timothy-d17-biaffine}，并在两方面对其做了修改：1) 用CharLSTM代替原来的词性embedding，2) 用一阶Eisner算法\cite{eisner-2000-iwptbook}代替原来的MST算法来进行投影树解码.
+我们复现了当前最好的Biaffine Parser\cite{dozat-etal-2017-biaffine}，并在两方面对其做了修改：1) 用CharLSTM代替原来的词性embedding，2) 用一阶Eisner算法\cite{eisner-2000-iwptbook}代替原来的MST算法来进行投影树解码.
 
 \subsection{打分方法}
 图~\ref{fig:dep-framework}展示了我们的打分架构，一共由四个部分组成.
@@ -85,7 +85,7 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 其中$\mathbf{r}_i^{h}$和$\mathbf{r}_i^{m}$是词$w_i$分别作为一条弧的头和修饰词的表示.
 
 \noindent\textbf{Biaffine打分器.}
-\cite{Timothy-d17-biaffine}首次提出通过biaffine attention计算一条依存弧$i \rightarrow j$的分值
+\cite{dozat-etal-2017-biaffine}首次提出通过biaffine attention计算一条依存弧$i \rightarrow j$的分值
 \begin{equation} \label{eq:biaffine}
     \mathrm{s}(i,j) =  \left[
         \begin{array}{c}
@@ -123,7 +123,7 @@ Biaffine Parser采用了一个简单的词级别非结构化损失函数，试�
 
 \subsection{依存标签处理}
 Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立的任务.
-这里为了方便我们采取了相同的策略. 具体细节可以参考\cite{Timothy-d17-biaffine}.
+这里为了方便我们采取了相同的策略. 具体细节可以参考\cite{dozat-etal-2017-biaffine}.
 
 \begin{figure}[tb]
     \centering
@@ -265,7 +265,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 接着，我们在GPU上通过高效的大规模张量并行操作来同时进行计算和归并.
 我们还可以以类似的方式来批次化解码算法，这里省略细节.
 
-值得注意的是，这里描述的技术同样可以在其他形式的文法里应用，比如CKY算法形式的成分句法分析\cite{finkel-etal-2008-efficient,drozdov-etal-2019-unsupervised-latent}.
+值得注意的是，这里描述的技术同样可以在其他形式的文法里应用，比如CKY算法形式的成分句法分析\cite{finkel-etal-2008-efficient,drozdov-etal-2019-unsupervised}.
 具体在章节~\ref{cha:con-crf}中描述.
 
 \subsection{Outside算法的替代：反向传播}
@@ -287,7 +287,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 作为一个有吸引力的研究方向，很多研究证明构建或者收集局部标注数据很有效\cite{nivre-etal-2014-squibs,hwa-99-partial-annotation,pereira-92-inside-outside}，在依存句法分析中，一个句子可以关联一个局部标注树.
 当结合主动学习（active learning）时，局部标注可以发挥更大的作用，由于只需要标注部分较难的子树结构，这样可以极大减轻标注者的标注负担.
 \cite{li-etal-2016-active}中有关于这部分的详细调研.
-此外，\cite{peng2019overview}最近基于这方面的研究公开了一个局部标注的多领域中文树库.
+此外，\cite{peng-etal-2019-overview}最近基于这方面的研究公开了一个局部标注的多领域中文树库.
 
 那么问题就变成了如何利用局部标注数据来训练模型.
 \cite{li-etal-2016-active}基于这个目的提出扩展TreeCRF到局部标注场景，并在非神经网络模型上取得了不错的效果.
@@ -321,7 +321,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 \noindent\textbf{数据.}
 我们在13个语言的27个数据集上进行了实验和分析，包含两个广泛使用的数据集：英语的斯坦福依存规范\cite{chen-manning-2014-fast}的宾州树库（Penn Treebank, PTB）和中文的CoNLL09数据\cite{hajic-etal-2009-conll}.
 
-我们还采用了公开于NLPCC19跨领域句法分析任务的中文数据集\cite{peng2019overview}，其中一共包含四个源领域和三个目标领域.
+我们还采用了公开于NLPCC19跨领域句法分析任务的中文数据集\cite{peng-etal-2019-overview}，其中一共包含四个源领域和三个目标领域.
 方便起见，我们直接分别合并了四个领域的Train/Dev/Test数据到更大的数据集.
 这些数据的一个特征是大部分句子都是基于主动学习的局部标注.
 
@@ -339,7 +339,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 我们采用了Dan Bikel的随机解析评价比较器来进行显著性检验.
 
 \noindent\textbf{参数设置.}
-我们直接采用了\cite{Timothy-d17-biaffine}的大部分参数设置，包含Dropout和初始化策略.
+我们直接采用了\cite{dozat-etal-2017-biaffine}的大部分参数设置，包含Dropout和初始化策略.
 对于CharLSTM，和\cite{lample-etal-2016-neural}一样，输入字向量的维度是50，输出向量的维度是100.
 对于二阶模型，我们设置$\mathbf{r}^{h'/s/m'}_i$的维度为100（进一步提升到300带来的提升很小）.
 我们训练模型最多1,000次迭代，并且如果在dev上的性能连续100次不提升那就停止训练.
@@ -347,7 +347,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 \noindent\textbf{模型.}
 \textsc{Loc}使用了局部交叉熵训练损失函数，并且解码时使用Eisner算法来获取最优的投影树.
 \textsc{Crf}和\textsc{Crf2o}各自代表一阶和二阶TreeCRF模型.
-$\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用和\cite{Timothy-d17-biaffine}一样的MST算法输出非投影树.
+$\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用和\cite{dozat-etal-2017-biaffine}一样的MST算法输出非投影树.
 
 \subsection{效率比较}
 
