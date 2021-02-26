@@ -1,0 +1,92 @@
+
+\documentclass{article}
+\usepackage{pgfplots}
+\usepackage{tikz-dependency}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[labelformat = empty]{caption}
+\usepackage{floatrow}
+\thispagestyle{empty}
+\pgfplotsset{compat=1.9}
+\usepgflibrary{arrows.meta}
+\usetikzlibrary{fit}
+
+
+\begin{document}
+
+\begin{tikzpicture}[
+  dep arrow/.style={
+  arrows = {-Latex[round,open,length=8pt,width=6pt]},
+  shorten >= 3pt,
+  shorten <= 3pt,
+  thick
+  },
+  dot/.style={
+      inner sep=0pt,
+      circle,
+      draw=none
+    },
+  label/.style={
+      anchor=base,
+    },
+  line/.style={
+      line join=round,
+      fill=none,
+      % fill={rgb,255:red,76; green,114; blue,176},
+      % draw={rgb,255:red,76; green,114; blue,176},
+      % draw opacity=0.6,
+      % fill opacity=0.1,
+      rounded corners=1pt,
+      thick
+    }]
+
+  \begin{scope}
+    \node [dot] (i) {};
+    \node [dot] (j) at ($(i) + (2.0cm, 0)$) {};
+
+    \node [label] (i_label) at ($(i) + (0, -0.4cm)$) {$i$};
+    \node [label] at ($(j) + (0, -0.4cm)$) {$j$};
+    \node [dot, draw=none] (j') at ($(j) + (0, 0.8cm)$) {};
+    \filldraw [line] ($(i)$) -- ($(j)$) -- ($(j) + (0, 0.6cm)$) -- ($(i) + (0, 0.8cm)$) -- cycle;
+    \draw [dep arrow] [out=50,in=140] ($(i)$) to ($(j)$);
+    \node (placeholder_b) [draw=none, fit=(i) (j) (j')] {};
+  \end{scope}
+
+  \begin{scope}[xshift=3.2cm, yshift=0.8cm]
+    \node [dot] (i) {};
+    \node [dot] (i_1) at ($(i) + (0.4cm, 0)$) {};
+    \node [dot] (j) at ($(i_1) + (1.6cm, 0)$) {};
+
+    \node [label] at ($(i) + (0, -0.4cm)$) {$i$};
+    \node [label] at ($(i_1) + (0.2cm, -0.4cm)$) {$i+1$};
+    \node [label] at ($(j) + (0, -0.4cm)$) {$j$};
+    \node [dot, draw=none] (j') at ($(j) + (0, 0.8cm)$) {};
+    \filldraw [line] {[rounded corners=1pt] ($(i) + (0cm, 0.8cm)$) -- ($(i) + (0.25cm, 0)$) -- ($(i)$)} -- cycle;
+    \filldraw [line] ($(i_1)$) -- ($(j)$) -- ($(j) + (0, 0.6cm)$) -- cycle;
+  \end{scope}
+
+  \begin{scope}[xshift=3.2cm, yshift=-0.6cm]
+    \node [dot] (i) {};
+    \node [dot] (r) at ($(i) + (0.8cm, 0)$) {};
+    \node [dot] (j) at ($(i) + (2cm, 0)$) {};
+
+    \node [label] (i_label) at ($(i) + (0, -0.4cm)$) {$i$};
+    \node [label] at ($(r) + (0, -0.4cm)$) {$r$};
+    \node [label] at ($(j) + (0, -0.4cm)$) {$j$};
+    \node [dot, draw=none] at ($(j) + (0, 0.8cm)$) {};
+    \filldraw [line] ($(i)$) -- ($(r) + (-0.1cm, 0)$) -- ($(r) + (-0.1cm, 0.6cm)$) -- ($(i) + (0, 0.8cm)$) -- cycle;
+    \filldraw [line] ($(r) + (0.1cm, 0)$)  -- ($(j)$) -- ($(j) + (0, 0.6cm)$) -- ($(r) + (0.1cm, 0.6cm)$) -- cycle;
+    \draw [dep arrow] [out=80,in=115,looseness=2] ($(i) + (0.04cm, 0)$) to ($(r) + (-0.1cm, 0)$);
+  \end{scope}
+  \node (placeholder_a) [draw=none, fit=(i) (j')] {};
+
+  \node at ($(placeholder_a)!0.5!(placeholder_b)$) {$\Leftarrow$};
+  \node at ($(placeholder_b) + (-1.8cm,0) $) {$I_{i, j}:$};
+  % \node at ($(placeholder_b) + (-3cm,0) $) {$(\mathrm{a})$};
+\end{tikzpicture}
+
+\end{document}

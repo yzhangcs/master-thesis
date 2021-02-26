@@ -14,7 +14,7 @@
 
         \FOR [span width]{$w = 1$ \TO $n$}
         \STATE \textbf{Batchify:} $0 \le i$; $j=i+w \le n$
-        \STATE $I_{i, j} = \log\left(\exp\left(C_{i, i}  +  C_{j, i+1}\right) ~ +\sum\limits_{i < r < j} \exp\left(I_{i, r} + S_{r, j}+ \mathrm{s}(i, r, j)\right)\right) + \mathrm{s}(i, j)$
+        \STATE $I_{i, j} = \log\left(\exp\left(C_{i, i}  +  C_{j, i+1}\right) ~ +\sum\limits_{i < r < j} \exp\left(I_{i, r} + S_{r, j}+ \mathrm{s}(i\rightarrow \{r,j\})\right)\right) + \mathrm{s}(i\rightarrow j)$
         \STATE $S_{i, j} = \log \sum\limits_{i \le r < j} \exp\left(C_{i, r}  +  C_{j, r+1}\right) $ \\
         \STATE $C_{i, j} = \log \sum\limits_{i < r \le j} \exp\left(I_{i, r}  +  C_{r, j}\right)  $ \\
         \ENDFOR \COMMENT{refer to Fig.~\ref{fig:eisner-2o}}
