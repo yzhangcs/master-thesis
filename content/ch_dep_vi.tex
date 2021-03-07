@@ -109,27 +109,39 @@
     \begin{subfigure}[b]{0.8\textwidth}
         \centering
         \includegraphics[scale=1]{figures/dep-factors.pdf}
-        \caption{依存句法对应的因子图}
+        \caption{依存句法模型的因子图}
         \label{fig:con-factors}
     \end{subfigure}
     \begin{subfigure}[b]{0.8\textwidth}
         \centering
         \includegraphics[scale=1]{figures/con-factors.pdf}
-        \caption{成分句法对应的因子图}
+        \caption{成分句法模型的因子图}
         \label{fig:dep-factors}
     \end{subfigure}
-    \caption{一个例句和其对应的因子图，包含四个词以及根结点，句子下方标出了对应的正确无标签依存树. 灰色的圆圈代表被屏蔽的弧.
-        图中标出了所有的一阶（红色）因子，为了简洁起见，对于二阶因子，我们只标出了涉及弧$2\rightarrow 3$的兄弟（绿色）和祖父（蓝色）因子.}
+    \caption{一个例句和其依存/成分句法模型对应的因子图.
+        灰色虚线圆圈代表被屏蔽的变量.
+        图中标出了所有的一阶（红色）因子，为了简洁起见，对于二阶因子，依存句法图中我们只标出了涉及弧$3\rightarrow 4$的兄弟（绿色）因子，成分句法图中只标出了和组块$(3, 4)$连接的二阶（蓝色）因子.}
     \label{fig:dep-vi-factors}
 \end{figure}
 
+
 \begin{figure}[tb]
     \centering
-    \includegraphics[scale=0.22]{figures/iters.jpg}
-    \caption{（暂时填充）一个例句迭代的样例.}
-    \label{fig:dep-vi-iters}
+    \begin{subfigure}[b]{0.9\textwidth}
+        \centering
+        \includegraphics[scale=0.75]{figures/dep-probs.pdf}
+        \caption{成分句法树每个位置对应的分值和后验概率}
+        \label{fig:con-factors}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.9\textwidth}
+        \centering
+        \includegraphics[scale=0.75]{figures/con-probs.pdf}
+        \caption{成分句法树每个位置对应的分值和后验概率}
+        \label{fig:dep-factors}
+    \end{subfigure}
+    \caption{一个例句对应的依存句法模型和成分句法模型的输出. 左边的图是每个位置的分值（log potential），右边的图是变分推断得到的后验概率. 灰色虚线圆圈代表被屏蔽的不合法位置，颜色的深浅反应了分值/概率的大小.}
+    \label{fig:dep-vi-factors}
 \end{figure}
-
 
 \section{实验}\label{sec:dep-vi-exp}
 
