@@ -76,11 +76,11 @@
 
 \noindent\textbf{平均场变分推断}
 
-\noindent\textbf{循环置信传播}
-
 \subsection{训练}
 
 \subsection{解码}
+
+\subsection{复杂度分析}
 
 \section{实验}\label{sec:dep-vi-exp}
 
@@ -103,6 +103,33 @@
     \end{array}
     \right.
 \end{equation}
+
+\begin{figure}[tb]
+    \centering
+    \begin{subfigure}[b]{0.8\textwidth}
+        \centering
+        \includegraphics[scale=1]{figures/dep-factors.pdf}
+        \caption{依存句法对应的因子图}
+        \label{fig:con-factors}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.8\textwidth}
+        \centering
+        \includegraphics[scale=1]{figures/con-factors.pdf}
+        \caption{成分句法对应的因子图}
+        \label{fig:dep-factors}
+    \end{subfigure}
+    \caption{一个例句和其对应的因子图，包含四个词以及根结点，句子下方标出了对应的正确无标签依存树. 灰色的圆圈代表被屏蔽的弧.
+        图中标出了所有的一阶（红色）因子，为了简洁起见，对于二阶因子，我们只标出了涉及弧$2\rightarrow 3$的兄弟（绿色）和祖父（蓝色）因子.}
+    \label{fig:dep-vi-factors}
+\end{figure}
+
+\begin{figure}[tb]
+    \centering
+    \includegraphics[scale=0.22]{figures/iters.jpg}
+    \caption{（暂时填充）一个例句迭代的样例.}
+    \label{fig:dep-vi-iters}
+\end{figure}
+
 
 \section{实验}\label{sec:dep-vi-exp}
 

@@ -1,0 +1,94 @@
+\documentclass{standalone} % DO NOT CHANGE THIS
+\usepackage{tikz}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{times}
+\usepackage{amssymb}
+\usetikzlibrary[arrows.meta, positioning,math, calc, shapes.geometric,intersections, fit, backgrounds, decorations.pathmorphing]
+
+\begin{document}
+
+\begin{tikzpicture}[
+        word/.style={
+                minimum width=1.5cm,
+                minimum height=1.5cm,
+                inner sep=0pt,
+                text width=1.5cm,
+                % draw=black
+            },
+        red filled/.style={
+                fill={rgb,255:red,238; green,63; blue,77},
+            },
+        blue filled/.style={
+                fill={rgb,255:red,17; green,101; blue,154},,
+            },
+        red connect/.style={
+                draw={rgb,255:red,238; green,63; blue,77},
+                shorten >= 1pt,
+                shorten <= 1pt,
+                semithick
+            },
+        blue connect/.style={
+                draw={rgb,255:red,17; green,101; blue,154},
+                shorten >= 1pt,
+                shorten <= 1pt,
+                semithick
+            },
+        connect/.style={
+                shorten >= -0.5pt,
+                shorten <= 1pt,
+            },
+    ]
+    \centering
+
+    \node [word] [anchor=north west] (w00) {};
+    \node [word] [anchor=south, align=right] (w01) at ($(w00.north) + (0, 6cm)$) {She$_1$};
+    \node [word] [anchor=south, align=right] (w02) at ($(w00.north) + (0, 4.5cm)$) {enjoys$_2$};
+    \node [word] [anchor=south, align=right] (w03) at ($(w00.north) + (0, 3.0cm)$) {playing$_3$};
+    \node [word] [anchor=south, align=right] (w04) at ($(w00.north) + (0, 1.5cm)$) {tennis$_4$};
+    \node [word] [anchor=south, align=right] (w05) at ($(w00.north) + (0, 0.0cm)$) {.$_5$};
+    \node [word] [anchor=north west, text centered, minimum height=0.6cm] (w10) at ($(w00.north east) + (0.0cm, 0)$) {She$_1$};
+    \node [word] [anchor=north west, text centered, minimum height=0.6cm] (w20) at ($(w00.north east) + (1.5cm, 0)$) {enjoys$_2$};
+    \node [word] [anchor=north west, text centered, minimum height=0.6cm] (w30) at ($(w00.north east) + (3.0cm, 0)$) {playing$_3$};
+    \node [word] [anchor=north west, text centered, minimum height=0.6cm] (w40) at ($(w00.north east) + (4.5cm, 0)$) {tennis$_4$};
+    \node [word] [anchor=north west, text centered, minimum height=0.6cm] (w50) at ($(w00.north east) + (6.0cm, 0)$) {.$_5$};
+
+
+    \foreach \y in {1,...,5}
+    \foreach \x in {\y,...,5} {
+            \pgfmathtruncatemacro{\label}{\x*10 + \y}
+            \node [circle,draw=black,semithick,inner sep=0pt,minimum size=0.4cm]  (w\x\y) at ($(w00.base) + (1.5cm*\x,9cm-1.5cm*\y)$) {};
+            \node [red filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm]  (f\x\y) at ($(w\x\y) - (0, 0.42cm)$) {};
+            \draw[red connect,thick,connect] (w\x\y.south) -- (f\x\y.north);
+        }
+    \foreach \x in {1,...,4}{
+            \pgfmathtruncatemacro{\n}{\x + 1}
+            \foreach \y in {\n,...,5}
+                {\pgfmathtruncatemacro{\label}{\x*10 + \y}
+                    \node [circle,draw=gray, densely dashed ,semithick,minimum size=0.4cm]  (w\x\y) at ($(w00.base) + (1.5cm*\x,9cm-1.5cm*\y)$) {};}
+        }
+    \node [circle,draw=none,fill=black, inner sep=0pt, minimum height=0.32cm] at (w42) {};
+    % \node [circle,draw=black,fill=black] at (w42) {};
+    \draw[blue connect] (w32.east) -- (w42.west) node[midway,blue filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {};
+    % \draw[blue] (w22.east) .. controls (w32.north) and (w42.west) ..node[midway,fill=blue,minimum size=0.02cm] {};
+    \draw[blue connect] (w22) to [out=30, in=150] node[midway,blue filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {} (w42) ;
+
+
+    % \node [] (c44) at ($(w40.center)-(0,0.6cm)$) {};
+    % \node [] (c34) at ($(w30.center)!0.5!(w40.center)-(0,0.8cm)$) {};
+    % \node [] (c24) at ($(w20.center)!0.5!(w40.center)-(0,1.2cm)$) {};
+    % \node [] (c25) at ($(w20.center)!0.5!(w50.center)-(0,1.4cm)$) {};
+    % \node [] (c15) at ($(w10.center)!0.5!(w50.center)-(0,1.6cm)$) {};
+    % \draw[] ($(w10.center)-(0,0.3cm)$) -- (c15.north) -- (c25.north)-- ($(w50.center)-(0,0.3cm)$);
+    % \draw[] ($(w20.center)-(0,0.3cm)$) -- (c24.north) -- (c25.north);
+    % \draw[] ($(w30.center)-(0,0.3cm)$) -- (c34.north) -- (c44.north);
+    % \draw[] (c24.north) -- (c34.north);
+    % \draw[] (c44.north) -- ($(w40.center)-(0,0.3cm)$);
+
+    \node [red filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] (unary) at ($(w10.north)-(0,1.2cm)$) {};
+    \node [anchor=west] (unary-text) at ($(unary.east)$) {Unary factor};
+    \node [blue filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] (binary) at ($(w30.north)-(0cm,1.2cm)$) {};
+    \node [anchor=west] (binary-text) at ($(binary.east)$) {Binary factor};
+\end{tikzpicture}
+\end{document}
+
