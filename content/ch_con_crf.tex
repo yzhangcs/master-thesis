@@ -76,7 +76,7 @@
 根据前置实验，我们在二叉化原始树的时候，采用了左二叉.
 在用CKY解码获得一棵最佳的树之后，CNF树会被恢复为原来的\textit{n}-ary形式.
 
-\subsection{模型定义}\label{sub@sec:model-definition}
+\subsection{模型定义}\label{sub@sec:con-crf-model-definition}
 
 在本章中，我们对成分句法分析采用了一个两阶段的解析框架bracketing-then-labeling.
 这与传统的一阶段解析方法\cite{stern-etal-2017-minimal,gaddy-etal-2018-whats}相比，不仅简化了模型架构，同样也提升了效率.
@@ -324,7 +324,7 @@ CharLSTM里自向量、词向量以及CharLSTM输出向量的维度分别为50�
   \mathrm{s}(\boldsymbol{x},\boldsymbol{y},\boldsymbol{l}) =
   \sum_{(i,j),l \in (\boldsymbol{y}, \boldsymbol{l})} \mathrm{s}((i,j),l)
 \end{equation}
-如章节\ref{sub@sec:model-definition}的最后一段所讨论的，一阶段解析的Inside算法和CKY算法相比于两阶段解析要复杂一点.
+如章节\ref{sub@sec:con-crf-model-definition}的最后一段所讨论的，一阶段解析的Inside算法和CKY算法相比于两阶段解析要复杂一点.
 
 从表格的前两行我们可以看到，在一阶段解析的框架下，CRF损失函数在英语上带来了相似的结果，但是在中文数据集上稳定超过Max Margin方法0.5的F值.
 Max Margin方法由额外的超参数，即margin值，该值根据在英语上调整的结果为1，并且为了方便没有在中文上进一步调整.
@@ -383,7 +383,7 @@ Berkeley Parser和ZPar是两个最具代表性的非神经网络的解析器，�
 但是他们的结果还很差，如表~\ref{table:con-test}所示.
 
 两阶段解析器相比于一阶段解析器要快大约10\%.
-相比于我们之前讨论的时间复杂度差异（参考章节~\ref{sub@sec:model-definition}），这个差距显得似乎不是特别明显.
+相比于我们之前讨论的时间复杂度差异（参考章节~\ref{sub@sec:con-crf-model-definition}），这个差距显得似乎不是特别明显.
 一个利用是这两种解析器都共享了相同的编码和打分组块，这可能占用了解析的大部分时间.
 
 使用MBR解码额外需要运行一次Inside算法和反向传播来计算边缘概率，因此相对来说效率要差一些.

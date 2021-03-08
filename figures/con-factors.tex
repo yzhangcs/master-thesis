@@ -67,23 +67,31 @@
                 {\pgfmathtruncatemacro{\label}{\x*10 + \y}
                     \node [circle,draw=gray, densely dashed ,semithick,minimum size=0.4cm]  (w\x\y) at ($(w00.base) + (1.5cm*\x,-1.5cm*\y)$) {};}
         }
-    \node [circle,draw=none,fill=black, inner sep=0pt, minimum height=0.32cm] at (w42) {};
+    \node [circle,draw=none,fill=black, inner sep=0pt, minimum height=0.32cm] at (w43) {};
     % \node [circle,draw=black,fill=black] at (w42) {};
-    \draw[blue connect] (w32.east) -- (w42.west) node[midway,blue filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {};
-    % \draw[blue] (w22.east) .. controls (w32.north) and (w42.west) ..node[midway,fill=blue,minimum size=0.02cm] {};
-    \draw[blue connect] (w22) to [out=30, in=150] node[midway,blue filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {} (w42) ;
+    \draw[blue connect] (w33) -- (w43) node[midway,blue filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {};
+    \draw[blue connect] (w43) -- (w53) node[midway,blue filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {};
+    % \draw[blue connect] (w33) to [out=30, in=150] node[midway,blue filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {} (w53) ;
 
 
+    \node [] (c11) at ($(w10.center)+(0,0.6cm)$) {};
+    \node [] (c22) at ($(w20.center)+(0,0.6cm)$) {};
+    \node [] (c33) at ($(w30.center)+(0,0.6cm)$) {};
     \node [] (c44) at ($(w40.center)+(0,0.6cm)$) {};
+    \node [] (c55) at ($(w50.center)+(0,0.6cm)$) {};
     \node [] (c34) at ($(w30.center)!0.5!(w40.center)+(0,0.8cm)$) {};
-    \node [] (c24) at ($(w20.center)!0.5!(w40.center)+(0,1.2cm)$) {};
-    \node [] (c25) at ($(w20.center)!0.5!(w50.center)+(0,1.4cm)$) {};
-    \node [] (c15) at ($(w10.center)!0.5!(w50.center)+(0,1.6cm)$) {};
-    \draw[semithick] ($(w10.center)+(0,0.3cm)$) -- (c15.south) -- (c25.south)-- ($(w50.center)+(0,0.3cm)$);
-    \draw[semithick] ($(w20.center)+(0,0.3cm)$) -- (c24.south) -- (c25.south);
-    \draw[semithick] ($(w30.center)+(0,0.3cm)$) -- (c34.south) -- (c44.south);
-    \draw[semithick] (c24.south) -- (c34.south);
+    \node [] (c24) at ($(w20.center)!0.5!(w40.center)+(0,1.0cm)$) {};
+    \node [] (c14) at ($(w10.center)!0.5!(w40.center)+(0,1.2cm)$) {};
+    \node [] (c15) at ($(w10.center)!0.5!(w50.center)+(0,1.4cm)$) {};
+    \draw[semithick] ($(w10.center)+(0,0.3cm)$) -- (c11.south) -- (c14.south) -- (c15.south) -- (c55.south) -- ($(w50.center)+(0,0.3cm)$);
+    \draw[semithick] ($(w30.center)+(0,0.3cm)$) -- (c33.south) -- (c34.south) -- (c44.south);
+    \draw[semithick] (c14.south) -- (c24.south);
+    \draw[semithick] (c22.south) -- (c24.south) -- (c34.south);
+    \draw[semithick] (c11.south) -- ($(w10.center)+(0,0.3cm)$);
+    \draw[semithick] (c22.south) -- ($(w20.center)+(0,0.3cm)$);
+    \draw[semithick] (c33.south) -- ($(w30.center)+(0,0.3cm)$);
     \draw[semithick] (c44.south) -- ($(w40.center)+(0,0.3cm)$);
+    \draw[semithick] (c55.south) -- ($(w50.center)+(0,0.3cm)$);
 
     \node [red filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] (unary) at ($(w15.north)-(0,1.2cm)$) {};
     \node [anchor=west] (unary-text) at ($(unary.east)$) {Unary factor};

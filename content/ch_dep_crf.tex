@@ -29,8 +29,8 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 基于这些对比，我们尝试在基于图的分析器的基础上，将前深度学习时代的一些方法与神经网络模型做一下连接.
 这里要解决的\textbf{第一个问题}是:
 \emph{以前的一些技术，比如结构化学习和高阶建模，能够进一步提升当前最佳的分析器Biaffine Parser的性能吗\footnote{
-    尽管最近的一些工作汇报了相比Biaffin Parser更高的性能，但是都引入了一些外部资源，比如大规模语言模型的上下文词表示. 在相同网络和相同实验设置的场景下，这些工作的结果都是相近的.
-  }，如果可以，他们在哪些方面是有用的？}
+        尽管最近的一些工作汇报了相比Biaffin Parser更高的性能，但是都引入了一些外部资源，比如大规模语言模型的上下文词表示. 在相同网络和相同实验设置的场景下，这些工作的结果都是相近的.
+    }，如果可以，他们在哪些方面是有用的？}
 
 对于结构化学习而言，相比Max Margin方法，我们采用更复杂且更不常用的TreeCRF.
 主要原因有两方面.
@@ -47,12 +47,12 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 
 总体而言，针对上面的两个问题，我们做了下面的几个贡献：
 \begin{itemize}%[leftmargin=10pt,topsep=3pt,itemsep=1pt，partopsep=1pt]
-  \item 我们第一次提出了将二阶TreeCRF应用到神经依存句法分析中.
-        我们还提出了一个高效的Triaffine结构来对于二阶子树打分.
-  \item 我们提出通过GPU上大规模的并行张量计算来批次化inside算法，来进行更高效的TreeCRF损失函数的计算.
-        我们表明复杂的outside算法对于梯度和边缘概率的计算而言已不再必须，相应的可以用高效的反向传播代替.
-  \item 我们在13个语言的27个树库上进行了实验.
-        结果和分析都表明，深度学习时代的，结构化学习和高阶建模在许多方面对当前最好的Biaffine Parser仍然是有用的.
+    \item 我们第一次提出了将二阶TreeCRF应用到神经依存句法分析中.
+          我们还提出了一个高效的Triaffine结构来对于二阶子树打分.
+    \item 我们提出通过GPU上大规模的并行张量计算来批次化inside算法，来进行更高效的TreeCRF损失函数的计算.
+          我们表明复杂的outside算法对于梯度和边缘概率的计算而言已不再必须，相应的可以用高效的反向传播代替.
+    \item 我们在13个语言的27个树库上进行了实验.
+          结果和分析都表明，深度学习时代的，结构化学习和高阶建模在许多方面对当前最好的Biaffine Parser仍然是有用的.
 \end{itemize}
 
 \section{基线模型}
@@ -66,8 +66,8 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 \textbf{输入向量.}
 第$i$个输入向量可以分为两部分：词向量，以及词$w_i$的CharLSTM表示向量.
 \begin{equation}
-  \label{eq:input}
-  \mathbf{e}_i=\mathrm{emb}({w_i}) \oplus \mathrm{CharLSTM}(w_i)
+    \label{eq:input}
+    \mathbf{e}_i=\mathrm{emb}({w_i}) \oplus \mathrm{CharLSTM}(w_i)
 \end{equation}
 其中$\mathrm{CharLSTM}(w_i)$是由先将$w_i$输入到一个双向LSTM，然后拼接两个最后的隐向量获得\cite{lample-etal-2016-neural}.
 我们发现用$\mathrm{CharLSTM}(w_i)$替换原有的词性embedding会带来稳定的提升，并且也简化了实验流程，尤其是对于多语言实验恶言，无需再用到词性标注器来额外生成输入句子的词性.
@@ -79,68 +79,68 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 \noindent\textbf{MLP特征提取层.}
 两个共享的MLP层被应用到了$\mathbf{h}_i$上来获取相应的低维向量，通过这种方式只保留句法相关的信息
 \begin{equation}
-  \label{mlp-arc}
-  \mathbf{r}_i^{h}; \mathbf{r}_i^{m} =\mathrm{MLP}^{h/m} \left( \mathbf{h}_i \right)
+    \label{mlp-arc}
+    \mathbf{r}_i^{h}; \mathbf{r}_i^{m} =\mathrm{MLP}^{h/m} \left( \mathbf{h}_i \right)
 \end{equation}
 其中$\mathbf{r}_i^{h}$和$\mathbf{r}_i^{m}$是词$w_i$分别作为一条弧的头和修饰词的表示.
 
 \noindent\textbf{Biaffine打分器.}
 \cite{dozat-etal-2017-biaffine}首次提出通过biaffine attention计算一条依存弧$i \rightarrow j$的分值
 \begin{equation} \label{eq:biaffine}
-  \mathrm{s}(i,j) =  \left[
-    \begin{array}{c}
-      \mathbf{r}_{j}^{m} \\
-      1
-    \end{array}
-    \right]^\mathrm{T}
-  \mathbf{W}^\textit{biaffine}  \mathbf{r}_{i}^{h}
+    \mathrm{s}(i,j) =  \left[
+        \begin{array}{c}
+            \mathbf{r}_{j}^{m} \\
+            1
+        \end{array}
+        \right]^\mathrm{T}
+    \mathbf{W}^\textit{biaffine}  \mathbf{r}_{i}^{h}
 \end{equation}
 其中$\mathbf{W}^\textit{biaffine} \in \mathbb{R}^{d \times d}$.
 这种计算方式在GPU上进行尤其高效.
 
 \begin{figure}[tb]
-  \centering
-  \includegraphics[scale=1.5]{figures/dep-framework.pdf}
-  \caption{带二阶扩展的打分架构.}
-  \label{fig:dep-framework}
+    \centering
+    \includegraphics[scale=1.5]{figures/dep-framework.pdf}
+    \caption{带二阶扩展的打分架构.}
+    \label{fig:dep-framework}
 \end{figure}
 
 \subsection{局部词级别训练损失}
 Biaffine Parser采用了一个简单的词级别非结构化损失函数，试着对每个词独立最大化正确头的局部概率.
 在一个训练实例中，对于一个正确的头-依赖对$(w_i, w_j$)，其对应的交叉熵损失为
 \begin{equation} \label{eq:biaffine-loss}
-  \mathit{L}(i\rightarrow j) = -\log{\frac{e^{\mathrm{s}(i\rightarrow j)}}{\sum_{0 \le k \le n} e^{\mathrm{s}(k,j)}}}
+    \mathit{L}(i\rightarrow j) = -\log{\frac{e^{\mathrm{s}(i\rightarrow j)}}{\sum_{0 \le k \le n} e^{\mathrm{s}(k,j)}}}
 \end{equation}
 换句话说，模型的训练是基于一个简单的头选择目标，最终所有词的损失都被累加起来，而没有考虑任何树结构的约束.
 
 \subsection{解码}
 有了所有依存弧的分值，我们采用复杂度为$O(n^3)$的一阶Eisner算法来寻找最优的句法树.
 \begin{equation}
-  \label{eq:map-decoding}
-  {\boldsymbol{y}}^* = \arg\max_{\boldsymbol{y}} \left[ \mathrm{s}(\boldsymbol{x},\boldsymbol{y}) \equiv
-    \sum_{i \rightarrow j \in \boldsymbol{y}}{\mathrm{s}(i\rightarrow j)} \right]
+    \label{eq:map-decoding}
+    {\boldsymbol{y}}^* = \arg\max_{\boldsymbol{y}} \left[ \mathrm{s}(\boldsymbol{x},\boldsymbol{y}) \equiv
+        \sum_{i \rightarrow j \in \boldsymbol{y}}{\mathrm{s}(i\rightarrow j)} \right]
 \end{equation}
 
-\subsection{依存标签处理}
+\subsection{依存标签处理}\label{sub@sec:dep-crf-labeling}
 Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立的任务.
 这里为了方便我们采取了相同的策略. 具体细节可以参考\cite{dozat-etal-2017-biaffine}.
 
 \begin{figure}[tb]
-  \centering
-  \begin{subfigure}[b]{0.45\textwidth}
     \centering
-    \includegraphics[scale=1.5]{figures/scoring-part/arc.pdf}
-    \caption{单弧}
-    \label{fig:scoring-part-arc}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.45\textwidth}
-    \centering
-    \includegraphics[scale=1.5]{figures/scoring-part/sib.pdf}
-    \caption{邻接兄弟}
-    \label{fig:scoring-part-sib}
-  \end{subfigure}
-  \caption{两种打分的子树结构.}
-  \label{fig:scoring-part}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[scale=1.5]{figures/scoring-part/arc.pdf}
+        \caption{单弧}
+        \label{fig:scoring-part-arc}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[scale=1.5]{figures/scoring-part/sib.pdf}
+        \caption{邻接兄弟}
+        \label{fig:scoring-part-sib}
+    \end{subfigure}
+    \caption{两种打分的子树结构.}
+    \label{fig:scoring-part}
 \end{figure}
 
 
@@ -150,95 +150,95 @@ Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立�
 使用概率TreeCRF来进行结构化训练，以及显式引入高阶子树地分值.
 
 具体地我们在基本的一阶模型的基础上引入了二阶邻接子树的分值:\footnote{
-  我们还可以进一步扩展，引入祖父-父亲-孩子的子树分值，然后基于\cite{koo-collins-2010-efficient}提出的$O(n^4)$的Viterbi算法解码.
-  这里我们留待作为未来的工作.
+    我们还可以进一步扩展，引入祖父-父亲-孩子的子树分值，然后基于\cite{koo-collins-2010-efficient}提出的$O(n^4)$的Viterbi算法解码.
+    这里我们留待作为未来的工作.
 }
 \begin{equation}\label{eq:score-definition-2o}
-  \mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) = \sum_{i\rightarrow j \in \boldsymbol{y}}\mathrm{s}(i\rightarrow j) + \sum_{
-    %\begin{array}{c}
-    i\rightarrow \{k,j\} \in \boldsymbol{y} %\
-    %  i\rightarrow k \in \boldsymbol{y}
-    %\end{array}
-  } \mathrm{s}(i\rightarrow \{k,j\})
+    \mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) = \sum_{i\rightarrow j \in \boldsymbol{y}}\mathrm{s}(i\rightarrow j) + \sum_{
+        %\begin{array}{c}
+        i\rightarrow \{k,j\} \in \boldsymbol{y} %\
+        %  i\rightarrow k \in \boldsymbol{y}
+        %\end{array}
+    } \mathrm{s}(i\rightarrow \{k,j\})
 \end{equation}
 其中$k$和$j$是$i$的两个相邻的孩子，并且满足$i < k < j$或者$j < k < i$.
 图\ref{fig:scoring-part}展示了两种我们要打分的子树结构.
 
 作为一个概率模型，TreeCRF以下面的方式计算一棵树的条件概率
 \begin{equation}\label{eq:prob-labeled}
-  \begin{split}
-    & p(\boldsymbol{y}\mid\boldsymbol{x})  = \frac{e^{\mathrm{s}(\boldsymbol{x},\boldsymbol{y})}}{Z(\boldsymbol{x}) \equiv \sum_{\boldsymbol{y'} \in \mathcal{Y}(\boldsymbol{x})} {e^{\mathrm{s}(\boldsymbol{x},\boldsymbol{y'})}}}
-  \end{split}
+    \begin{split}
+        & p(\boldsymbol{y}\mid\boldsymbol{x})  = \frac{e^{\mathrm{s}(\boldsymbol{x},\boldsymbol{y})}}{Z(\boldsymbol{x}) \equiv \sum_{\boldsymbol{y'} \in \mathcal{Y}(\boldsymbol{x})} {e^{\mathrm{s}(\boldsymbol{x},\boldsymbol{y'})}}}
+    \end{split}
 \end{equation}
 其中$\mathcal{Y}(\boldsymbol{x})$是输入句子$\boldsymbol{x}$对应所有合法的句法树，$Z(\boldsymbol{x})$通常被成为normalization/partition term.
 
 训练时，TreeCRF应用了下面的损失函数来最大化给定$\boldsymbol{x}$正确句法树$\boldsymbol{y}$的条件概率.
 \begin{equation}\label{eq:training-loss-treecrf}
-  \begin{split}
-    \mathit{L}(\boldsymbol{x},\boldsymbol{y}) &= -\log p(\boldsymbol{y}\mid\boldsymbol{x})  \\
-    &= - \mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) + \log Z(\boldsymbol{x})
-  \end{split}
+    \begin{split}
+        \mathit{L}(\boldsymbol{x},\boldsymbol{y}) &= -\log p(\boldsymbol{y}\mid\boldsymbol{x})  \\
+        &= - \mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) + \log Z(\boldsymbol{x})
+    \end{split}
 \end{equation}
 
 \begin{figure}[tb]
-  \centering
-  \begin{subfigure}[b]{\textwidth}
-    \begin{minipage}{\textwidth}
-      \centering
-      \includegraphics[scale=1.35]{figures/eisner-2o/a.pdf}
-      \label{fig:eisner-2o-a}
-    \end{minipage}
-  \end{subfigure}
-  \begin{subfigure}[b]{\textwidth}
-    \begin{minipage}{\textwidth}
-      \centering
-      \includegraphics[scale=1.35]{figures/eisner-2o/b.pdf}
-      \label{fig:eisner-2o-b}
-    \end{minipage}
-  \end{subfigure}
-  \begin{subfigure}[b]{\textwidth}
-    \begin{minipage}{\textwidth}
-      \centering
-      \includegraphics[scale=1.35]{figures/eisner-2o/c.pdf}
-      \label{fig:eisner-2o-c}
-    \end{minipage}
-  \end{subfigure}
-  \caption{基于自底向上动态规划的二阶Inside算法图示.}
-  \label{fig:eisner-2o}
-  % \vspace{-5pt}
+    \centering
+    \begin{subfigure}[b]{\textwidth}
+        \begin{minipage}{\textwidth}
+            \centering
+            \includegraphics[scale=1.35]{figures/eisner-2o/a.pdf}
+            \label{fig:eisner-2o-a}
+        \end{minipage}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+        \begin{minipage}{\textwidth}
+            \centering
+            \includegraphics[scale=1.35]{figures/eisner-2o/b.pdf}
+            \label{fig:eisner-2o-b}
+        \end{minipage}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+        \begin{minipage}{\textwidth}
+            \centering
+            \includegraphics[scale=1.35]{figures/eisner-2o/c.pdf}
+            \label{fig:eisner-2o-c}
+        \end{minipage}
+    \end{subfigure}
+    \caption{基于自底向上动态规划的二阶Inside算法图示.}
+    \label{fig:eisner-2o}
+    % \vspace{-5pt}
 \end{figure}
 
 \subsection{二阶子树打分}
 为了避免对原有打分架构有大的改动，我们采用来一个直接的扩展来获得邻接子树的分值.
 首先，我们用三个额外的MLP层来进行和Biaffine所需要的类似的特征提取
 \begin{equation}
-  \label{mlp-sib}
-  \mathbf{r}_i^{h'}; \mathbf{r}_i^{s}; \mathbf{r}_i^{m'} =\mathrm{MLP}^{h'/s/m'} \left( \mathbf{h}_i \right)
+    \label{mlp-sib}
+    \mathbf{r}_i^{h'}; \mathbf{r}_i^{s}; \mathbf{r}_i^{m'} =\mathrm{MLP}^{h'/s/m'} \left( \mathbf{h}_i \right)
 \end{equation}
 $\mathbf{r}_i^{h'}; \mathbf{r}_i^{s}; \mathbf{r}_i^{m'}$是词$w_i$分别作为头，兄弟，和依赖对应的表示.\footnote{
-  另一种方式是重用一阶部分头和依赖的表示，但是我们的前置实验表明这种方法的结果要更差一点
+    另一种方式是重用一阶部分头和依赖的表示，但是我们的前置实验表明这种方法的结果要更差一点
 }
 
 然后，我们提出来一个对biaffine equation自然的扩展，triaffine结构，来通过上述的三个向量计算分值\footnote{
-  我们同样尝试了\cite{wang-etal-2019-second}的方法，他们用了三个biaffine操作来模拟三个输入向量的交互，但是这种方法的结果相对要差一点.
-  篇幅限制我们省略了相应结果的汇报.
+    我们同样尝试了\cite{wang-etal-2019-second}的方法，他们用了三个biaffine操作来模拟三个输入向量的交互，但是这种方法的结果相对要差一点.
+    篇幅限制我们省略了相应结果的汇报.
 }
 \begin{equation} \label{eq:triaffine}
-  \mathrm{s}(i\rightarrow \{k,j\}) =
-  \left[
-    \begin{array}{c}
-      \mathbf{r}_{k}^{s} \\
-      1
-    \end{array}
-    \right]^\mathrm{T}
-  {\mathbf{r}_{i}^{h'}}^\mathrm{T}
-  \mathbf{W}^\textit{triaffine}
-  \left[
-    \begin{array}{c}
-      \mathbf{r}_{j}^{m'} \\
-      1
-    \end{array}
-    \right]
+    \mathrm{s}(i\rightarrow \{k,j\}) =
+    \left[
+        \begin{array}{c}
+            \mathbf{r}_{k}^{s} \\
+            1
+        \end{array}
+        \right]^\mathrm{T}
+    {\mathbf{r}_{i}^{h'}}^\mathrm{T}
+    \mathbf{W}^\textit{triaffine}
+    \left[
+        \begin{array}{c}
+            \mathbf{r}_{j}^{m'} \\
+            1
+        \end{array}
+        \right]
 \end{equation}
 其中$\mathbf{W}^\textit{triaffine} \in \mathbb{R}^{d' \times d' \times d'}$是一个三维的张量.
 Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
@@ -275,8 +275,8 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 
 进一步地，我们同样发现边缘概率$p(i \rightarrow j\mid\boldsymbol{x})$直接与对$\log Z(\boldsymbol{x})$关于分值$\mathrm{s}(i\rightarrow j)$的偏导相关
 \begin{equation}
-  \label{eq:partial-derivative}
-  \frac{\partial \log Z}{\partial \mathrm{s}(i\rightarrow j)} = p(i \rightarrow j\mid\boldsymbol{x})
+    \label{eq:partial-derivative}
+    \frac{\partial \log Z}{\partial \mathrm{s}(i\rightarrow j)} = p(i \rightarrow j\mid\boldsymbol{x})
 \end{equation}
 这可以很方便的证明（见附录~\ref{sec:outside-backprop}）.
 对于TreeCRF分析器，我们可以通过将解码算法中的分值用边缘概率代替，进行\textbf{最小贝叶斯风险}（Minimum Bayesian Risk, MBR）解码\cite{smith-smith-2007-probabilistic}，从而带来一个稳定的提升，相关推导见附录~\ref{sec:mbr-decoding}.
@@ -300,21 +300,21 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 
 对于局部标注，我们和\cite{li-etal-2016-active}一样，定义训练的目标函数如下:
 \begin{equation}
-  \label{eq:training-loss-treecrf-partial}
-  \begin{split}
-    \mathit{L}(\boldsymbol{x}, {\boldsymbol{y}^p}) &= -\log \sum\limits_{\boldsymbol{y} \in \mathcal{Y}(\boldsymbol{x}); \boldsymbol{y} \supseteq {\boldsymbol{y}^p}} p(\boldsymbol{y}\mid\boldsymbol{x})  \\
-    &= - \log \frac{Z(\boldsymbol{x}, {\boldsymbol{y}^p}) \equiv \sum\limits_{\boldsymbol{y} \in \mathcal{Y}(\boldsymbol{x}); \boldsymbol{y} \supseteq \boldsymbol{y}^p} e^{\mathrm{s}(\boldsymbol{x},\boldsymbol{y})}}{Z(\boldsymbol{x})}
-  \end{split}
+    \label{eq:training-loss-treecrf-partial}
+    \begin{split}
+        \mathit{L}(\boldsymbol{x}, {\boldsymbol{y}^p}) &= -\log \sum\limits_{\boldsymbol{y} \in \mathcal{Y}(\boldsymbol{x}); \boldsymbol{y} \supseteq {\boldsymbol{y}^p}} p(\boldsymbol{y}\mid\boldsymbol{x})  \\
+        &= - \log \frac{Z(\boldsymbol{x}, {\boldsymbol{y}^p}) \equiv \sum\limits_{\boldsymbol{y} \in \mathcal{Y}(\boldsymbol{x}); \boldsymbol{y} \supseteq \boldsymbol{y}^p} e^{\mathrm{s}(\boldsymbol{x},\boldsymbol{y})}}{Z(\boldsymbol{x})}
+    \end{split}
 \end{equation}
 其中$Z(\boldsymbol{x}, {\boldsymbol{y}^p})$ 只包含所有与给定局部标注树兼容的和法术，并且可以以与$Z(\boldsymbol{x})$类似的方式进行高效的计算.
 
 \begin{figure}[tb]
-  \centering
-  \includegraphics[scale=1.2]{figures/speed.pdf}
-  \caption{
-    PTB的test数据上的速度比较.
-  }
-  \label{fig:speed}
+    \centering
+    \includegraphics[scale=1.2]{figures/speed.pdf}
+    \caption{
+        PTB的test数据上的速度比较.
+    }
+    \label{fig:speed}
 \end{figure}
 
 \section{实验结果及分析}\label{sec:dep-exps}
@@ -382,19 +382,19 @@ $\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用
 \label{subsec:dep-analysis}
 
 \begin{figure*}[tb!]
-  \centering
-  \includegraphics[width=\textwidth]{figures/convergency.pdf}
-  \caption{
-    PTB、CoNLL09和NLPCC19的dev数据的训练收敛曲线（LAS相对于训练迭代次数).}
-  \label{fig:convergency}
+    \centering
+    \includegraphics[width=\textwidth]{figures/convergency.pdf}
+    \caption{
+        PTB、CoNLL09和NLPCC19的dev数据的训练收敛曲线（LAS相对于训练迭代次数).}
+    \label{fig:convergency}
 \end{figure*}
 
 \noindent\textbf{MBR解码的影响.}
 对于\textsc{Crf}和\textsc{Crf2o}，我们默认进行MBR解码，也就是直接在边缘概率上应用Eisner算法\cite{smith-smith-2007-probabilistic}来找到最优的句法树.
 \begin{equation}
-  \begin{split}
-    & {\boldsymbol{y}}^* = \arg\max_{\boldsymbol{y}} \sum_{i \rightarrow j \in \boldsymbol{y}}{p(i \rightarrow j|\boldsymbol{x})}
-  \end{split}
+    \begin{split}
+        & {\boldsymbol{y}}^* = \arg\max_{\boldsymbol{y}} \sum_{i \rightarrow j \in \boldsymbol{y}}{p(i \rightarrow j|\boldsymbol{x})}
+    \end{split}
 \end{equation}
 表~\ref{table:dev-test}报告了MAP解码（即根据依存分值直接寻找最优句法树，关于与MBR解码的联系详见附录~\ref{sec:mbr-decoding}）.
 除了PTB数据集的结果已经比较高了之外，MBR解码对于\textsc{Crf}和\textsc{Crf2o}都带来了不多但是一致的提升.
@@ -422,19 +422,19 @@ UCM（Unlabeled Complete Match）代表无标签完全匹配率，即所有对�
 可以明显看到，通过建模邻接兄弟子树的分值，SIB的性能相比于\textsc{Crf}和\textsc{Loc}得到了更大的提升，并且这进一步带来了进一步在完全树匹配率（UCM/LCM）上的进步.
 
 \begin{figure}[tb!]
-  \centering
-  \begin{subfigure}[b]{0.4\textwidth}
     \centering
-    \includegraphics[width=1.\textwidth]{figures/part-gap-ptb.pdf}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.4\textwidth}
-    \centering
-    \includegraphics[width=1.\textwidth]{figures/part-gap-conll.pdf}
-  \end{subfigure}
-  \caption{
-    PTB（左）和CoNLL09（右）的测试集有关训练数据量（弧数以及句子数）变化之后的LAS比较.
-  }
-  \label{fig:part-gap}
+    \begin{subfigure}[b]{0.4\textwidth}
+        \centering
+        \includegraphics[width=1.\textwidth]{figures/part-gap-ptb.pdf}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.4\textwidth}
+        \centering
+        \includegraphics[width=1.\textwidth]{figures/part-gap-conll.pdf}
+    \end{subfigure}
+    \caption{
+        PTB（左）和CoNLL09（右）的测试集有关训练数据量（弧数以及句子数）变化之后的LAS比较.
+    }
+    \label{fig:part-gap}
 \end{figure}
 
 \noindent\textbf{学习局部标注树的能力.}
