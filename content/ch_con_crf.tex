@@ -164,7 +164,7 @@ $\mathbf{r}_i^{l/r}$的维度$d$为500.
 
 \noindent\textbf{仿射打分.}
 给定边界表示，对于候选区块$(i,j)$，我们在左边界词$w_i$的表示和右边界词$w_j$的表示上利用仿射注意力为该区块打分.
-\begin{equation} \label{eq:biaffine}
+\begin{equation} \label{eq:con-biaffine}
   \mathrm{s}(i,j) =  \left[
     \begin{array}{c}
       \mathbf{r}_{i}^{l} \\
@@ -188,7 +188,7 @@ $\mathbf{r}_i^{l/r}$的维度$d$为500.
 \end{equation}
 $\mathbf{r}_i^{l'}; \mathbf{r}_i^{r'}; \mathbf{r}_i^{s}$是词$w_i$分别作为左边界、右边界和分割点对应的表示.
 然后，我们对上述表示应用Triaffine结构
-\begin{equation} \label{eq:triaffine}
+\begin{equation} \label{eq:con-triaffine}
   \mathrm{s}(i,k,j) =
   \left[
     \begin{array}{c}
