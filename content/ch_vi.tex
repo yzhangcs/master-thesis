@@ -190,27 +190,6 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 
 \subsection{复杂度分析}
 
-
-\begin{figure}[tb]
-  \centering
-  \begin{subfigure}[b]{0.9\textwidth}
-    \centering
-    \includegraphics[scale=0.75]{figures/dep-probs.pdf}
-    \caption{依存句法树每个位置对应的分值和后验概率}
-    \label{fig:dep-probs}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.9\textwidth}
-    \centering
-    \includegraphics[scale=0.75]{figures/con-probs.pdf}
-    \caption{成分句法树每个位置对应的分值和后验概率}
-    \label{fig:con-probs}
-  \end{subfigure}
-  \caption{一个例句对应的依存句法模型和成分句法模型的输出. 左边的图是每个位置的分值（log potential），为了方便显示，我们首先对分值进行了归一化.
-    右边的图是变分推断得到的后验概率. 灰色虚线圆圈代表被屏蔽的不合法位置，颜色的深浅反应了分值/概率的大小.}
-
-  \label{fig:vi-probs}
-\end{figure}
-
 \section{实验}\label{sec:vi-exp}
 
 \noindent\textbf{数据.}
@@ -240,6 +219,42 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 \noindent\textbf{迭代次数的影响.}
 
 \subsection{样例分析}
+
+\begin{figure}[tb!]
+  \centering
+  \begin{subfigure}[b]{0.9\textwidth}
+    \centering
+    \includegraphics[scale=0.75]{figures/dep-probs.pdf}
+    \caption{依存句法树每个位置对应的分值和后验概率}
+    \label{fig:dep-probs}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.9\textwidth}
+    \centering
+    \includegraphics[scale=0.75]{figures/con-probs.pdf}
+    \caption{成分句法树每个位置对应的分值和后验概率}
+    \label{fig:con-probs}
+  \end{subfigure}
+  \caption{一个例句对应的依存句法模型和成分句法模型的输出. 左边的图是每个位置的分值（log potential），为了方便显示，我们首先对分值进行了归一化.
+    右边的图是变分推断得到的后验概率. 灰色虚线圆圈代表被屏蔽的不合法位置.}
+
+  \label{fig:vi-probs}
+\end{figure}
+
+图~\ref{fig:vi-probs}给出了一个例句分别在依存和成分句法模型上的分值（log potentials）与经过MFVI迭代近似得到的后验概率的热力图对比.
+图中颜色的深浅反应了分值/概率的大小.
+
+左边的图反应的是模型直接输出的分值之间的对比，这对应于一阶模型的输出.
+可以看到模型的输出的分值数值相对来说都比较均匀.
+由于依存句法模型基于的是头选择的训练目标，可以看到图中的每一列都有一个极值存在，比如词$She_i$对应的列中，颜色最深（分值最高）的位置为词$enjoys_2$，这对应了句法树中的弧$enjoys_2\rightarrow She_1$.
+成分句法的热力图中，由于采用了二分类的目标，因此颜色较深的位置表示更可能成为一个区块.
+然而由于没有类似于依存句法的头约束，直接通过对每个位置$\arg\max$得到的所有区块可能无法组成一棵合法的句法树，因此我们仍需要CKY算法来获得全局最优的合法句法树.
+
+当我们利用MFVI算法，得到的近似后验概率的热力图如右边图所示.
+可以看到，在进一步考虑了二阶特征的分值并聚合到每个变量位置之后，后验概率的置信度远远高于分值.
+对于依存句法而言，每个词都有一个最可能的头，并且概率几乎为1，对应于热力图中每列仅有一个红色结点.
+对于成分句法而言，如果对图中每个位置的后验概率取$\arg\max$得到可能的区块，每个区块的概率同样近似为1，并且对于图中的例句而言，这种贪婪解码得到的句法树可以直接组成一棵合法的短语结构树，例如，红色结点$(She_1,tennis_4)$和$(playing_3,tennis_4)$对应了例句正确的无标签树左二叉化之后的两个区块.
+这显示了MFVI在引入二阶结构打分之后，对于模型结构预测更强大的约束作用.
+
 
 \subsection{速度比较}
 
