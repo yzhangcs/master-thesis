@@ -81,7 +81,7 @@ MFVI假设句法树$\boldsymbol{y}$每个位置的变量相互独立，因此可
 根据依存句法和成分句法任务目标的不同，我们在下面两小节详细阐述了通用公式针对具体任务的特化版本，以及相关的势函数（potential function）和因子图（factor graph）的设计.
 
 \noindent\textbf{基于头选择的变分推断.}
-目前广泛使用的一阶局部模型（对应于章节~\ref{cha:dep-crf}的\textsc{Loc}方法，这里我们称为\textsc{Loc}$^{dep}$）在训练的时候采用了头选择（head selection）训练目标，要求句子中除了根结点之外的每个词有且仅有一个头.
+目前广泛使用的一阶局部模型（对应于章节~\ref{cha:dep-crf}的\textsc{Loc}方法，这里我们称为\textsc{Loc}$_{dep}$）在训练的时候采用了头选择（head selection）训练目标，要求句子中除了根结点之外的每个词有且仅有一个头.
 和\cite{wang-tu-2020-second}一样，我们选择在依存句法对应变分推断方法中引入头选择约束，相应的因子图见图~\ref{fig:dep-factors}..
 对于每个变量$j$，我们定义变量取值为$\boldsymbol{y}_j\in \{0,1,\cdots,i\neq j,\cdots,n\}$，代表词$w_j$的可能的头索引.
 
@@ -114,7 +114,7 @@ MFVI迭代式地更新近似分布$Q(\cdot)$，来最小化其与真实分布$P(
 每次迭代时，我们都会将$Q_j^{(0)}(\cdot)$的值在所有可能的头取值上进行归一化.
 
 \noindent\textbf{基于二分类的变分推断.}
-我们的成分句法分析模型采用了\cite{gaddy-etal-2018-whats}的方法作为基线方法，称为\textsc{Loc}$^{con}$.
+我们的成分句法分析模型采用了\cite{gaddy-etal-2018-whats}的方法作为基线方法，称为\textsc{Loc}$_{con}$.
 具体来说，模型对短语树所有可能的位置进行一个简单的二分类，预测该位置是否是一个区块.
 \cite{dozat-manning-2018-simpler,wang-etal-2019-second}在语义依存分析中应用了这样的训练目标.
 \cite{gormley-eisner-2015-structured,naradowsky-etal-2012-grammarless}在成分句法分析中应用了这种方法，并采用循环置信传播（Loopy Belief Propagation, LBP）来近似获得后验概率，并设计了若干种局部和全局因子，比如\textsc{Exactly1}、\textsc{Tree}等.
@@ -132,7 +132,7 @@ MFVI迭代式地更新近似分布$Q(\cdot)$，来最小化其与真实分布$P(
   \end{array}
   \right.
 \end{equation}
-$s(i,j)$是区块$(i,j)$的分值，由公式~\ref{eq:con-biaffine}计算得到.
+$s(i,j)$是区块$(i,j)$的分值，由公式~\ref{eq:con-biaffine}计算得到，这里我们要求$i<j$.
 
 给定两个变量$\boldsymbol{y}_{ij}$和$\boldsymbol{y}_{lk}$，我们考虑使用和章节~\ref{cha:con-crf}一致的二阶兄弟特征，因此二阶的势函数定义为
 \begin{equation}
@@ -144,7 +144,7 @@ $s(i,j)$是区块$(i,j)$的分值，由公式~\ref{eq:con-biaffine}计算得到.
   \end{array}
   \right.
 \end{equation}
-$s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的分值，由公式~\ref{eq:con-triaffine}计算得到，这里$k$的位置不受动态规划算法的约束，并不要求一定位于$(i,j)$之间.
+$s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的分值，由公式~\ref{eq:con-triaffine}计算得到，这里$k$的位置不受动态规划算法的约束，并不要求一定位于$(i,j)$之间，即有$i<j,i<k$.
 
 成分句法模型的MFVI迭代更新公式如下\cite{wang-etal-2019-second}：
 \begin{equation}
@@ -160,10 +160,33 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 
 \subsection{训练}
 
-给定输入句子$\boldsymbol{x}$和对应正确的句法树$\boldsymbol{y}^{\ast}$，我们的目标是最大化句法树的概率$P(\boldsymbol{y}\mid\boldsymbol{x})$.
-由于MFVI将概率在每个变量上分解，得到近似概率$Q(\boldsymbol{y})$，因此训练目标等价于最大化每个变量的后验概率.
+我们的训练损失函数分为两部分，分别是无标签树的损失和对应标签的损失.
+给定所有正确标签，我们的目标是最大化树上每个标签的概率，和前面的章节一致，我们采用了弧/区块级别的标准交叉熵损失函数.
+给定输入句子$\boldsymbol{x}$和对应正确的无标签句法树$\boldsymbol{y}^{\ast}$，我们的目标是最大化句法树的概率$P(\boldsymbol{y}^{\ast}\mid\boldsymbol{x})$.
+由于MFVI将概率在每个变量上分解，得到近似概率$Q(\boldsymbol{y}^{\ast})$，因此训练目标等价于最大化每个变量的后验概率.
+
+对于每个句子，依存句法分析相应无标签句法树的目标函数为
+\begin{equation}
+  \label{eq:dep-vi-arc-loss}
+  L_{dep}^{arc}=-\sum_{j\neq 0}\log Q_j(\boldsymbol{y}^{\ast}_j)
+\end{equation}
+
+成分句法的无标签句法树的目标函数为
+\begin{equation}
+  \label{eq:con-vi-bracket-loss}
+  L_{con}^{bracket}=-\sum_{i<j}\log Q_{ij}(\boldsymbol{y}^{\ast}_{ij})
+\end{equation}
+对于最终的目标函数，我们新引入了一个参数$\lambda$用于平衡无标签句法树以及标签的损失，相应的最终训练目标为
+\begin{equation}
+  \label{eq:con-vi-loss}
+  L_{con}=\lambda L_{con}^{label}+(1-\lambda)L_{con}^{bracket}
+\end{equation}
 
 \subsection{解码}
+在MFVI模型中，解码时我们直接应用了MBR解码.
+我们直接用MFVI近似得到的后验概率作为解码算法的输入.
+依存句法中，我们将由公式~\ref{eq:mfvi-dep}得到的概率$Q_i(\cdot)$作为输入，并利用了Eisner算法来解码，加速时采用了算法~\ref{alg:eisner-2o}的批次化技术.
+成分句法中，我们将由公式~\ref{eq:mfvi-con}得到的概率$Q_{ij}(\cdot)$作为输入，并利用了和章节~\ref{cha:con-crf}一样的类CKY算法来解码，采用了算法~\ref{alg:inside}的批次化技术来加速.
 
 \subsection{复杂度分析}
 
