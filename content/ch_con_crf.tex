@@ -220,7 +220,7 @@ $\mathbf{r}_i^{l'}; \mathbf{r}_i^{r'}; \mathbf{r}_i^{s}$是词$w_i$分别作为�
 
 对于一个训练的例子$(\boldsymbol{x},\boldsymbol{y},\boldsymbol{l})$，训练损失函数由两部分组成.
 \begin{equation} \label{eq:final-loss}
-  \mathit{L(\boldsymbol{x}, \boldsymbol{y}, \boldsymbol{l})} = \mathit{L}^{bracket}(\boldsymbol{x}, \boldsymbol{y}) + \mathit{L}^{label}(\boldsymbol{x}, \boldsymbol{y}, \boldsymbol{l})
+  \mathit{L}(\boldsymbol{x}, \boldsymbol{y}, \boldsymbol{l}) = \mathit{L}^{bracket}(\boldsymbol{x}, \boldsymbol{y}) + \mathit{L}^{label}(\boldsymbol{x}, \boldsymbol{y}, \boldsymbol{l})
 \end{equation}
 第一项是句子级的全局CRF损失，目的是最大化树的条件概率:
 \begin{equation}\label{eq:bracket-loss}

@@ -48,23 +48,23 @@
 \subsection{打分方法}
 
 \begin{figure}[tb!]
+  \centering
+  \begin{subfigure}[b]{0.8\textwidth}
     \centering
-    \begin{subfigure}[b]{0.8\textwidth}
-        \centering
-        \includegraphics[scale=1]{figures/dep-factors.pdf}
-        \caption{依存句法模型的因子图}
-        \label{fig:dep-factors}
-    \end{subfigure}
-    \begin{subfigure}[b]{0.8\textwidth}
-        \centering
-        \includegraphics[scale=1]{figures/con-factors.pdf}
-        \caption{成分句法模型的因子图}
-        \label{fig:con-factors}
-    \end{subfigure}
-    \caption{一个例句和其依存/成分句法模型对应的因子图，我们在例句上方标出了对应的正确无标签依存句法树和成分句法树，其中成分句法树进行了左二叉化.
-        灰色虚线圆圈代表被屏蔽的变量.
-        图中标出了所有的一阶（红色）因子，为了简洁起见，对于二阶因子，依存句法图中我们只标出了涉及弧$3\rightarrow 4$的兄弟（绿色）因子，成分句法图中只标出了和组块$(3, 4)$连接的二阶（蓝色）因子.}
-    \label{fig:vi-factors}
+    \includegraphics[scale=1]{figures/dep-factors.pdf}
+    \caption{依存句法模型的因子图}
+    \label{fig:dep-factors}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.8\textwidth}
+    \centering
+    \includegraphics[scale=1]{figures/con-factors.pdf}
+    \caption{成分句法模型的因子图}
+    \label{fig:con-factors}
+  \end{subfigure}
+  \caption{一个例句和其依存/成分句法模型对应的因子图，我们在例句上方标出了对应的正确无标签依存句法树和成分句法树，其中成分句法树进行了左二叉化.
+    灰色虚线圆圈代表被屏蔽的变量.
+    图中标出了所有的一阶（红色）因子，为了简洁起见，对于二阶因子，依存句法图中我们只标出了涉及弧$3\rightarrow 4$的兄弟（绿色）因子，成分句法图中只标出了和组块$(3, 4)$连接的二阶（蓝色）因子.}
+  \label{fig:vi-factors}
 \end{figure}
 
 \subsection{变分推断}
@@ -87,28 +87,28 @@ MFVI假设句法树$\boldsymbol{y}$每个位置的变量相互独立，因此可
 
 具体地，对于每个变量$\boldsymbol{y}_j$，一阶的势函数定义为
 \begin{equation}
-    \label{eq:1o-potential}
-    \psi_j(\boldsymbol{y}_j)=\exp(s(\boldsymbol{y}_j\rightarrow j))
+  \label{eq:1o-potential}
+  \psi_j(\boldsymbol{y}_j)=\exp(s(\boldsymbol{y}_j\rightarrow j))
 \end{equation}
 $s(\boldsymbol{y}_j\rightarrow j)$是弧$\boldsymbol{y}_j\rightarrow j$对应的分值，由公式~\ref{eq:biaffine}计算得到.
 
 对于两个变量$\boldsymbol{y}_{j}$和$\boldsymbol{y}_{k}$，我们使用和章节~\ref{cha:dep-crf}一致的二阶特征，对应的二阶势函数定义为
 \begin{equation}
-    \label{eq:2o-dep-potential}
-    \psi_{j,k}(\boldsymbol{y}_j,\boldsymbol{y}_k)=\left\{
-    \begin{array}{rcl}
-        \exp \mathrm{s}(\boldsymbol{y}_j\rightarrow \{k,j\}) &  & {\boldsymbol{y}_j=\boldsymbol{y}_k} \\
-        1                                                    &  & {otherwise}
-    \end{array}
-    \right.
+  \label{eq:2o-dep-potential}
+  \psi_{j,k}(\boldsymbol{y}_j,\boldsymbol{y}_k)=\left\{
+  \begin{array}{rcl}
+    \exp \mathrm{s}(\boldsymbol{y}_j\rightarrow \{k,j\}) &  & {\boldsymbol{y}_j=\boldsymbol{y}_k} \\
+    1                                                    &  & {otherwise}
+  \end{array}
+  \right.
 \end{equation}
 $s(\boldsymbol{y}_j\rightarrow \{k,j\})$是兄弟子树$\boldsymbol{y}_j\rightarrow \{k,j\}$的分值，由公式~\ref{eq:triaffine}计算得到.
 需要注意的是这里的兄弟$k$和二阶TreeCRF不一样，并不需要一定和$j$邻近.
 
 MFVI迭代式地更新近似分布$Q(\cdot)$，来最小化其与真实分布$P(\cdot)$的KL散度，依存句法模型的迭代更新公式如下\cite{wang-tu-2020-second}：
 \begin{equation}
-    \label{eq:mfvi-dep}
-    Q_{j}^{(t)}(i)\propto \exp\left(s(i\rightarrow j) +\sum_{k\neq i,j} Q_{k}^{(t-1)}(i)\cdot s(i\rightarrow {k,j}) \right)
+  \label{eq:mfvi-dep}
+  Q_{j}^{(t)}(i)\propto \exp\left(s(i\rightarrow j) +\sum_{k\neq i,j} Q_{k}^{(t-1)}(i)\cdot s(i\rightarrow {k,j}) \right)
 \end{equation}
 后验概率$Q_j^{(0)}(i)$初始化为一阶势函数$\psi_j(i)$.
 每次迭代时，我们都会将$Q_j^{(0)}(\cdot)$的值在所有可能的头取值上进行归一化.
@@ -124,35 +124,35 @@ MFVI迭代式地更新近似分布$Q(\cdot)$，来最小化其与真实分布$P(
 
 具体地，每个位置$ij$的可能的变量取值$\boldsymbol{y}_{ij}\in \{0,1\}$. 对于单个变量$\boldsymbol{y}_{ij}$，一阶的势函数定义为
 \begin{equation}
-    \label{eq:1o-potential}
-    \psi_{ij}(\boldsymbol{y}_{ij})=\left\{
-    \begin{array}{rcl}
-        \exp\left(\mathrm{s}(i,j)\right) &  & {\boldsymbol{y}_{ij}=1} \\
-        1                                &  & {otherwise}
-    \end{array}
-    \right.
+  \label{eq:1o-potential}
+  \psi_{ij}(\boldsymbol{y}_{ij})=\left\{
+  \begin{array}{rcl}
+    \exp\left(\mathrm{s}(i,j)\right) &  & {\boldsymbol{y}_{ij}=1} \\
+    1                                &  & {otherwise}
+  \end{array}
+  \right.
 \end{equation}
 $s(i,j)$是区块$(i,j)$的分值，由公式~\ref{eq:con-biaffine}计算得到.
 
 给定两个变量$\boldsymbol{y}_{ij}$和$\boldsymbol{y}_{lk}$，我们考虑使用和章节~\ref{cha:con-crf}一致的二阶兄弟特征，因此二阶的势函数定义为
 \begin{equation}
-    \label{eq:2o-con-potential}
-    \psi_{ij,lk}(\boldsymbol{y}_{ij},\boldsymbol{y}_{lk})=\left\{
-    \begin{array}{rcl}
-        \exp\left(\mathrm{s}(i,k,j)\right) &  & {i=l}       \\
-        1                                  &  & {otherwise}
-    \end{array}
-    \right.
+  \label{eq:2o-con-potential}
+  \psi_{ij,lk}(\boldsymbol{y}_{ij},\boldsymbol{y}_{lk})=\left\{
+  \begin{array}{rcl}
+    \exp\left(\mathrm{s}(i,k,j)\right) &  & {i=l}       \\
+    1                                  &  & {otherwise}
+  \end{array}
+  \right.
 \end{equation}
-$s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的分值，由公式~\ref{eq:con-triaffine}计算得到，这里$k$的位置不受动态规划算法的约束，并不要求一定位于$(i，j)$之间.
+$s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的分值，由公式~\ref{eq:con-triaffine}计算得到，这里$k$的位置不受动态规划算法的约束，并不要求一定位于$(i,j)$之间.
 
 成分句法模型的MFVI迭代更新公式如下\cite{wang-etal-2019-second}：
 \begin{equation}
-    \label{eq:mfvi-con}
-    \begin{array}{l}
-        Q_{ij}^{(t)}(0)\propto 1 \\
-        Q_{ij}^{(t)}(1)\propto \exp\left(s(i,j) +\sum_{k\neq i,j} Q_{ik}^{(t-1)}(1)\cdot s(i,k,j) \right)
-    \end{array}
+  \label{eq:mfvi-con}
+  \begin{array}{l}
+    Q_{ij}^{(t)}(0)\propto 1 \\
+    Q_{ij}^{(t)}(1)\propto \exp\left(s(i,j) +\sum_{k\neq i,j} Q_{ik}^{(t-1)}(1)\cdot s(i,k,j) \right)
+  \end{array}
 \end{equation}
 后验概率$Q_{ij}^{(0)}(\boldsymbol{y}_{ij})$初始化为一阶势函数$\psi_{ij}(\boldsymbol{y}_{ij})$.
 每次迭代时，我们将$Q_{ij}^{(0)}(\cdot)$在取值$\{0,1\}$上进行归一化.
@@ -160,29 +160,32 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 
 \subsection{训练}
 
+给定输入句子$\boldsymbol{x}$和对应正确的句法树$\boldsymbol{y}^{\ast}$，我们的目标是最大化句法树的概率$P(\boldsymbol{y}\mid\boldsymbol{x})$.
+由于MFVI将概率在每个变量上分解，得到近似概率$Q(\boldsymbol{y})$，因此训练目标等价于最大化每个变量的后验概率.
+
 \subsection{解码}
 
 \subsection{复杂度分析}
 
 
 \begin{figure}[tb]
+  \centering
+  \begin{subfigure}[b]{0.9\textwidth}
     \centering
-    \begin{subfigure}[b]{0.9\textwidth}
-        \centering
-        \includegraphics[scale=0.75]{figures/dep-probs.pdf}
-        \caption{成分句法树每个位置对应的分值和后验概率}
-        \label{fig:dep-probs}
-    \end{subfigure}
-    \begin{subfigure}[b]{0.9\textwidth}
-        \centering
-        \includegraphics[scale=0.75]{figures/con-probs.pdf}
-        \caption{成分句法树每个位置对应的分值和后验概率}
-        \label{fig:con-probs}
-    \end{subfigure}
-    \caption{一个例句对应的依存句法模型和成分句法模型的输出. 左边的图是每个位置的分值（log potential），为了方便显示，我们首先对分值进行了归一化.
-        右边的图是变分推断得到的后验概率. 灰色虚线圆圈代表被屏蔽的不合法位置，颜色的深浅反应了分值/概率的大小.}
+    \includegraphics[scale=0.75]{figures/dep-probs.pdf}
+    \caption{依存句法树每个位置对应的分值和后验概率}
+    \label{fig:dep-probs}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.9\textwidth}
+    \centering
+    \includegraphics[scale=0.75]{figures/con-probs.pdf}
+    \caption{成分句法树每个位置对应的分值和后验概率}
+    \label{fig:con-probs}
+  \end{subfigure}
+  \caption{一个例句对应的依存句法模型和成分句法模型的输出. 左边的图是每个位置的分值（log potential），为了方便显示，我们首先对分值进行了归一化.
+    右边的图是变分推断得到的后验概率. 灰色虚线圆圈代表被屏蔽的不合法位置，颜色的深浅反应了分值/概率的大小.}
 
-    \label{fig:vi-probs}
+  \label{fig:vi-probs}
 \end{figure}
 
 \section{实验}\label{sec:vi-exp}
@@ -203,7 +206,7 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 我们设置变分推断的迭代次数统一为3次.
 在成分句法分析中我们新加入了一个参数$\lambda$来平衡标签和无标签树的训练损失，并设置$\lambda$为0.1.
 
-\input{tables/dep-vi-dev.tex}
+\input{tables/vi-dev.tex}
 
 \subsection{分析}
 
