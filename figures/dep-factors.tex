@@ -55,13 +55,13 @@
     \node [circle,draw=gray, densely dashed, semithick,inner sep=0pt,minimum size=0.4cm]  (c0) at ($(w0.base) + (0,-0.8cm)$) {};
     \foreach \x in {1,...,5} {
             \node [circle,draw=black,semithick,inner sep=0pt,minimum size=0.4cm]  (c\x) at ($(w0.base) + (1.5cm*\x,-0.8cm)$) {};
-            \node [red filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm]  (f\x) at ($(c\x) + (0.42cm,0)$) {};
-            \draw[red connect, thick, connect] (c\x.east) -- (f\x.west);
+            \node [red filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm]  (f\x) at ($(c\x) - (0,0.42cm)$) {};
+            \draw[red connect, thick, connect] (c\x.south) -- (f\x.north);
         }
     \node [circle,draw=none,fill=black, inner sep=0pt, minimum height=0.32cm] at (c4) {};
-    \draw[green connect] (c1) to [out=-60, in=-120] node[midway,green filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {} (c4) ;
-    \draw[green connect] (c2) to [out=-60, in=-120] node[midway,green filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {} (c4) ;
-    \draw[green connect] (c4) to [out=-60, in=-120] node[midway,green filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {} (c5) ;
+    \draw[green connect] (c1) to [out=-45, in=-135] node[midway,green filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {} (c4) ;
+    \draw[green connect] (c2) to [out=-45, in=-135] node[midway,green filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {} (c4) ;
+    \draw[green connect] (c4) to [out=-45, in=-135] node[midway,green filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] {} (c5) ;
 
     \node [red filled,inner sep=0pt,minimum size=0.2cm,rounded corners=0.3mm] (unary) at ($(c1.north)-(0,1.9cm)$) {};
     \node [anchor=west] (unary-text) at ($(unary.east)$) {Arc factor};

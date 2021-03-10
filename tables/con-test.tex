@@ -1,5 +1,6 @@
 \begin{table*}[tb]
     \centering
+    \caption{Test数据的结果.}
     \begin{tabularx}{\textwidth}{lccccccccc}
         \toprule
                                                         & \multicolumn{3}{c}{PTB}  & \multicolumn{3}{c}{CTB5.1} & \multicolumn{3}{c}{CTB7}                                                                                                                                     \\
@@ -25,16 +26,14 @@
         \textsc{Crf2o}                                  & 94.06                    & 93.84                      & 93.95                    & 89.04                    & 88.68                    & 88.86                    & 87.86          & 87.40          & 87.63          \\
         \textsc{Crf} w/ pretrained                      & 94.23                    & 94.02                      & 94.12                    & 89.71                    & \textbf{89.89}           & \textbf{89.80}           & 88.84          & 88.36          & 88.60          \\
         \textsc{Crf2o} w/ pretrained                    & \textbf{94.29}           & \textbf{94.15}             & \textbf{94.22}           & \textbf{89.97}           & 89.47                    & 89.72                    & \textbf{88.95} & \textbf{88.56} & \textbf{88.76} \\[1pt]
-        \hline
-        \\[-8pt]
-
+        \midrule
+        \\[-20pt]
         \cite{kitaev-klein-2018-constituency} w/ ELMo   & 95.40                    & 94.85                      & 95.13                    & -                        & -                        & -                        & -              & -              & -              \\
         \cite{kitaev-etal-2019-multilingual} w/ BERT    & 95.73                    & 95.46                      & 95.59                    & 91.96                    & 91.55                    & 91.75                    & -              & -              & -              \\[3pt]
         \textsc{Crf} w/ BERT                            & \textbf{95.85}           & \textbf{95.53}             & \textbf{95.69}           & 92.51                    & 92.04                    & 92.27                    & 91.73          & \textbf{91.38} & 91.55          \\
         \textsc{Crf2o} w/ BERT                          & 95.73                    & 95.45                      & 95.59                    & \textbf{92.75}           & \textbf{92.18}           & \textbf{92.47}           & \textbf{91.93} & 91.31          & \textbf{91.62} \\
         \bottomrule
     \end{tabularx}
-    \caption{Test数据的结果.}
     \label{table:con-test}
 \end{table*}
 

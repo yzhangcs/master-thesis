@@ -275,7 +275,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 
 进一步地，我们同样发现边缘概率$p(i \rightarrow j\mid\boldsymbol{x})$直接与对$\log Z(\boldsymbol{x})$关于分值$\mathrm{s}(i\rightarrow j)$的偏导相关
 \begin{equation}
-    \label{eq:partial-derivative}
+    \label{eq:dep-partial-derivative}
     \frac{\partial \log Z}{\partial \mathrm{s}(i\rightarrow j)} = p(i \rightarrow j\mid\boldsymbol{x})
 \end{equation}
 这可以很方便的证明（见附录~\ref{sec:outside-backprop}）.

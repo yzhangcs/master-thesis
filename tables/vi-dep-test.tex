@@ -1,0 +1,24 @@
+\begin{table}[tb!]
+  \centering
+  \caption{依存句法分析模型在PTB和CoNLL09的Test数据上不同推断算法的结果.}
+  \begin{tabular}{lcccc}
+    \toprule
+                   & \multicolumn{2}{c}{PTB} & \multicolumn{2}{c}{CoNLL09}                                   \\
+                   & UAS                     & LAS                         & UAS            & LAS            \\[2pt]
+    \midrule
+    \\[-15pt]
+    \textsc{Loc}   & 96.08                   & 94.47                       & 89.15          & 85.98          \\
+    \textsc{Crf}   & 96.02                   & 94.33                       & 89.28          & 86.18          \\
+    \textsc{Mfvi}  & \textbf{96.11}          & \textbf{94.49}              & 89.35          & 86.25          \\
+    \textsc{Crf2o} & \textbf{96.11}          & 94.46                       & \textbf{89.63} & \textbf{86.52} \\
+    \multicolumn{5}{c}{+BERT}                                                                                \\[3pt]
+    \textsc{Loc}   &                                                                                         \\
+    \textsc{Crf}   &                                                                                         \\
+    \textsc{Mfvi}  &                                                                                         \\
+    \textsc{Crf2o} &                                                                                         \\
+    \bottomrule
+  \end{tabular}
+  \label{table:vi-dep-test}
+\end{table}
+
+

@@ -25,6 +25,17 @@
 \usepackage{graphics}
 \usepackage{pdfpages}
 
+\newfontfamily\tgtermes{TeX Gyre Termes}
+\makeatletter
+  \begingroup
+    \tgtermes
+    \DeclareFontShape{\f@encoding}{\rmdefault}{m}{sc}{%
+      <-> ssub * \f@family/m/sc}{}
+    \DeclareFontShape{\f@encoding}{\rmdefault}{bx}{sc}{%
+      <-> ssub * \f@family/bx/sc}{}
+  \endgroup
+\makeatother
+
 \begin{document}
 
 % 用户信息

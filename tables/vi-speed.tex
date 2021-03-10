@@ -1,0 +1,25 @@
+\begin{table}[tb!]
+  \centering
+  \caption{依存句法和成分句法使用不同推断算法的时间复杂度，以及相应的在PTB的Test数据上的解析时间的比较.
+    依存句法统一使用了Eisner算法解码，成分句法统一使用了CKY算法解码}
+  \begin{tabular}{llcccr}
+    \toprule
+     & \multirow{2}{*}{Inference} & \multicolumn{2}{c}{Complexity} & \multirow{2}{*}{Decoding Alg.} & \multirow{2}{*}{Sents/sec}                 \\
+     &                            & CPU                            & GPU                            &                            &               \\[2pt]
+    \midrule
+    \multirow{3}{*}{Dependency}
+    % & \textsc{Loc}               & $O(n)$                         & $O(1)$                         & Eisner                     & 990           \\
+     & \textsc{Crf}               & $O(n^3)$                       & $O(n^2)$                       & Eisner                     & 653           \\
+     & \textsc{Crf2o}             & $O(n^3)$                       & $O(n^2)$                       & Eisner                     & 431           \\
+     & \textsc{Mfvi}              & $O(n^3)$                       & $O(n)$                         & Eisner                     & \textbf{1126} \\
+    \midrule
+    \multirow{3}{*}{Constituency}
+    % & \textsc{Loc}               & $O(n)$                         & $O(1)$                         & CKY                        & 990           \\
+     & \textsc{Crf}               & $O(n^3)$                       & $O(n^2)$                       & CKY                        & 743           \\
+     & \textsc{Crf2o}             & $O(n^3)$                       & $O(n^2)$                       & CKY                        & 598           \\
+     & \textsc{Mfvi}              & $O(n^3)$                       & $O(n)$                         & CKY                        & \textbf{905}  \\
+
+    \bottomrule
+  \end{tabular}
+  \label{table:vi-speed}
+\end{table}

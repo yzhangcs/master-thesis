@@ -1,0 +1,24 @@
+\begin{table}[tb!]
+  \centering
+  \caption{成分句法分析模型在英文PTB、中文CTB5.1和CTB7的Test数据上不同推断算法的结果.}
+  \begin{tabular}{lccccccccc}
+    \toprule
+                   & \multicolumn{3}{c}{PTB} & \multicolumn{3}{c}{CTB51} & \multicolumn{3}{c}{CTB7}                                                                                                       \\
+                   & P                       & R                         & F                        & P              & R              & F              & P              & R              & F              \\[2pt]
+    \midrule
+    \\[-15pt]
+    \textsc{Loc}   & 94.16                   & 93.85                     & 94.01                    & 89.39          & 89.16          & 89.28          & 88.54          & 87.96          & 88.25          \\
+    \textsc{Crf}   & 94.23                   & 94.02                     & 94.12                    & 89.71          & \textbf{89.89} & \textbf{89.80} & 88.84          & 88.36          & 88.60          \\
+    \textsc{Mfvi}  & 94.11                   & 93.96                     & 94.04                    & 89.82          & 89.79          & 89.81          & 88.71          & 88.16          & 88.43          \\
+    \textsc{Crf2o} & \textbf{94.29}          & \textbf{94.15}            & \textbf{94.22}           & \textbf{89.97} & 89.47          & 89.72          & \textbf{88.95} & \textbf{88.56} & \textbf{88.76} \\
+    \multicolumn{10}{c}{+BERT}                                                                                                                                                                            \\[3pt]
+    \textsc{Loc}   &                         &                           &                          &                &                &                &                &                &                \\
+    \textsc{Crf}   & \textbf{95.85}          & \textbf{95.53}            & \textbf{95.69}           & 92.51          & 92.04          & 92.27          & 91.73          & \textbf{91.38} & 91.55          \\
+    \textsc{Mfvi}  &                         &                           &                          &                &                &                &                &                &                \\
+    \textsc{Crf2o} & 95.73                   & 95.45                     & 95.59                    & \textbf{92.75} & \textbf{92.18} & \textbf{92.47} & \textbf{91.93} & 91.31          & \textbf{91.62} \\
+    \bottomrule
+  \end{tabular}
+  \label{table:vi-con-test}
+\end{table}
+
+
