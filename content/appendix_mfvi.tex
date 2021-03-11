@@ -2,94 +2,94 @@
 \label{appendix:mfvi-derivation}
 对于一个真正的后验分布$P(\boldsymbol{y})$，定义为
 \begin{equation}\label{eq:posterior}
-    P(\boldsymbol{y}) =\frac{\prod_{i=1}^{N} \phi(\boldsymbol{y}_i)}{Z:=\sum_{\boldsymbol{y}}\prod_{i=1}^{N} \phi(\boldsymbol{y}_i)}
+  P(\boldsymbol{y}) =\frac{\prod_{i=1}^{N} \phi(y_i)}{Z:=\sum_{\boldsymbol{y}}\prod_{i=1}^{N} \phi(y_i)}
 \end{equation}
-其中$Z$为partition term，我们定义未归一化的分布$\tilde{P}(\boldsymbol{y})=\prod_{i=1}^{N} \phi(\boldsymbol{y}_i)$，$\phi(\cdot)=\exp(\mathrm{s}(\cdot))$
+其中$Z$为partition term，我们定义未归一化的分布$\tilde{P}(\boldsymbol{y})=\prod_{i=1}^{N} \phi(y_i)$，$\phi(\cdot)=\exp(\mathrm{s}(\cdot))$
 
 变分推断建模一个近似分布$Q(\boldsymbol{y})$，并最小化与真实分布的KL散度（KL Divergence）
 \begin{equation}
-    \begin{split}
-        KL(Q||P)
-        &=-E_{Q(\boldsymbol{y})}\left[\log\frac{Q(\boldsymbol{y})}{P(\boldsymbol{y})}\right]\\
-        &=\underbrace{E_{Q(\boldsymbol{y})}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y})\right]}_{ELBo}+\log Z
-    \end{split}
+  \begin{split}
+    KL(Q||P)
+    &=-E_{Q(\boldsymbol{y})}\left[\log\frac{Q(\boldsymbol{y})}{P(\boldsymbol{y})}\right]\\
+    &=\underbrace{E_{Q(\boldsymbol{y})}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y})\right]}_{ELBo}+\log Z
+  \end{split}
 \end{equation}
 定义
 \begin{equation}
-    \mathcal{L}(Q)=ELBo=E_{Q(\boldsymbol{y})}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y})\right]
+  \mathcal{L}(Q)=ELBo=E_{Q(\boldsymbol{y})}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y})\right]
 \end{equation}
 我们将最小化KL代替为最大化ELBo
 \begin{equation}
-    \begin{split}
-        Q^{\ast}(\boldsymbol{y}) &= \arg\max_{Q}\mathcal{L}(Q)\\
-        &= \arg\max_{Q}E_{Q(\boldsymbol{y})}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y}))\right]
-    \end{split}
+  \begin{split}
+    Q^{\ast}(\boldsymbol{y}) &= \arg\max_{Q}\mathcal{L}(Q)\\
+    &= \arg\max_{Q}E_{Q(\boldsymbol{y})}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y}))\right]
+  \end{split}
 \end{equation}
 
 
-Mean Field假设每个变量相互独立，有$Q(\boldsymbol{y})=\prod_i{Q_i(\boldsymbol{y}_i)}$. 因此上式可应用梯度上升法（Coordinate Ascent），每次迭代优化一个变量$Q_j(\boldsymbol{y}_j)$，保持其余变量$Q_{-j}(\boldsymbol{y}_{-j})$不变，有
+Mean Field假设每个变量相互独立，有$Q(\boldsymbol{y})=\prod_i{Q_i(y_i)}$. 因此上式可应用梯度上升法（Coordinate Ascent），每次迭代优化一个变量$Q_j(y_j)$，保持其余变量$Q_{-j}(y_{-j})$不变，有
 \begin{equation}
-    \mathcal{L}(Q)=\underbrace{E_{Q(\boldsymbol{y})}\left[\log \tilde{P}(\boldsymbol{y})\right]}_{\textcircled{1}}-\underbrace{E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y})\right]}_{\textcircled{2}}
+  \mathcal{L}(Q)=\underbrace{E_{Q(\boldsymbol{y})}\left[\log \tilde{P}(\boldsymbol{y})\right]}_{\textcircled{1}}-\underbrace{E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y})\right]}_{\textcircled{2}}
 \end{equation}
 其中
 \begin{equation}
-    \begin{split}
-        \textcircled{1}&=E_{Q(\boldsymbol{y})}\left[\log \tilde{ P}(\boldsymbol{y})\right]\\
-        &=\int_{\boldsymbol{y}}Q(\boldsymbol{y}) \log \tilde{P}(\boldsymbol{y})d\boldsymbol{y}\\
-        &=\int_{\boldsymbol{y}}\prod_i{Q_i(\boldsymbol{y}_i)} \log \tilde{P}(\boldsymbol{y})d\boldsymbol{y}\\
-        &=\int_{\boldsymbol{y}_j}Q_j(\boldsymbol{y}_j)\left(\int_{\boldsymbol{y_{-j}}}Q_{-j}(\boldsymbol{y}_{-j})\log \tilde{ P}(\boldsymbol{y}) d\boldsymbol{y}_{-j}\right) d\boldsymbol{y}_j\\
-        &=\int_{\boldsymbol{y_j}}Q_j(\boldsymbol{y}_j)E_{Q_{-j}(\boldsymbol{y}_{-j})}\left[\log \tilde{ P}(\boldsymbol{y}) \right] d\boldsymbol{y}_j\\
-        \textcircled{2}&=E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y}))\right]\\
-        &=\int_{\boldsymbol{y}}Q(\boldsymbol{y}) \sum_i\log Q_i(\boldsymbol{y}_i) d\boldsymbol{y}\\
-        &=\int_{\boldsymbol{y}}\prod_i{Q_i(\boldsymbol{y}_i)} \sum_i\log Q_i(\boldsymbol{y}_i) d\boldsymbol{y}\\
-        &=\sum_j\int_{\boldsymbol{y}}\prod_i{Q_i(\boldsymbol{y}_i)}\log Q_j(\boldsymbol{y}_j) d\boldsymbol{y}\\
-        &=\sum_j\int_{\boldsymbol{y}_j}Q_j(\boldsymbol{y}_j)\log Q_j(\boldsymbol{y}_j) d\boldsymbol{y}_j\int_{\boldsymbol{y}_{-j}} {Q_{-j}(\boldsymbol{y}_{-j})}d\boldsymbol{y}_{-j}\\
-        &=\sum_j\int_{\boldsymbol{y}_j}Q_j(\boldsymbol{y}_j)\log Q_j(\boldsymbol{y}_j) d\boldsymbol{y}_j\\
-        &=\int_{\boldsymbol{y}_j}Q_j(\boldsymbol{y}_j)\log Q_j(\boldsymbol{y}_j) d\boldsymbol{y}_j + C
-    \end{split}
+  \begin{split}
+    \textcircled{1}&=E_{Q(\boldsymbol{y})}\left[\log \tilde{ P}(\boldsymbol{y})\right]\\
+    &=\int_{\boldsymbol{y}}Q(\boldsymbol{y}) \log \tilde{P}(\boldsymbol{y})d\boldsymbol{y}\\
+    &=\int_{\boldsymbol{y}}\prod_i{Q_i(y_i)} \log \tilde{P}(\boldsymbol{y})d\boldsymbol{y}\\
+    &=\int_{y_j}Q_j(y_j)\left(\int_{\boldsymbol{y_{-j}}}Q_{-j}(y_{-j})\log \tilde{ P}(\boldsymbol{y}) dy_{-j}\right) dy_j\\
+    &=\int_{\boldsymbol{y_j}}Q_j(y_j)E_{Q_{-j}(y_{-j})}\left[\log \tilde{ P}(\boldsymbol{y}) \right] dy_j\\
+    \textcircled{2}&=E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y}))\right]\\
+    &=\int_{\boldsymbol{y}}Q(\boldsymbol{y}) \sum_i\log Q_i(y_i) d\boldsymbol{y}\\
+    &=\int_{\boldsymbol{y}}\prod_i{Q_i(y_i)} \sum_i\log Q_i(y_i) d\boldsymbol{y}\\
+    &=\sum_j\int_{\boldsymbol{y}}\prod_i{Q_i(y_i)}\log Q_j(y_j) d\boldsymbol{y}\\
+    &=\sum_j\int_{y_j}Q_j(y_j)\log Q_j(y_j) dy_j\int_{y_{-j}} {Q_{-j}(y_{-j})}dy_{-j}\\
+    &=\sum_j\int_{y_j}Q_j(y_j)\log Q_j(y_j) dy_j\\
+    &=\int_{y_j}Q_j(y_j)\log Q_j(y_j) dy_j + C
+  \end{split}
 \end{equation}
 $C$代表常数项，因此
 \begin{equation}
-    \begin{split}
-        \mathcal{L}(Q)&=\textcircled{1}-\textcircled{2}\\
-        &=\int_{\boldsymbol{y_j}}Q_j(\boldsymbol{y}_j)E_{Q_{-j}(\boldsymbol{y}_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right] d\boldsymbol{y}_j-\int_{\boldsymbol{y}_j}Q_j(\boldsymbol{y}_j)\log Q_j(\boldsymbol{y}_j) d\boldsymbol{y}_j +C\\
-        &=-\int_{\boldsymbol{y_j}}Q_j(\boldsymbol{y}_j)\log\frac{Q_j(\boldsymbol{y}_j)}{\exp\left(E_{Q_{-j}(\boldsymbol{y}_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)} d\boldsymbol{y}_j +C\\
-        &=KL\left(Q_j(\boldsymbol{y}_j)||\exp\left(E_{Q_{-j}(\boldsymbol{y}_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)\right)+C
-    \end{split}
+  \begin{split}
+    \mathcal{L}(Q)&=\textcircled{1}-\textcircled{2}\\
+    &=\int_{\boldsymbol{y_j}}Q_j(y_j)E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right] dy_j-\int_{y_j}Q_j(y_j)\log Q_j(y_j) dy_j +C\\
+    &=-\int_{\boldsymbol{y_j}}Q_j(y_j)\log\frac{Q_j(y_j)}{\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)} dy_j +C\\
+    &=KL\left(Q_j(y_j)||\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)\right)+C
+  \end{split}
 \end{equation}
-因此最大化$\mathcal{L}(Q)$即最小化$KL\left(Q_j(\boldsymbol{y}_j)||\exp\left(E_{Q_{-j}(\boldsymbol{y}_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)\right)$，相应的更新公式为
+因此最大化$\mathcal{L}(Q)$即最小化$KL\left(Q_j(y_j)||\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)\right)$，相应的更新公式为
 \begin{equation}
-    {Q^{\ast}_j(\boldsymbol{y}_j)}=\exp\left(E_{Q_{-j}(\boldsymbol{y}_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)
+  {Q^{\ast}_j(y_j)}=\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)
 \end{equation}
 对于包含二阶factor的$\boldsymbol{y}$，上式进一步写为
 \begin{equation}
-    \begin{split}
-        {Q^{\ast}_j(\boldsymbol{y}_j)}&=\exp\left(E_{Q_{-j}(\boldsymbol{y}_{-j})}\left[\log \tilde{P}\boldsymbol{y})\right]\right)\\
-        &=\exp\left(E_{Q_{-j}(\boldsymbol{y}_{-j})}\left[\sum_i s_u(\boldsymbol{y}_i)+\sum_{i,k} s_b(\boldsymbol{y}_i,\boldsymbol{y}_k) \right]\right)
-    \end{split}
+  \begin{split}
+    {Q^{\ast}_j(y_j)}&=\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}\boldsymbol{y})\right]\right)\\
+    &=\exp\left(E_{Q_{-j}(y_{-j})}\left[\sum_i s(y_i)+\sum_{i,k} s(y_i,y_k) \right]\right)
+  \end{split}
 \end{equation}
 其中，对于一阶项
 \begin{equation}
-    \begin{split}
-        E_{Q_{-j}(\boldsymbol{y}_{-j})}\left[\sum_i s_u(\boldsymbol{y}_i)\right]
-        &=\sum_{i}s_u(\boldsymbol{y}_i) \int_{\boldsymbol{y}_{-j}} Q_{-j}(\boldsymbol{y}_{-j}) d\boldsymbol{y}_{-j}\\
-        &=\sum_{i}s_u(\boldsymbol{y}_i)\\
-        &=s_u(\boldsymbol{y}_j)+C
-    \end{split}
+  \begin{split}
+    E_{Q_{-j}(y_{-j})}\left[\sum_i s(y_i)\right]
+    &=\sum_{i}s(y_i) \int_{y_{-j}} Q_{-j}(y_{-j}) dy_{-j}\\
+    &=\sum_{i}s(y_i)\\
+    &=s(y_j)+C
+  \end{split}
 \end{equation}
 对于二阶项
 \begin{equation}
-    \begin{split}
-        E_{Q_{-j}(\boldsymbol{y}_{-j})}\left[\sum_{i,k} s_b(\boldsymbol{y}_i,\boldsymbol{y}_k) \right] &=\int_{\boldsymbol{y}_{-j}} Q_{-j}(\boldsymbol{y}_{-j})\left(\sum_{i,k} s_b(\boldsymbol{y}_i,\boldsymbol{y}_k) \right) d\boldsymbol{y}_{-j}\\
-        &=\sum_{i,k}\int_{\boldsymbol{y}_{-j}} Q_{-j}(\boldsymbol{y}_{-j})s_b(\boldsymbol{y}_i,\boldsymbol{y}_k) d\boldsymbol{y}_{-j}\\
-        &=\sum_{i\neq j}{\int_{\boldsymbol{y}_{-j}}Q_{-j}(\boldsymbol{y}_{-j}) s_b(\boldsymbol{y}_i,\boldsymbol{y}_j)  d\boldsymbol{y}_{-j}} +C\\
-        &=\sum_{i\neq j}{\int_{\boldsymbol{y}_i}Q_{i}(\boldsymbol{y}_i) s_b(\boldsymbol{y}_i,\boldsymbol{y}_j)  d\boldsymbol{y}_i}{\int_{\boldsymbol{y}_{-i-j}}Q_{{-i-j}}(\boldsymbol{y}_{-i-j})   d\boldsymbol{y}_{-i-j}} +C\\
-        &=\sum_{i\neq j}{\int_{\boldsymbol{y}_i}Q_{i}(\boldsymbol{y}_i) s_b(\boldsymbol{y}_i,\boldsymbol{y}_j)  d\boldsymbol{y}_i} +C
-    \end{split}
+  \begin{split}
+    E_{Q_{-j}(y_{-j})}\left[\sum_{i,k} s(y_i,y_k) \right] &=\int_{y_{-j}} Q_{-j}(y_{-j})\left(\sum_{i,k} s(y_i,y_k) \right) dy_{-j}\\
+    &=\sum_{i,k}\int_{y_{-j}} Q_{-j}(y_{-j})s(y_i,y_k) dy_{-j}\\
+    &=\sum_{i\neq j}{\int_{y_{-j}}Q_{-j}(y_{-j}) s(y_i,y_j)  dy_{-j}} +C\\
+    &=\sum_{i\neq j}{\int_{y_i}Q_{i}(y_i) s(y_i,y_j)  dy_i}{\int_{y_{-i-j}}Q_{{-i-j}}(y_{-i-j})   dy_{-i-j}} +C\\
+    &=\sum_{i\neq j}{\int_{y_i}Q_{i}(y_i) s(y_i,y_j)  dy_i} +C
+  \end{split}
 \end{equation}
 因此，更新公式为
 \begin{equation}
-    {Q^{\ast}_j(\boldsymbol{y}_j)}\propto \exp\left(s_u(\boldsymbol{y}_j) + \sum_{i\neq j}{\sum_{\boldsymbol{y}_i}Q_{i}(\boldsymbol{y}_i) s_b(\boldsymbol{y}_i,\boldsymbol{y}_j)} \right)
+  {Q^{\ast}_j(y_j)}\propto \exp\left(s(y_j) + \sum_{i\neq j}{\sum_{y_i}Q_{i}(y_i) s(y_i,y_j)} \right)
 \end{equation}
 
 \noindent$\blacksquare$

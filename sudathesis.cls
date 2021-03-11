@@ -245,11 +245,12 @@ The LaTeX template for thesis of suda]
 %%%%%%%%%% reference %%%%%%%%%%
 % 参考文献
 
-\bibliographystyle{chinesebst} % 参考文献格式
-\RequirePackage[sort&compress]{natbib}
+\bibliographystyle{gbt7714-author-year} % 参考文献格式
+\RequirePackage[authoryear]{natbib}
 \bibpunct{[}{]}{,}{n}{}{}
 \setlength{\bibsep}{0pt}
 \newcommand{\upcite}[1]{\textsuperscript{\cite{#1}}}
+\renewcommand{\citep}[1]{(\citet{#1})}
 
 %%%%%%%%%% table %%%%%%%%%%
 % 表格
