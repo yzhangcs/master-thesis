@@ -1,1 +1,71 @@
 \chapter{绪论}
+\label{cha:intro}
+
+\section{研究背景和意义}
+
+\section{相关工作}
+\label{sec:relworks}
+
+\subsection{依存句法分析}
+
+批次化技术已经在线性链条件随机场（linear-chain CRF）中广泛应用，但是在树形结构中这个要复杂得多.
+\citet{eisner-2016-inside}在成分句法分析上提出了一个关于Outside算法和反向传播机制等价性的理论证明，并同样讨论了其他类似于依存文法的范式.
+我们在章节~\ref{cha:dep-crf}的工作中借鉴了他们的理论性工作.
+作为一个经验型分析，我们相信我们的尝试能够让树形条件随机场在现实系统中应用起来.
+
+和\citet{gaddy-etal-2018-whats}在成分句法上的工作类似，\citet{falenska-kuhn-2019-non}提出了一个在依存句法上的很好的分析性工作.
+通过将\citet{kiperwasser-goldberg-2016-simple}的一阶基于图的方法扩展到二阶，他们尝试探究有多少结构化上下文被双向LSTM编码器捕捉.
+他们拼接3层LSTM的在$i,k,j$位置的输出向量来给邻接兄弟子树打分，并采用了Max Margin训练损失和二阶Eisner解码算法\citep{mcdonald-pereira-2006-online}.
+基于他们相对负面的结果和分析，他们认为高阶建模是多余的，因为双向LSTM已经可以有效的隐式捕捉足够的结构化上下文.
+他们同样在RNNs和句法的关系上进行了详细的调研.
+在我们的工作中，我们使用了一个更强的基线模型，并且发现了相比于他们的工作更显著的UAS/LAS提升.
+特别地，我们提出了深入的分析，显示显式建模高阶信息可以帮助句法模型，因此与双向LSTM编码器是互补的.
+
+
+\citet{ji-etal-2019-graph}引入了高阶结构信息，并用在Biaffine Parser\citep{dozat-etal-2017-biaffine}上用图神经网络来隐式建模.
+他们在MLP层和Biaffine层之间增加了三层的图注意力网络（graph attention network，GAT）\citep{velickovic-etal-2018-graph}作为组块.
+第一层GAT使用MLP层的输出$\mathbf{r}_i^{h}$和$\mathbf{r}_i^{m}$作为输入，通过集聚邻居节点产生新的表示$\mathbf{r}_i^{h1}$和$\mathbf{r}_i^{m1}$.
+类似的，第二层GAT在$\mathbf{r}_i^{h1}$和$\mathbf{r}_i^{m1}$上操作，产生$\mathbf{r}_i^{h2}$和$\mathbf{r}_i^{m2}$.
+通过这种方式，一个节点渐渐的收集到多跳的高阶信息作为单条弧打分的全局证据.
+训练时他们遵循了原始的头选择训练损失.
+与此相对的，我们的工作采用的全局的TreeCRF损失并显式地将高阶分值引入到了Biaffine Parser.
+
+\citet{zhang-etal-2019-empirical}探索了在一阶Biaffine Parser上结构化学习的作用.
+他们在多语言数据上比较了局部头选择损失、全局Max Margin损失和TreeCRF损失的性能.
+他们表明全局的TreeCRF损失总体上要稍微好于Max Margin损失，并且对大多数语言而言，结构化学习带来了虽然不多但是显著的LAS提升.
+他们同样表明结构化学习，特别是TreeCRF，极大的提升了句子级匹配的准确率，这与我们的观察相仿.
+此外，他们通过Cython programming显式在CPU上计算了Inside算法和Outside算法.
+与此对应的，这里我们在Biaffine Parser上提出一个高效的二阶TreeCRF扩展，并且进行了更加深入的分析，证明了结构化学习和高阶建模的效果.
+
+\subsection{成分句法分析}
+
+由于效率低下的远远，以前很少有关于基于条件随机场的成分句法分析的工作.
+\citet{finkel-etal-2008-efficient}提出了第一个基于非神经网络的引入丰富特征的条件随机场成分句法分析器.
+\citet{durrett-klein-2015-neural}拓展了\citet{finkel-etal-2008-efficient}的工作，使用一个带非线性激活的前馈神经网络来打分产生式.
+这两个工作都在CPU上显式进行了Inside-Outside计算，并且有严重的效率问题.
+
+我们的成分句法分析器基于高性能的基于双向LSTM编码器\citep{stern-etal-2017-minimal}的现代神经网络分析器，在基于图的模型上利用了minus feature\citep{cross-huang-2016-span}进行区块的打分.
+最近有很多工作都参考了\citet{stern-etal-2017-minimal}.
+\citet{gaddy-etal-2018-whats}尝试分析什么样的，以及有多少上下文被双向LSTM隐式编码.
+\citet{kitaev-klein-2018-constituency}将2层双向LSTM替换为自注意力层，并通过分离上下文和位置注意力，发现了可观的提升.
+与此对应的，我们的工作表明通过合理的设置双向LSTM，例如Dropout策略，\citet{stern-etal-2017-minimal}的分析器可以超过\citet{kitaev-klein-2018-constituency}的结果.
+请注意\citet{kitaev-klein-2018-constituency}的工作中使用了很大的词向量.
+
+对于序列标注任务而言，批次化很直接，并且已经被很好的解决，比如NCRF++的实现\footnote{\url{https://github.com/jiesutd/NCRFpp}}.
+但是，还很少有工作关注树形结构.
+在依存句法的工作里，我们首次提出批次化树形结构的Inside和Viterbi（Eisner）计算，以便于在依存句法分析中利用GPU加速\citep{zhang-etal-2020-efficient}.
+现在，我们在成分句法分析中做了类似的扩展，采用了不同的Inside和Viterbi（CKY）算法.
+
+Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}}\citep{rush-2020-torch}是我们的方法之外一个同期独立完成的工作，同样为成分句法分析实现了批次化的CKY算法.
+然而，Torch-Struct旨在实现通用目的的结构化预测算法的基本实现.
+与此相反，我们着力于复杂的解析器模型，并力求达到成分句法分析在准确率和效率上的最佳性能.
+
+与此同时，近期有许多工作没有显式考虑结构化约束或者CKY解码，极大简化了成分句法分析任务.
+\citet{gomez-rodriguez-vilares-2018-constituent}通过对每个词设计复杂的标签编码树信息，尝试采用序列标注方法解决成分句法分析任务.
+\citet{vilares-etal-2019-better}通过一系列的增强技术，例如多任务学习和策略提督，进一步增强的序列标注方法.
+\citet{shen-etal-2018-straight}提出对于正确树中的每个邻居词对预测一个数值距离，并应用自底向上的贪婪解码找到一棵最优的树.
+然而，所有上面的工作仍然在解析性能上极大的落后于主流的方法.
+
+\subsection{近似推断方法}
+
+\section{章节和内容安排}
