@@ -3,10 +3,45 @@
 
 \section{研究背景和意义}
 
+自然语言处理（Natural Language Processing, NLP）是目前人工智能方兴未艾的领域之一.
+一个完整的自然语言处理句子分析流程主要分为三个部分：1）词法分析；2）句法分析；3）语义分析.
+其中词法分析包含了词性标注（Part-of-Speech Tagging）、命名实体识别（Named Entity Recognition, NER）以及消歧（Disambiguation）等子任务，中文由于词语之间没有天然边界，还额外需要进行中文分词.
+句法分析的目的是以句法树的形式，刻画句子词语的修饰关系，主要包含了依存句法（Dependency Parsing）和成分句法（Constituency Parsing）分析这两种句法分析范式.
+语义分析的主要目的是为了理解句子内涵的语义，包含语义角色标注（Semantic Role Labeling, SRL）、语义依存分析（Semantic Dependency Parsing, SDP）和抽象语义表示（Abstract Meaning Representation, AMR）等子任务.
+句子分析作为分析句子结构，理解句子结构的必不可少的步骤，对下游任务，如机器翻译（Machine Translation）、问答（Question \& Answering, QA），有极大的帮助作用.
+
+上述的三个流程通常以管道的方式进行.
+而句法分析作为连接词法和语义分析的中间步骤，具备十分重要的研究价值.
+目前存在着多种句法分析文法，例如组合范畴文法（Combinatorial Cat-egorial Grammars, CCGs），成分文法（Constituency Grammars）或者我们更为熟知的上下文无关文法（Contex Free Grammars, CFGs），以及依存文法（Dependency Grammars）.
+其中依存文法对应的依存句法解析，和成分文法对应的成分句法解析是目前最常见的句法分析范式，也是本文主要的研究对象.
+依存句法分析的目的是识别句子中词语次的修饰的关系.
+成分句法则是将句子刻画为多个层次关系的短语，组成树的结构.
+
+得益于基准数据集宾州书库（Penn Treebank, PTB）的发布，以及深度学习技术的长足进步，目前句法分析方法领域得到了迅速的发展.
+不同于传统句法分析方法十分依赖于离散特征的人工设计，由于深度神经网络的强大上下文编码能力，句法分析器的方法愈来愈有简单化的趋势.
+其中依存句法分析器Biaffine Parser\citep{dozat-etal-2017-biaffine}正是符合这样的潮流：利用诸如双向LSTM或Transformer\citep{vaswani-2017-attention}等强大编码器得到上下文表示，然后采取一个简单的头选择训练目标训练每个词找到正确的头.
+类似的，\citet{gaddy-etal-2018-whats}采用的成分句法分析器采用了一个二分类训练目标，判断每个位置是否能够组成一个区块.
+由于其准确率高，速度快的特点，基于局部训练目标的分析器是目前最为流行的句法分析器.
+
+然而，已有的句法分析器Biaffine Parser也存在一些固有的缺陷.
+由于训练时没有显式的树结构约束，在解码时分析器仍然需要通过解码算法（例如Eisner算法、MST算法或CKY算法）来得到一棵合法的树，这就造成了训练和预测的不匹配.
+由于分析器训练目标较强的独立性假设，尽管能够得到合法的树输出，但是我们没法得到相应的树概率，而在数据建模的时代，概率分布估计一直是一个核心问题\citep{le-zuidema-2014-inside}.
+
+因此，在本文章节~\ref{cha:dep-crf}和章节~\ref{cha:con-crf}，分别在依存句法分析任务和成分句法分析任务上，我们考虑将以前流行的结构化学习目标引入到现有的神经网络模型中，我们尝试引入树形条件随机场（TreeCRF）在训练时最大化树的概率.
+考虑到在前人的工作中，引入高阶特征一直对于句法分析性能的提升\citet{mcdonald-pereira-2006-online,chen-manning-2014-fast}很关键，因此我们还尝试在两种句法分析范式中尝试了采用兄弟等二阶子树特征.
+在我们之前，已经有研究者尝试在神经网络模型中增加高阶建模和结构化学习\citep{zhang-etal-2019-empirical,falenska-kuhn-2019-non}.
+然而，引入更多的高阶特征后结构化学习算法受限于高复杂度问题，限制了该类算法的广泛应用.
+我们主要从两个方面尝试缓解这类算法的高复杂度问题.
+第一，得益于GPU的并行计算能力，我们为结构化学习的精确推断算法，诸如（二阶）Inside算法等设计了精巧的批次化方法，使得推断过程能够在GPU上能够利用到并行计算大大加速.
+第二，有益于集成了自动求导机制的深度学习库的出现，我们无需和前人一样需要在CPU上进行完整的Inside-Outside过程得到梯度，而是由结合自动求导的反向传播机制自动完成.
+
+在机器学习社区中，研究者针在推断算法高复杂度，或者不可精确推断的问题时通常的做法是采用近似算法来进行近似推断.
+因此在章节~\ref{cha:vi}中，我们还尝试了利用机器学习中的一个近似推断算法，平均场变分推断（Mean Field Variational Inference, \textsc{Mfvi}），近似得到后验概率，我们在依存句法和成分句法分析两种范式中分别设计了两种不同的因子图以及变分推断迭代算法，显著提升了句法分析方法的解析速度.
+
 \section{相关工作}
 \label{sec:relworks}
 
-\subsection{依存句法分析}
+\subsection{高阶依存句法分析}
 
 批次化技术已经在线性链条件随机场（linear-chain CRF）中广泛应用，但是在树形结构中这个要复杂得多.
 \citet{eisner-2016-inside}在成分句法分析上提出了一个关于Outside算法和反向传播机制等价性的理论证明，并同样讨论了其他类似于依存文法的范式.
@@ -78,7 +113,7 @@ Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}}\citep{
 \citet{koo-etal-2010-dual}将非投影依存句法分析形式化为对偶分解（Dual Decomposition, \textsc{Dd}）问题.
 将一个难以求解的问题分解为若干个可求解的子问题，例如可以将输出树的问题分解为单条弧、连续兄弟、双头等\citep{martins-etal-2011-dual}.
 
-另一个和我们的在本文采用的平均场变分推断（Mean Field Variational Inference, \textsc{Mfvi})高度相关的方法是循环置信传播（Loopy Belief Propagation, \textsc{Lbp}）.
+另一个和我们的在本文采用的平均场变分推断高度相关的方法是循环置信传播（Loopy Belief Propagation, \textsc{Lbp}）.
 循环置信传播定义了一个包含多种局部和全局特征的由变量和因子构成的因子图，接着算法迭代式地让因子（变量）收集邻居变量（因子）的信息，最终收敛后得到后验概率.
 \cite{smith-eisner-2008-dependency,gormley-etal-2015-approximation}在依存句法分析上引入了循环置信传播.
 除了上面提到的兄弟（\textsc{Sib}）、祖父（\textsc{Grand}）因子，他们还引入了丰富的全局因子，例如\textsc{Exactly1}约束每个词有且仅有一个头，\textsc{Tree}要求所有词必须组成一棵树等等.
@@ -86,7 +121,7 @@ Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}}\citep{
 与精确算法相比，循环置信传播可以以可接受的复杂度引入大量全局因子，并为模型带来了可观的性能收益.
 
 还有一些工作同时使用了上述的近似算法.
-\citet{auli-lopez-2011-comparison}在组合语义（Combinatorial Cat-egorial Grammar, CCG）文法中同时采用了循环置信传播\citep{smith-eisner-2008-dependency}以及对偶分解\citet{koo-etal-2010-dual}，取得了最佳性能，并对两种方法做了经验性比较.
+\citet{auli-lopez-2011-comparison}在组合范畴文法中同时采用了循环置信传播\citep{smith-eisner-2008-dependency}以及对偶分解\citet{koo-etal-2010-dual}，取得了最佳性能，并对两种方法做了经验性比较.
 \citet{martins-etal-2010-turbo}提出了在非投影依存句法分析中同时利用了循环置信传播\citep{smith-eisner-2008-dependency}以及整数线性规划\citep{martins-etal-2009-concise}方法，表明两种方法采用了一致的因子图，并在局部近似的目标函数的理念上是相一致的.
 
 \section{章节和内容安排}

@@ -1,5 +1,5 @@
 \chapter{基于变分推断的高效句法分析方法}
-\label{cha:approximate-vi}
+\label{cha:vi}
 
 本章节在提出了章节~\ref{cha:dep-crf}和~\ref{cha:con-crf}提出的高阶句法解析器的基础上，尝试利用基于平均场变分推断来近似得到树的后验概率，并与精确推断的CRF相比较.
 我们在依存句法和成分句法的中英文常见的5个基准数据集上做了实验，并对比了加入BERT之后的效果.
@@ -167,9 +167,9 @@ $s(i,j)$是区块$(i,j)$的分值，由公式~\ref{eq:con-biaffine}计算得到�
   \end{array}
   \right.
 \end{equation}
-$s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的分值，由公式~\ref{eq:con-triaffine}计算得到，这里$k$的位置不受动态规划算法的约束，并不要求一定位于$(i,j)$之间，即有$i<j,i<k$.
+$s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的分值，由公式~\ref{eq:con-triaffine}计算得到，这里$k$的位置不受动态规划算法的约束，并不要求一定位于$(i,j)$之间，即有$i<j,k$.
 
-成分句法模型的\textsc{Mfvi}迭代更新公式如下\citep{wang-etal-2019-second}：
+成分句法模型的\textsc{Mfvi}迭代更新公式如下：
 \begin{equation}
   \label{eq:mfvi-con}
   \begin{array}{l}

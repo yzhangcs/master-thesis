@@ -396,17 +396,17 @@ Berkeley Parser和ZPar是两个最具代表性的非神经网络的解析器，�
 \subsection{Test数据上的结果和比较}
 表~\ref{table:con-test}显示了有和没有ELMo/BERT这两种设置下，Test数据集上的最终结果.
 
-除了\citep{zhou-zhao-2019-head}，大部分前人的结果都没有使用预训练的词向量，而是用了随机初始化的版本.
+除了\citet{zhou-zhao-2019-head}，大部分前人的结果都没有使用预训练的词向量，而是用了随机初始化的版本.
 他们在英文上使用了Glove词向量，中文上用了structured skip-gram词向量.
-对于预训练词向量，我们在英文PTB上用了100维的Glove\footnote{\url{https://nlp.stanford.edu/projects/glove}}，中文上采用了\citep{li-etal-2019-attentive}的设置，使用基于Gigaword 3rd Edition训练的词向量，我们同样尝试了\citep{zhou-zhao-2019-head}分享的structured skip-gram词向量，最终的结果和前者差不多.
+对于预训练词向量，我们在英文PTB上用了100维的Glove\footnote{\url{https://nlp.stanford.edu/projects/glove}}，中文上采用了\citet{li-etal-2019-attentive}的设置，使用基于Gigaword 3rd Edition训练的词向量，我们同样尝试了\citet{zhou-zhao-2019-head}分享的structured skip-gram词向量，最终的结果和前者差不多.
 可以明显看到我们的解析器极大受益于预训练词向量的使用.
 
 我们同样与最近的一些成分句法分析相关工作做了对比.
-可以看到我们的基于双向LSTM编码器的解析器极大的超越了基本的\citep{stern-etal-2017-minimal}，这大部分要归功于新的打分架构，以及Dropout之类的参数设置.
+可以看到我们的基于双向LSTM编码器的解析器极大的超越了基本的\citet{stern-etal-2017-minimal}，这大部分要归功于新的打分架构，以及Dropout之类的参数设置.
 和在Dev数据上的趋势一致，我们的二阶模型\textsc{Crf2o}和一阶模型\textsc{Crf}的结果近乎一致，其中\textsc{Crf2o}在PTB和CTB7上的结果超越了\textsc{Crf}，在CTB51上要次于\textsc{Crf}，但是差异都不大.
-与之前最佳的自注意力解析器相比\citep{kitaev-klein-2018-constituency}，我们的一阶解析器分别在英文PTB和中文CTB5.1有0.16以及1.67的绝对提升，并且不包含任何语言特定的实验设置.
+与之前最佳的自注意力解析器相比\citet{kitaev-klein-2018-constituency}，我们的一阶解析器分别在英文PTB和中文CTB5.1有0.16以及1.67的绝对提升，并且不包含任何语言特定的实验设置.
 
-\citep{zhou-zhao-2019-head}的CTB5.1结果得自重新运行他们开源的代码，使用了预测的词性.
+\citet{zhou-zhao-2019-head}的CTB5.1结果得自重新运行他们开源的代码，使用了预测的词性.
 我们参考了他们描述\footnote{\url{https://github.com/DoodleJZ/HPSG-Neural-Parser}}来产生预测词性.
 值得注意的是他们的汇报的CTB5.1结果意外使用了正确的词性.
 我们用正确词性重新跑了他们的代码，在CTB5的Test数据的结果是92.14，与他们论文汇报的结果十分接近.
@@ -414,9 +414,9 @@ Berkeley Parser和ZPar是两个最具代表性的非神经网络的解析器，�
 关于他们论文的另一个细节需要澄清：对于中文上的依存句法分析，他们使用了两种不同的数据分割设置，并且都用了Stanford Dependencies 3.3.0以及正确词性.
 
 表格的最后三行列出了在使用ELMo/BERT设置下的结果.
-对于PTB，我们参考\citep{kitaev-etal-2019-multilingual}，使用了\texttt{bert-large-cased}\footnote{\url{https://github.com/huggingface/transformers}}（24 layers，1024 dimensions，16 heads），对于CTB则使用了\texttt{bert-base-chinese}（12 layers，768 dimensions，12 heads）.
+对于PTB，我们参考\citet{kitaev-etal-2019-multilingual}，使用了\texttt{bert-large-cased}\footnote{\url{https://github.com/huggingface/transformers}}（24 layers，1024 dimensions，16 heads），对于CTB则使用了\texttt{bert-base-chinese}（12 layers，768 dimensions，12 heads）.
 可以明显看到无论是在一阶\textsc{Crf}模型和二阶\textsc{Crf2o}模型上，使用BERT表示都可以极大帮助性能的提升，最终两种解析器的结果趋于一致.
-我们的解析器同样超过了\citep{kitaev-etal-2019-multilingual}的多语言解析器，这里他们用了额外了多语言资源.
+我们的解析器同样超过了\citet{kitaev-etal-2019-multilingual}的多语言解析器，这里他们用了额外了多语言资源.
 总体而言，我们的解析器在两个语言和不同的设置下都达到了当前最佳的结果.
 
 \section{本章小结}\label{sec:con-conclusions}
