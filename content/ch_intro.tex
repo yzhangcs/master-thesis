@@ -39,7 +39,7 @@
 
 \subsection{成分句法分析}
 
-由于效率低下的远远，以前很少有关于基于条件随机场的成分句法分析的工作.
+由于效率低下，以前很少有关于条件随机场的成分句法分析的工作.
 \citet{finkel-etal-2008-efficient}提出了第一个基于非神经网络的引入丰富特征的条件随机场成分句法分析器.
 \citet{durrett-klein-2015-neural}拓展了\citet{finkel-etal-2008-efficient}的工作，使用一个带非线性激活的前馈神经网络来打分产生式.
 这两个工作都在CPU上显式进行了Inside-Outside计算，并且有严重的效率问题.
@@ -67,6 +67,27 @@ Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}}\citep{
 然而，所有上面的工作仍然在解析性能上极大的落后于主流的方法.
 
 \subsection{近似推断方法}
+有许多文献已经证明，引入高阶特征，即考虑多个变量之间的交互，能够帮助模型准确率的提升
+\citep{mcdonald-pereira-2006-online,carreras-2007-experiments,koo-collins-2010-efficient,ma-zhao-2012-fourth}.
+然而这种高阶特征通常导致难以设计一个精确推断的算法来对模型进行学习，甚至导致学习问题成为NP-hard问题\citep{mcdonald-pereira-2006-online}.
+因此我们不得不考虑近似方法.
+由于不可精确推断问题的广泛存在，一直以来近似推断算法在NLP社区都有很多都应用.
+
+\citet{martins-etal-2009-concise}将依存句法分析问题近似为整数线性规划（Integer Linear Programming, \textsc{Ilp}）问题.
+与传统算法相比，\citet{martins-etal-2009-concise}利用了大量的局部和全局丰富特征，例如兄弟、祖父特征，价键特征，作为线性约束，用\textsc{Ilp}来求解，保证输出是一棵合法的依存树.
+\citet{koo-etal-2010-dual}将非投影依存句法分析形式化为对偶分解（Dual Decomposition, \textsc{Dd}）问题.
+将一个难以求解的问题分解为若干个可求解的子问题，例如可以将输出树的问题分解为单条弧、连续兄弟、双头等\citep{martins-etal-2011-dual}.
+
+另一个和我们的在本文采用的平均场变分推断（Mean Field Variational Inference, \textsc{Mfvi})高度相关的方法是循环置信传播（Loopy Belief Propagation, \textsc{Lbp}）.
+循环置信传播定义了一个包含多种局部和全局特征的由变量和因子构成的因子图，接着算法迭代式地让因子（变量）收集邻居变量（因子）的信息，最终收敛后得到后验概率.
+\cite{smith-eisner-2008-dependency,gormley-etal-2015-approximation}在依存句法分析上引入了循环置信传播.
+除了上面提到的兄弟（\textsc{Sib}）、祖父（\textsc{Grand}）因子，他们还引入了丰富的全局因子，例如\textsc{Exactly1}约束每个词有且仅有一个头，\textsc{Tree}要求所有词必须组成一棵树等等.
+\citet{naradowsky-etal-2012-grammarless}将循环置信传播引入到了成分句法分析，也采用了类似的高阶因子和\textsc{Tree}因子在成分句法的变体.
+与精确算法相比，循环置信传播可以以可接受的复杂度引入大量全局因子，并为模型带来了可观的性能收益.
+
+还有一些工作同时使用了上述的近似算法.
+\citet{auli-lopez-2011-comparison}在组合语义（Combinatorial Cat-egorial Grammar, CCG）文法中同时采用了循环置信传播\citep{smith-eisner-2008-dependency}以及对偶分解\citet{koo-etal-2010-dual}，取得了最佳性能，并对两种方法做了经验性比较.
+\citet{martins-etal-2010-turbo}提出了在非投影依存句法分析中同时利用了循环置信传播\citep{smith-eisner-2008-dependency}以及整数线性规划\citep{martins-etal-2009-concise}方法，表明两种方法采用了一致的因子图，并在局部近似的目标函数的理念上是相一致的.
 
 \section{章节和内容安排}
 
@@ -75,9 +96,17 @@ Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}}\citep{
 第一章 绪论. 本章介绍本文中每个工作的任务背景和意义，并阐述一下与工作相关的有关文献的进展和内容，以及与我们方法的对比.
 
 第二章 基于树形条件随机场的高阶依存句法分析.
+本章在当前最佳的依存句法分析器的基础上，提出了一个二阶树形条件随机场的拓展，进一步提升了句法分析的性能.
+为了解决效率问题，我们还提出了批次化技术在GPU上对训练和解码算法进行加速.
 
 第三章 基于树形条件随机场的快速精准成分句法分析.
+本章将树形条件随机场的应用到了神经成分句法分析器当中.
+我们应用了批次化技术解决了树形条件随机场效率低下的问题.
+我们提出了一个简单的两阶段解析方法，来进一步提升分析器的效率.
+我们还为解析器引入了新的打分架构，以及有效的Dropout策略，使得解析器达到了新的最佳水平，并且解析速度很快.
 
 第四章 基于变分推断的高效句法分析方法.
+本章在前面章节提出的高阶句法解析器的基础上，提出利用平均场变分推断方法来近似推断后验概率.
+在引入高阶算法的同时，变分推断避免了精确推断算法的高复杂度问题，并达到了和精确推断方法接近或相当的结果.
 
 第五章 总结与展望. 本章总结本文的主要内容，并展望后续可能的研究方向.
