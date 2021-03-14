@@ -9,7 +9,7 @@
 变分推断建模一个近似分布$Q(\boldsymbol{y})$，并最小化与真实分布的KL散度（KL Divergence）
 \begin{equation}
   \begin{split}
-    KL(Q||P)
+    KL(Q\|P)
     &=-E_{Q(\boldsymbol{y})}\left[\log\frac{Q(\boldsymbol{y})}{P(\boldsymbol{y})}\right]\\
     &=\underbrace{E_{Q(\boldsymbol{y})}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q(\boldsymbol{y})}\left[\log Q(\boldsymbol{y})\right]}_{ELBo}+\log Z
   \end{split}
@@ -54,10 +54,10 @@ $C$代表常数项，因此
     \mathcal{L}(Q)&=\textcircled{1}-\textcircled{2}\\
     &=\int_{\boldsymbol{y_j}}Q_j(y_j)E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right] dy_j-\int_{y_j}Q_j(y_j)\log Q_j(y_j) dy_j +C\\
     &=-\int_{\boldsymbol{y_j}}Q_j(y_j)\log\frac{Q_j(y_j)}{\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)} dy_j +C\\
-    &=KL\left(Q_j(y_j)||\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)\right)+C
+    &=KL\left(Q_j(y_j)\|\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)\right)+C
   \end{split}
 \end{equation}
-因此最大化$\mathcal{L}(Q)$即最小化$KL\left(Q_j(y_j)||\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)\right)$，相应的更新公式为
+因此最大化$\mathcal{L}(Q)$即最小化$KL\left(Q_j(y_j)\|\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)\right)$，相应的更新公式为
 \begin{equation}
   {Q^{\ast}_j(y_j)}=\exp\left(E_{Q_{-j}(y_{-j})}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)
 \end{equation}

@@ -247,7 +247,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 
 如公式~\ref{eq:training-loss-treecrf}所示，计算TreeCRF损失的关键在于如何计算$\log Z(\boldsymbol{x})$.
 这个问题在前深度学习时代的非神经网络模型上已经被很好的解决了.
-我们可以在Viterbi算法的基础上，直接用sum product操作取代max product操作，这样就可以以相同的多项式时间的复杂度得到$\log Z(\boldsymbol{x})$.
+我们可以在Viterbi算法的基础上，直接用sum product操作取代max-product操作，这样就可以以相同的多项式时间的复杂度得到$\log Z(\boldsymbol{x})$.
 然而，对非神经网络模型而言，由于缺乏自动求导机制，单独的计算Inside算法仍然是不够的.
 为了获取边缘概率，然后得到特征权重的梯度，我们还需要实现更加复杂的Outside算法，而这通常要两倍慢于Inside算法.
 这可能是TreeCRF在非神经网络上不如Max Margin流行的主要原因.
@@ -258,7 +258,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 为来提升效率，这些计算通常被从GPU迁移到CPU，用Cython加速.
 
 这里我们表明Inside算法可以被高效的批次化，从而充分利用GPU并行计算的能力.
-图~\ref{fig:eisner-2o}和算法~\ref{alg:eisner-2o}展示了批次化版本的二阶Inside算法，这是\citep{mcdonald-pereira-2006-online}中的二阶Eisner算法的一个直接扩展，将其中的max product操作用sum product取代.
+图~\ref{fig:eisner-2o}和算法~\ref{alg:eisner-2o}展示了批次化版本的二阶Inside算法，这是\citep{mcdonald-pereira-2006-online}中的二阶Eisner算法的一个直接扩展，将其中的max-product操作用sum product取代.
 为了简便，我们忽略了自右边位置$j$向左边位置$i$归并生成incomplete/complete/sibling区块的描述.
 
 具体地，对一个批次中$B$个句子，我们首先将不同位置但是相同宽度的区块($i, j$)的分值打包成为一个大的张量.
@@ -270,16 +270,25 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 
 \subsection{Outside算法的替代：反向传播}
 
-\citep{eisner-2016-inside}以成分句法分析（短语结构）为例，对反向传播机制和Outside算法的等价性进行了理论证明.
+\citet{eisner-2016-inside}以成分句法分析（短语结构）为例，对反向传播机制和Outside算法的等价性进行了理论证明.
 这里我们同样在依存句法上验证了其等价性.
 
-进一步地，我们同样发现边缘概率$p(i \rightarrow j\mid\boldsymbol{x})$直接与对$\log Z(\boldsymbol{x})$关于分值$\mathrm{s}(i\rightarrow j)$的偏导相关
+进一步地，我们同样发现边缘概率$p(i \rightarrow j\mid\boldsymbol{x})$直接与对$\log Z(\boldsymbol{x})$关于分值$\mathrm{s}(i\rightarrow j)$的偏导相关，这可以很方便的证明
 \begin{equation}
   \label{eq:dep-partial-derivative}
-  \frac{\partial \log Z}{\partial \mathrm{s}(i\rightarrow j)} = p(i \rightarrow j\mid\boldsymbol{x})
+  \begin{split}
+    \frac{\partial \log Z}{\partial \mathrm{s}(i\rightarrow j)}
+    & = \frac{\partial \log Z}{\partial Z} \cdot \frac{\partial Z}{\partial \mathrm{s}(i\rightarrow j)}\\
+    & =\frac{1}{Z} \cdot \frac{\partial \sum_{\boldsymbol{y}} \exp \left(\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) \right)}{\partial \mathrm{s}(i\rightarrow j)}\\
+    & =\frac{1}{Z} \cdot \frac{\partial \sum_{\boldsymbol{y}:i\rightarrow j \in \boldsymbol{{y}}} \exp \left(\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) \right)}{\partial \mathrm{s}(i\rightarrow j)}\\
+    & =\frac{1}{Z} \cdot \frac{\sum_{\boldsymbol{y}:i\rightarrow j \in \boldsymbol{{y}}} \exp \left( \sum_{i^{\prime}\rightarrow j^{\prime} \in \boldsymbol{y}\setminus i\rightarrow j} \mathrm{s}(i^{\prime}\rightarrow j^{\prime}) \right)\cdot \partial \exp(\mathrm{s}(i\rightarrow j))}{\partial \mathrm{s}(i\rightarrow j)}\\
+    & =\sum_{\boldsymbol{y}:i\rightarrow j \in \boldsymbol{{y}}} \frac{\exp \left( \sum_{i^{\prime}\rightarrow j^{\prime} \in \boldsymbol{y}\setminus i\rightarrow j} \mathrm{s}(i^{\prime}\rightarrow j^{\prime})\right)\cdot \exp(\mathrm{s}(i\rightarrow j))}{Z}\\
+    &= \sum_{\boldsymbol{y}:i\rightarrow j \in \boldsymbol{{y}}} p(\boldsymbol{y}\mid\boldsymbol{x})\\
+    &= p(i \rightarrow j\mid\boldsymbol{x})
+  \end{split}
 \end{equation}
-这可以很方便的证明（见附录~\ref{sec:outside-backprop}）.
-对于TreeCRF分析器，我们可以通过将解码算法中的分值用边缘概率代替，进行\textbf{最小贝叶斯风险}（Minimum Bayesian Risk, MBR）解码\citep{smith-smith-2007-probabilistic}，从而带来一个稳定的提升，相关推导见附录~\ref{sec:mbr-decoding}.
+因此偏导数等价于所有包含$i \rightarrow j$的弧的句法树的概率之和，即边缘概率$p(i \rightarrow j\mid\boldsymbol{x})$.
+对于TreeCRF分析器，我们可以通过将解码算法中的分值用边缘概率代替，进行\textbf{最小贝叶斯风险}（Minimum Bayesian Risk, MBR）解码\citep{smith-smith-2007-probabilistic}，从而带来一个稳定的提升，相关推导见附录~\ref{cha:mbr-decoding}.
 
 \subsection{局部标注处理}
 \label{sub@sec:partial-annotation}
@@ -396,7 +405,7 @@ $\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用
     & {\boldsymbol{y}}^* = \arg\max_{\boldsymbol{y}} \sum_{i \rightarrow j \in \boldsymbol{y}}{p(i \rightarrow j|\boldsymbol{x})}
   \end{split}
 \end{equation}
-表~\ref{table:dev-test}报告了MAP解码（即根据依存分值直接寻找最优句法树，关于与MBR解码的联系详见附录~\ref{sec:mbr-decoding}）.
+表~\ref{table:dev-test}报告了MAP解码（即根据依存分值直接寻找最优句法树，关于与MBR解码的联系详见附录~\ref{cha:mbr-decoding}）.
 除了PTB数据集的结果已经比较高了之外，MBR解码对于\textsc{Crf}和\textsc{Crf2o}都带来了不多但是一致的提升.
 
 \noindent\textbf{收敛行为.}

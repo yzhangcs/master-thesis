@@ -1,35 +1,35 @@
 \begin{algorithm}[tb]
-    \caption{批次化的Inside算法.}
-    \begin{algorithmic}[1]
-        % \renewcommand{\algorithmiccomment}[2][.6\linewidth]{\leavevmode\hfill\makebox[#1][l]{/~#2}}
-        % \renewcommand{\COMMENT}[2][.4\linewidth]{\leavevmode\hfill\makebox[#1][l]{$\rhd$~#2}}
-        \setlength{\commentindent}{.3\textwidth}
-        \renewcommand{\algorithmiccomment}[1]{\unskip\hfill\makebox[\commentindent][l]{$\rhd$~#1}\par}
-        \LetLtxMacro{\oldalgorithmic}{\algorithmic}
-        \renewcommand{\algorithmic}[1][0]{%
-            \oldalgorithmic[#1]%
-            \renewcommand{\ALC@com}[1]{%
-                \ifnum\pdfstrcmp{##1}{default}=0\else\algorithmiccomment{##1}\fi}%
-        }
-        %\begin{spacing}{1.2}
-        % \begin{footnotesize}
-        % \STATE $\forall 0 \le i \le n ~ C_{i, i} = 0$
-        % \COMMENT $\rhd$ initialization
-        \STATE \textbf{define:} $S \in \mathbb{R}^{n \times n \times B}$ \COMMENT{$B$ is \#sents in a batch}
-        % \STATE \hspace{\algorithmicindent}
-        % \STATE \textbf{Output:} $ C_{0, n} = \log Z(\boldsymbol{x})$
-        %   \COMMENT{balabala}
+  \caption{批次化的Inside算法.}
+  \begin{algorithmic}[1]
+    % \renewcommand{\algorithmiccomment}[2][.6\linewidth]{\leavevmode\hfill\makebox[#1][l]{/~#2}}
+    % \renewcommand{\COMMENT}[2][.4\linewidth]{\leavevmode\hfill\makebox[#1][l]{$\rhd$~#2}}
+    \setlength{\commentindent}{.3\textwidth}
+    \renewcommand{\algorithmiccomment}[1]{\unskip\hfill\makebox[\commentindent][l]{$\rhd$~#1}\par}
+    \LetLtxMacro{\oldalgorithmic}{\algorithmic}
+    \renewcommand{\algorithmic}[1][0]{%
+      \oldalgorithmic[#1]%
+      \renewcommand{\ALC@com}[1]{%
+        \ifnum\pdfstrcmp{##1}{default}=0\else\algorithmiccomment{##1}\fi}%
+    }
+    %\begin{spacing}{1.2}
+    % \begin{footnotesize}
+    % \STATE $\forall 0 \le i \le n ~ C_{i, i} = 0$
+    % \COMMENT $\rhd$ initialization
+    \STATE \textbf{define:} $S \in \mathbb{R}^{n \times n \times B}$ \COMMENT{$B$ is \#sents in a batch}
+    % \STATE \hspace{\algorithmicindent}
+    % \STATE \textbf{Output:} $ C_{0, n} = \log Z(\boldsymbol{x})$
+    %   \COMMENT{balabala}
 
-        \STATE \textbf{initialize:} all $S_{:, :} = 0$
-        % \STATE $S_{i, i+1} = s_{i, i+1}$ \COMMENT{$w$ is 1}
-        \FOR [span width]{$w = 1$ \TO $n$}
-        \STATE \emph{Parallel computation on $0 \le i$,$j<n$,$~r$,$0\le b<B$}
-        \STATE $S_{i, j=i+w} = \log \sum\limits_{i \le r < j} \exp \left( S_{i, r}+S_{r+1, j} \right)  + s(i, j) $ \label{line:sum-product}\\
-        %\textbf{batchify:} $0 \le i$; $j=i+w < n$
-        \ENDFOR
-        \RETURN $S_{0, n-1} \equiv \log Z(\boldsymbol{x})$
-        % \end{footnotesize}
-        %\end{spacing}
-    \end{algorithmic}
-    \label{alg:inside}
+    \STATE \textbf{initialize:} all $S_{:, :} = 0$
+    % \STATE $S_{i, i+1} = s_{i, i+1}$ \COMMENT{$w$ is 1}
+    \FOR [span width]{$w = 1$ \TO $n$}
+    \STATE \emph{Parallel computation on $0 \le i$,$j<n$,$~r$,$0\le b<B$}
+    \STATE $S_{i, j=i+w} = \log \sum\limits_{i \le r < j} \exp \left( S_{i, r}+S_{r+1, j} \right)  + s(i, j) $ \label{line:sum-product}\\
+    %\textbf{batchify:} $0 \le i$; $j=i+w < n$
+    \ENDFOR
+    \RETURN $S_{0, n-1} \equiv \log Z(\boldsymbol{x})$
+    % \end{footnotesize}
+    %\end{spacing}
+  \end{algorithmic}
+  \label{alg:inside}
 \end{algorithm}

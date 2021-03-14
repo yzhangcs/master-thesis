@@ -258,7 +258,7 @@ $\mathbf{r}_i^{l'}; \mathbf{r}_i^{r'}; \mathbf{r}_i^{s}$是词$w_i$分别作为�
 事实上，Outside算法通常至少要两倍慢于Inside算法.
 而Outside算法的批次化也要复杂的多.
 幸运的是，这个问题在深度学习时代被很好的解决了，基于自动求导机制支持的反向传播可以方便的获取梯度.
-\citep{eisner-2016-inside}提出了理论上关于反向传播和Outside过程的等价性证明，和章节~\ref{cha:dep-crf}一样，我们给出的简化版本证明在附录~\ref{sec:outside-backprop}.
+\citet{eisner-2016-inside}提出了理论上的等价性证明.
 由于我们在前向过程使用来批次化的Inside算法，因此反向传播过程也是通过大规模张量并行计算的，可以视为同样高效.
 
 值得注意的是通过用区块分值$\mathrm{s}(i,j)$对$\log Z(\boldsymbol{x})$求偏导（同样由自动的反向传播完成），我们可以自然的得到区块$(i,j)$的边缘概率，也就是梯度.
@@ -266,12 +266,12 @@ $\mathbf{r}_i^{l'}; \mathbf{r}_i^{r'}; \mathbf{r}_i^{s}$是词$w_i$分别作为�
   p((i, j)\mid\boldsymbol{x}) = \frac{\partial \log Z(\boldsymbol{x})}{\partial \mathrm{s}(i, j)}
 \end{equation}
 边缘概率在很多下游任务都可以作为一种很有用的软特征.
-更多细节可以参考\citep{eisner-2016-inside}.
+更多细节可以参考\citet{eisner-2016-inside}.
 
 \subsection{解码}
 
 正如上面提到的，解析过程中，我们应用CKY算法来获取一棵最佳的句法树，如公式~\ref{eq:tree-argmax}所示.
-和Eisner算法一样，CKY算法和成分句法分析的Inside算法几乎一样，除了其中的sum-product被替换为了max product（参考算法~\ref{alg:inside}的行~\ref{line:sum-product}），因此可以被同样高效的批次化.
+和Eisner算法一样，CKY算法和成分句法分析的Inside算法几乎一样，除了其中的sum-product被替换为了max-product（参考算法~\ref{alg:inside}的行~\ref{line:sum-product}），因此可以被同样高效的批次化.
 为了进行MBR解码，我们直接将区块分值$\mathrm{s}(i,j)$换成式~\ref{eq:tree-score}和式~\ref{eq:tree-argmax}的边缘概率$p((i,j)\mid\boldsymbol{x})$.
 然而，我们发现这在成分句法上带来了很微弱的提升.
 

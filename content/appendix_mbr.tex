@@ -1,24 +1,5 @@
-\chapter{关于Outside算法以及反向传播机制等价性的推导}
-
-\section{Outside算法与反向传播机制的等价性证明}\label{sec:outside-backprop}
-我们可以直接用$\log Z(\boldsymbol{x})$（partition term）对每个位置的分值$\mathrm{s}(i, j)$（log potential）求偏导
-\begin{equation}
-  \label{eq:partial-derivative}
-  \begin{split}
-    \frac{\partial \log Z}{\partial \mathrm{s}(i, j)} & = \frac{\partial \log Z}{\partial Z} \cdot \frac{\partial Z}{\partial \mathrm{s}(i, j)}\\
-    & =\frac{1}{Z} \cdot \frac{\partial \sum_{\boldsymbol{y}} \exp \left(\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) \right)}{\partial \mathrm{s}(i, j)}\\
-    & =\frac{1}{Z} \cdot \frac{\partial \sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} \exp \left(\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) \right)}{\partial \mathrm{s}(i, j)}\\
-    & =\frac{1}{Z} \cdot \frac{\sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} \exp \left( \sum_{(i^{\prime}, j^{\prime}) \in \boldsymbol{y}\setminus (i,j)} \mathrm{s}(i^{\prime}, j^{\prime}) \right)\cdot \partial \exp(\mathrm{s}(i, j))}{\partial \mathrm{s}(i, j)}\\
-    & =\sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} \frac{\exp \left( \sum_{(i^{\prime}, j^{\prime}) \in \boldsymbol{y}\setminus (i,j)} \mathrm{s}(i^{\prime}, j^{\prime})\right)\cdot \exp(\mathrm{s}(i,j))}{Z}\\
-    &= \sum_{\boldsymbol{y}:(i,j) \in \boldsymbol{{y}}} p(\boldsymbol{y}\mid\boldsymbol{x})\\
-  \end{split}
-\end{equation}
-因此偏导数等价于所有包含$(i,j)$的弧的句法树的概率之和，这正是边缘概率$p(i \rightarrow j\mid\boldsymbol{x})$的定义.
-
-\noindent$\blacksquare$
-
-
-\section{MBR解码}\label{sec:mbr-decoding}
+\chapter{关于MBR解码的推导}
+\label{cha:mbr-decoding}
 大体上讲，解码过程是将一个模型输出的概率分布转化为对应的系统输出.
 给定输入$\boldsymbol{x}$，理想情况下一个解码器将选择一个$\boldsymbol{y}$，使得$\ell(\boldsymbol{y},\boldsymbol{y}^{\ast})$最小化，其中$\ell(\boldsymbol{y},\boldsymbol{y}^{\ast})$称为代价函数，衡量$\boldsymbol{y}$与真实分配$\boldsymbol{y}^{\ast}$的差异性.
 由于通常情况下解码时不存在正确答案，因此我们转而用正确答案的所有可能取值$\boldsymbol{y}^{\prime}$的平均来代替
