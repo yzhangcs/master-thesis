@@ -31,27 +31,27 @@
   \label{eq:map-dep}
   \begin{split}
     \boldsymbol{y}^{MAP}&=\arg\max_{\boldsymbol{y}}p(\boldsymbol{y}\mid\boldsymbol{x})\\
-    &=\arg\max_{\boldsymbol{y}}\frac{\sum_{(i,j)\in \boldsymbol{y}}\mathrm{s}(i,j)}{Z(\boldsymbol{x})\equiv \sum_{\boldsymbol{y}^{\prime}}\sum_{(i^{\prime},j^{\prime})\in \boldsymbol{y}^{\prime}}\mathrm{s}(i^{\prime},j^{\prime})}\\
-    &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in \boldsymbol{y}}\mathrm{s}(i,j)
+    &=\arg\max_{\boldsymbol{y}}\frac{\exp{\left(\sum_{i\rightarrow j\in \boldsymbol{y}}\mathrm{s}(i\rightarrow j)\right)}}{Z(\boldsymbol{x})\equiv \sum_{\boldsymbol{y}^{\prime}}\exp{\left(\sum_{i^{\prime}\rightarrow j\in \boldsymbol{y}^{\prime}}\mathrm{s}i^{\prime}\rightarrow j\right)}}\\
+    &=\arg\max_{\boldsymbol{y}}\sum_{i\rightarrow j\in \boldsymbol{y}}\mathrm{s}(i\rightarrow j)
   \end{split}
 \end{equation}
 去掉共同的分母，分子为对应句法树的分值，上式的含义是获取分值最大的句法树，这个目标可以通过常见的一些解码算法（如Eisner，MST等）达到.
 
 而对于MBR解码，我们定义代价函数为在每条弧上的指示函数，
 \begin{equation}
-  \ell^{MBR}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = \sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\mathbbm{1}(j\neq j^{\prime})
+  \ell^{MBR}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = \sum_{i\rightarrow j\in\boldsymbol{y},i^{\prime}\rightarrow j\in\boldsymbol{y}^{\prime}}\mathbbm{1}(i\neq i^{\prime})
 \end{equation}
 代入到公式~\ref{eq:mbr}得到
 \begin{equation}
   \label{eq:mbr-dep}
   \begin{split}
     \boldsymbol{y}^{MBR}&= \arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\ell^{MBR}(\boldsymbol{y},\boldsymbol{y}^{\prime})\\
-    &=\arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\mathbbm{1}(j\neq j^{\prime})\\
-    &=\arg\min_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y},(i,j^{\prime})\in\boldsymbol{y}^{\prime}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\mathbbm{1}(j\neq j^{\prime})\\
-    &=\arg\min_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}:(i,j)\notin \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\\
-    &=\arg\min_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}\left(1-\sum_{\boldsymbol{y}^{\prime}:(i,j)\in \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\right)\\
-    &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}:(i,j)\in \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\\
-    &=\arg\max_{\boldsymbol{y}}\sum_{(i,j)\in\boldsymbol{y}}p(i\rightarrow j\mid\boldsymbol{x})
+    &=\arg\min_{\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\sum_{i\rightarrow j\in\boldsymbol{y},i^{\prime}\rightarrow j\in\boldsymbol{y}^{\prime}}\mathbbm{1}(i\neq i^{\prime})\\
+    &=\arg\min_{\boldsymbol{y}}\sum_{i\rightarrow j\in\boldsymbol{y},i^{\prime}\rightarrow j\in\boldsymbol{y}^{\prime}}\sum_{\boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\cdot\mathbbm{1}(i\neq i^{\prime})\\
+    &=\arg\min_{\boldsymbol{y}}\sum_{i\rightarrow j\in\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}:i^{\prime}\rightarrow j\notin \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\\
+    &=\arg\min_{\boldsymbol{y}}\sum_{i\rightarrow j\in\boldsymbol{y}}\left(1-\sum_{\boldsymbol{y}^{\prime}:i^{\prime}\rightarrow j\in \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\right)\\
+    &=\arg\max_{\boldsymbol{y}}\sum_{i\rightarrow j\in\boldsymbol{y}}\sum_{\boldsymbol{y}^{\prime}:i^{\prime}\rightarrow j\in \boldsymbol{y}^{\prime}}p(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})\\
+    &=\arg\max_{\boldsymbol{y}}\sum_{i\rightarrow j\in\boldsymbol{y}}p(i\rightarrow j\mid\boldsymbol{x})
   \end{split}
 \end{equation}
 式~\ref{eq:mbr-dep}和式~\ref{eq:map-dep}的唯一区别在于要求和的项是边缘概率而非分值.

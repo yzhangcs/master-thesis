@@ -5,21 +5,31 @@
 
 自然语言处理（Natural Language Processing, NLP）是目前人工智能方兴未艾的领域之一.
 一个完整的自然语言处理句子分析流程主要分为三个部分：1）词法分析；2）句法分析；3）语义分析.
-其中词法分析包含了词性标注（Part-of-Speech Tagging）、命名实体识别（Named Entity Recognition, NER）以及消歧（Disambiguation）等子任务，中文由于词语之间没有天然边界，还额外需要进行中文分词.
-句法分析的目的是以句法树的形式，刻画句子词语的修饰关系，主要包含了依存句法（Dependency Parsing）和成分句法（Constituency Parsing）分析这两种句法分析范式.
-语义分析的主要目的是为了理解句子内涵的语义，包含语义角色标注（Semantic Role Labeling, SRL）、语义依存分析（Semantic Dependency Parsing, SDP）和抽象语义表示（Abstract Meaning Representation, AMR）等子任务.
-句子分析作为分析句子结构，理解句子结构的必不可少的步骤，对下游任务，如机器翻译（Machine Translation）、问答（Question \& Answering, QA），有极大的帮助作用.
+其中词法分析包含了词性标注（Part-of-Speech Tagging）、命名实体识别（Named Entity Recognition, NER）以及消歧（Disambiguation）等子任务，中文中由于词语之间没有天然边界，还需要额外进行中文分词.
+句法分析的目的是以句法树的形式刻画句子结构，主要包含了依存句法（Dependency Parsing）和成分句法（Constituency Parsing）分析这两种范式.
+语义分析则是为了理解句子的内含语义，包含语义角色标注（Semantic Role Labeling, SRL）、语义依存分析（Semantic Dependency Parsing, SDP）和抽象语义表示（Abstract Meaning Representation, AMR）等子任务.
 
-上述的三个流程通常以管道的方式进行.
-而句法分析作为连接词法和语义分析的中间步骤，具备十分重要的研究价值.
-目前存在着多种句法分析文法，例如组合范畴文法（Combinatorial Cat-egorial Grammars, CCGs），成分文法（Constituency Grammars）或者我们更为熟知的上下文无关文法（Contex Free Grammars, CFGs），以及依存文法（Dependency Grammars）.
-其中依存文法对应的依存句法解析，和成分文法对应的成分句法解析是目前最常见的句法分析范式，也是本文主要的研究对象.
-依存句法分析的目的是识别句子中词语次的修饰的关系.
-成分句法则是将句子刻画为多个层次关系的短语，组成树的结构.
+上述的三个流程通常以管道的方式进行，而句法分析作为连接词法和语义分析的中间步骤，具备十分重要的研究价值.
+目前存在着多种句法分析文法，例如组合范畴文法（Combinatorial Categorical Grammars, CCGs），成分文法（Constituency Grammars or Context Free Grammars, CFGs），以及依存文法（Dependency Grammars）.
+其中依存文法对应的依存句法分析，和成分文法对应的成分句法分析是目前最常见的句法分析范式，也是本文主要的研究对象.
 
-得益于基准数据集宾州书库（Penn Treebank, PTB）的发布，以及深度学习技术的长足进步，目前句法分析方法领域得到了迅速的发展.
+\input{figures/dep-tree.tex}
+依存句法分析的目的是识别句子中词语的修饰关系.
+如图\ref{fig:dep-tree-example}所示，给定一个句子$\boldsymbol{x}=w_0,w_1,\cdots,w_n$，一棵依存树被定义为$\boldsymbol{t}=\{(i\rightarrow j,l)\mid 0\le i \le n,0 < j \le n,l \in \mathcal{L}\}$，其中$(i\rightarrow j,l)$是一条从头（head）$w_i$到修饰词（modifier）$w_j$的弧，弧的标签为$l \in \mathcal{L}$.
+有标签树$\boldsymbol{t}$可以进一步被分解为$(\boldsymbol{y},\boldsymbol{l})$，即一棵无标签树$\boldsymbol{y}$和树上所有标签组成的序列$\boldsymbol{l}$.
+得益于基准数据集宾州书库（Penn Treebank, PTB）的发布，以及深度学习技术的发展，目前依存句法分析技术得到了广泛研究.
+其中计算自然语言学习会议（Conference on Computational Natural Language Learning, CoNLL）连续多年针对依存句法任务发布了评测任务，尤其是近年来依托通用依存（Universal Dependencies, UD）\citep{nivre-etal-2017-universal}项目发布的多语言评测比赛，大大推动了依存句法分析技术的进步.
+由于结构简单、形式直观的特点，依存句法分析一直被广泛的应用在多个其他任务中，例如机器翻译\citep{zhang-etal-2019-syntax}、关系抽取\citep{song-etal-2019-leveraging}、意见挖掘\citep{zhang-etal-2020-syntax}等等.
+
+\input{figures/con-tree.tex}
+成分句法则旨在构建一个层次化的树结构.
+如图\ref{fig:con-tree-full-figure}，其中每个叶子结点是输入句子的每个词，而非终端结点作为区块（Constituents），如$\texttt{VP}_{3,5}$.
+正式地，给定一个由$n$个词组成的句子$\boldsymbol{x}=w_1,\dots，w_{n}$，如图~\ref{fig:con-tree-original}所示，一棵成分句法树可以表示为$\boldsymbol{t}=\{((i, j),l)\mid 1\le i \le n,i \le j \le n,l \in \mathcal{L}\}$，其中$((i,j),l) \in \boldsymbol{t}$是一个包含$w_{i}...w_{j}$的区块，对应的句法标签为$l \in \mathcal{L}$.
+本文中，为了方便模型处理，我们还将原始的树转换为了二叉树形式，如图~\ref{fig:con-binaried-tree}所示.
+成分句法分析相比于依存句法而言，研究历史更加悠久，尽管目前没有依存句法技术那么流行，但是以其分析技术为基础衍生出了一系列在其他任务上的解析方法，例如UCCA语义分析\citep{jiang-etal-2019-hlt}、嵌套命名实体识别\citep{fu-etal-2021-nested}等等
+
 不同于传统句法分析方法十分依赖于离散特征的人工设计，由于深度神经网络的强大上下文编码能力，句法分析器的方法愈来愈有简单化的趋势.
-其中依存句法分析器Biaffine Parser\citep{dozat-etal-2017-biaffine}正是符合这样的潮流：利用诸如双向LSTM或Transformer\citep{vaswani-2017-attention}等强大编码器得到上下文表示，然后采取一个简单的头选择训练目标训练每个词找到正确的头.
+其中依存句法分析器Biaffine Parser\citep{dozat-etal-2017-biaffine}正是符合这样的潮流：利用诸如双向LSTM或Transformer\citep{vaswani-2017-attention}等强大编码器得到上下文表示，然后采取一个简单的头选择训练损失函数训练每个词找到正确的头.
 类似的，\citet{gaddy-etal-2018-whats}采用的成分句法分析器采用了一个二分类训练目标，判断每个位置是否能够组成一个区块.
 由于其准确率高，速度快的特点，基于局部训练目标的分析器是目前最为流行的句法分析器.
 
@@ -35,13 +45,57 @@
 第一，得益于GPU的并行计算能力，我们为结构化学习的精确推断算法，诸如（二阶）Inside算法等设计了精巧的批次化方法，使得推断过程能够在GPU上能够利用到并行计算大大加速.
 第二，有益于集成了自动求导机制的深度学习库的出现，我们无需和前人一样需要在CPU上进行完整的Inside-Outside过程得到梯度，而是由结合自动求导的反向传播机制自动完成.
 
-在机器学习社区中，研究者针在推断算法高复杂度，或者不可精确推断的问题时通常的做法是采用近似算法来进行近似推断.
+在机器学习社区中，研究者在针对推断算法高复杂度或者不可精确推断的问题时，通常的做法是尝试采用近似算法来进行近似推断.
 因此在章节~\ref{cha:vi}中，我们还尝试了利用机器学习中的一个近似推断算法，平均场变分推断（Mean Field Variational Inference, \textsc{Mfvi}），近似得到后验概率，我们在依存句法和成分句法分析两种范式中分别设计了两种不同的因子图以及变分推断迭代算法，显著提升了句法分析方法的解析速度.
+
+\section{数据集和评价指标}
+
+\input{tables/dep-statistics.tex}
+
+\noindent\textbf{数据.}
+对于依存句法分析，我们在13个语言的27个数据集上进行了实验和分析，包含两个广泛使用的数据集：英语的斯坦福依存规范\citep{chen-manning-2014-fast}的宾州树库（Penn Treebank, PTB）和中文的CoNLL09数据\citep{hajic-etal-2009-conll}.
+我们还采用了公开于NLPCC19跨领域句法分析任务的中文数据集\citep{peng-etal-2019-overview}，其中一共包含了四个源领域和三个目标领域.
+方便起见，我们直接合并了四个领域的Train/Dev/Test数据到更大的数据集.
+这些数据的一个特征是大部分句子都是利用基于主动学习的局部标注得到的.
+表~\ref{table:dep-statistics}列出了相关数据的统计信息.
+最后，遵循\citep{ji-etal-2019-graph}和\citep{zhang-etal-2019-empirical}，我们在Universal Dependencies (UD) v2.2和v2.3上进行了实验.
+我们采用了\citet{zeman-etal-2018-conll}使用的300维多语言预训练词向量，并采用CharLSTM表示作为输入.
+对于UD2.2，为了和\citet{ji-etal-2019-graph}公平比较，我们和CoNLL18任务一样\citep{zeman-etal-2018-conll}，使用了毛文本，并且直接使用了他们的句子分割和符号化的结果.
+对于UD2.3，为了与\citet{zhang-etal-2019-empirical}比较，我们报告的结果使用了正确词性.
+
+对于成分句法分析，我们主要在三个中文和英文的数据集上进行实验.
+前两个数据集，即PTB和CTB5.1，是句法分析社区中比较常用的两个数据集.
+我们遵循了传统的Train/Dev/Test数据分割.
+考虑到CTB5.1的Dev/Test都只有大约350句，为了得到更加稳定一致的结果，我们还在更大的CTB7数据上进行了实验，相关的数据分割设置参考了官方手册建议.
+表~\ref{table:con-statistics}列出了相关数据的统计信息.
+可以看到CNF转换引入了很多新的区块标签，其中大部分（大约75\%）都源于连续单链的折叠过程.
+
+\input{tables/con-statistics.tex}
+
+\noindent\textbf{评价指标.}
+对于依存句法分析，我们使用无标签/有标签附着分值(Unlabeled/Labeled Attachment Score, UAS/LAS)作为主要的评价指标.
+评价时，PTB中的词性会被忽略掉.
+对于局部标注的NLPCC19数据，我们采用了官方的评价脚本，直接忽略了没有正确头标注的词.
+我们采用了Dan Bikel的随机解析评价比较器来进行显著性检验.
+
+对于成分句法分析，正如前面提到的，在解析之后，我们将最佳的CNF树转化为了\textit{n}-ary树再进行评价.
+这里有必要提及一些有用的细节.
+由于解码算法没有相应的约束，预测的最佳CNF树可能包含很多不合法的产生式.
+以图~\ref{fig:con-binaried-tree}为例，模型可能输出$\texttt{VP}_{3,5} \rightarrow \texttt{PP}^{\ast}_{3,3} ~ \texttt{NP}_{4,5}$，其中 $\texttt{VP}$和$\texttt{PP}^{\ast}$是不兼容的.
+在\textit{n}-ary后处理过程中，我们直接忽略了``$\mathtt{\ast}$''符号之前具体的字符串$\texttt{PP}$.
+有鉴于此，如果解码的时候增加一定的约束，结果有可能进一步提高，这里我们留待作为后续的工作.
+我们使用了标准的区块级别的准确率、召回率和$\mathrm{F}_1$值（$\mathrm{P}$/$\mathrm{R}$/$\mathrm{F}_1$）作为评价指标，并使用\texttt{EVALB}工具\footnote{\url{https://nlp.cs.nyu.edu/evalb}}来评价.
+特别地，一个例如$\texttt{VP}_{3,5}$的预测区块如果出现在了正确树中，那就被认为是正确的.\footnote{
+    由于一些研究者可能会实现他们自己的评价脚本，为了比较的公平，需要澄清一些细节：
+    1）一些诸如\texttt{\{-NONE-\}}的空区块在预处理的时候被移除了.
+    2）评价的时候作为根结点的区块（英语里是\texttt{\{TOP，S1\}}，中文里是空字符串) 被忽略了.
+    3）包含一些例如\texttt{\{:，``，''，.，?，!\}}这些标点的区块也被忽略了. 请注意中文标点会作为正常的字符被评价.
+    4）一些在同一集合中的标签，例如\texttt{\{ADVP，PRT\}}，被认为是等价的.}
 
 \section{相关工作}
 \label{sec:relworks}
 
-\subsection{高阶依存句法分析}
+\subsection{依存句法分析}
 
 批次化技术已经在线性链条件随机场（linear-chain CRF）中广泛应用，但是在树形结构中这个要复杂得多.
 \citet{eisner-2016-inside}在成分句法分析上提出了一个关于Outside算法和反向传播机制等价性的理论证明，并同样讨论了其他类似于依存文法的范式.
@@ -101,28 +155,34 @@ Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}}\citep{
 \citet{shen-etal-2018-straight}提出对于正确树中的每个邻居词对预测一个数值距离，并应用自底向上的贪婪解码找到一棵最优的树.
 然而，所有上面的工作仍然在解析性能上极大的落后于主流的方法.
 
+\subsection{高阶句法分析方法}
+
 \subsection{近似推断方法}
-有许多文献已经证明，引入高阶特征，即考虑多个变量之间的交互，能够帮助模型准确率的提升
-\citep{mcdonald-pereira-2006-online,carreras-2007-experiments,koo-collins-2010-efficient,ma-zhao-2012-fourth}.
-然而这种高阶特征通常导致难以设计一个精确推断的算法来对模型进行学习，甚至导致学习问题成为NP-hard问题\citep{mcdonald-pereira-2006-online}.
+尽管引入高阶特征，能够帮助模型准确率的提升\citep{mcdonald-pereira-2006-online,carreras-2007-experiments,koo-collins-2010-efficient,ma-zhao-2012-fourth}，
+然而这种高阶特征通常导致难以设计一个精确推断的算法来得到目标结构的概率，进而最大化概率来优化模型，甚至对于非投影依存句法分析而言，高阶模型推断算法是NP-hard问题\citep{mcdonald-pereira-2006-online}.
 因此我们不得不考虑近似方法.
-由于不可精确推断问题的广泛存在，一直以来近似推断算法在NLP社区都有很多都应用.
+由于结构化学习问题中不可精确推断问题的广泛存在，因此一直以来近似推断算法在NLP社区都有很多都应用.
 
-\citet{martins-etal-2009-concise}将依存句法分析问题近似为整数线性规划（Integer Linear Programming, \textsc{Ilp}）问题.
-与传统算法相比，\citet{martins-etal-2009-concise}利用了大量的局部和全局丰富特征，例如兄弟、祖父特征，价键特征，作为线性约束，用\textsc{Ilp}来求解，保证输出是一棵合法的依存树.
-\citet{koo-etal-2010-dual}将非投影依存句法分析形式化为对偶分解（Dual Decomposition, \textsc{Dd}）问题.
-将一个难以求解的问题分解为若干个可求解的子问题，例如可以将输出树的问题分解为单条弧、连续兄弟、双头等\citep{martins-etal-2011-dual}.
+\citet{martins-etal-2009-concise}将依存句法分析问题近似为整数线性规划（Integer Linear Programming, ILP）问题.
+与传统算法相比，他们利用了大量的局部和全局丰富特征，例如兄弟、祖父特征和价键特征，作为线性约束，用ILP来求解，保证输出是一棵合法的依存树.
+\citet{koo-etal-2010-dual}将非投影依存句法分析形式化为对偶分解（Dual Decomposition, DD）问题，即将一个难以求解的问题分解为若干个可求解的子问题，例如可以将输出树的问题分解到单条弧、连续兄弟、双头等子结构上\citep{martins-etal-2011-dual}.
 
-另一个和我们的在本文采用的平均场变分推断高度相关的方法是循环置信传播（Loopy Belief Propagation, \textsc{Lbp}）.
+另一个和我们的在本文采用的平均场变分推断高度相关的方法是循环置信传播（Loopy Belief Propagation, LBP）.
 循环置信传播定义了一个包含多种局部和全局特征的由变量和因子构成的因子图，接着算法迭代式地让因子（变量）收集邻居变量（因子）的信息，最终收敛后得到后验概率.
 \cite{smith-eisner-2008-dependency,gormley-etal-2015-approximation}在依存句法分析上引入了循环置信传播.
 除了上面提到的兄弟（\textsc{Sib}）、祖父（\textsc{Grand}）因子，他们还引入了丰富的全局因子，例如\textsc{Exactly1}约束每个词有且仅有一个头，\textsc{Tree}要求所有词必须组成一棵树等等.
-\citet{naradowsky-etal-2012-grammarless}将循环置信传播引入到了成分句法分析，也采用了类似的高阶因子和\textsc{Tree}因子在成分句法的变体.
-与精确算法相比，循环置信传播可以以可接受的复杂度引入大量全局因子，并为模型带来了可观的性能收益.
+\citet{naradowsky-etal-2012-grammarless}将循环置信传播引入到了成分句法分析，也采用了类似的高阶因子（如\textsc{Tree}）在成分句法上的变体.
+与精确算法相比，循环置信传播可以用可接受的复杂度引入大量全局因子，并为模型带来了可观的性能收益.
 
 还有一些工作同时使用了上述的近似算法.
-\citet{auli-lopez-2011-comparison}在组合范畴文法中同时采用了循环置信传播\citep{smith-eisner-2008-dependency}以及对偶分解\citet{koo-etal-2010-dual}，取得了最佳性能，并对两种方法做了经验性比较.
+\citet{auli-lopez-2011-comparison}在组合范畴文法中同时采用了循环置信传播\citep{smith-eisner-2008-dependency}以及对偶分解\citep{koo-etal-2010-dual}，取得了最佳性能，并对两种方法做了经验性比较.
 \citet{martins-etal-2010-turbo}提出了在非投影依存句法分析中同时利用了循环置信传播\citep{smith-eisner-2008-dependency}以及整数线性规划\citep{martins-etal-2009-concise}方法，表明两种方法采用了一致的因子图，并在局部近似的目标函数的理念上是相一致的.
+
+近期在神经网络模型上，涌现出了大量的关于近似推断在结构化预测任务等上的应用\citep{li-etal-2020-high,wang-etal-2020-ain}.
+\citet{wang-etal-2019-second}首次在基于图的语义依存分析上提出了二阶模型，并采用LBP和MFVI作为近似算法，观察到了两种推断算法相似的性能提升.
+\citet{wang-tu-2020-second}首次在依存句法分析中引入了MFVI，他们采用了兄弟、组合和共同父亲这三种二阶特征.
+我们的依存模型中采用的基于头选择的MFVI参考了\citet{wang-tu-2020-second}，为了和精确推断算法公平比较，本文中我们只保留了兄弟特征.
+上述工作引入了近似推断算法之后都达到了和精确推断可比较的结果，同时速度上大大提升，这和我们的发现是一致的.
 
 \section{章节和内容安排}
 
@@ -141,7 +201,7 @@ Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}}\citep{
 我们还为解析器引入了新的打分架构，以及有效的Dropout策略，使得解析器达到了新的最佳水平，并且解析速度很快.
 
 第四章 基于变分推断的高效句法分析方法.
-本章在前面章节提出的高阶句法解析器的基础上，提出利用平均场变分推断方法来近似推断后验概率.
+本章在前面章节提出的高阶句法分析器的基础上，提出利用平均场变分推断方法来近似推断后验概率.
 在引入高阶算法的同时，变分推断避免了精确推断算法的高复杂度问题，并达到了和精确推断方法接近或相当的结果.
 
 第五章 总结与展望. 本章总结本文的主要内容，并展望后续可能的研究方向.

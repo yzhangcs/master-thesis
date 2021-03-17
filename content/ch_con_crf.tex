@@ -1,4 +1,4 @@
-\chapter{基于树形条件随机场的快速精准成分句法分析}
+\chapter{基于TreeCRF的高阶成分句法分析}
 \label{cha:con-crf}
 
 本章节提出了一个基于树形条件随机场的快速精准的神经成分句法分析器.
@@ -10,9 +10,6 @@
 在PTB、CTB5.1和CTB7上的实验表明我们的两阶段条件随机场分析器在使用和不使用BERT的两种设置上，达到了新的最佳性能，并且解析速度达到了1,000句每秒.
 
 \section{引言}\label{sec:con-intro}
-
-\input{figures/con-tree.tex}
-给定一个句子，成分句法分析旨在构建一个层次化的树结构. 如图\ref{fig:con-tree-full-figure}，其中每个叶子结点是输入句子的每个词，而非终端结点作为区块（Constituents），如\texttt{$VP_{3,5}$}.
 
 成分句法分析是自然语言处理领域一个基础但是富有挑战性的任务.
 由于诸如宾州树库（Penn Treebank，PTB）、中文宾州树库（Penn Chinese Treebank，CTB）等大规模树库的标注，成分句法分析吸引了一大批研究者的关注.
@@ -54,21 +51,20 @@
   \item 我们提出了基于区块表示的一个新的打分架构，以及基于仿射注意力机制的打分方法，比minus-feature方法表现的更好.
         我们同样表明，通过更好的模型及参数设置，比如Dropout，解析的性能可以被极大提升.
 
-  \item 在中英文的三个基准数据集上的实验表明，我们提出的两阶段解析方法在使用BERT和不使用BERT\citep{devlin-etal-2019-bert}的两种设置下，性能上达到了新的最佳水准.
-        解析速度方面，我们的分析器可以达到1,000句每秒的解析速度.
+  \item 在中英文的三个基准数据集上的实验表明，我们提出的两阶段解析方法在使用BERT和不使用BERT\citep{devlin-etal-2019-bert}的两种设置下，在性能上都分别达到了新的最佳水准.
+        在解析速度方面，我们的分析器可以达到大约1,000句每秒的解析速度.
 \end{itemize}
 
 \begin{figure}[tb]
   \centering
-  \includegraphics [scale=1.2]{figures/con-framework.pdf}
+  \includegraphics [scale=1.1]{figures/con-framework.pdf}
   \caption{模型架构.}
   \label{fig:con-framework}
 \end{figure}
 
 \section{两阶段CRF解析}\label{sec:2stage-parsing}
 
-正式地，给定一个由$n$个词组成的句子$\boldsymbol{x}=w_0,\dots，w_{n-1}$，如图~\ref{fig:con-tree-original}所示，一棵成分句法树可以表示为$\boldsymbol{t}$，其中$(i,j),l \in \boldsymbol{t}$是一个包含$w_{i}...w_{j}$的区块，对应的句法标签为$l \in \mathcal{L}$.
-一棵树同样可以被分解为两个部分，即，$\boldsymbol{t}=(\boldsymbol{y}, \boldsymbol{l})$，其中$\boldsymbol{y}$是一棵无标签树（又称为bracketed tree），而$\boldsymbol{l}$是树中所有区块的标签按一定顺序产生的标签序列.
+如图~\ref{fig:con-tree-original}所示，对于一个由$n$个词组成的句子$\boldsymbol{x}=w_1,\dots，w_{n}$，一棵成分句法树$\boldsymbol{t}=\{((i, j),l)\mid 1\le i \le n,i \le j \le n,l \in \mathcal{L}\}$可以被分解为两个部分，即，$\boldsymbol{t}=(\boldsymbol{y}, \boldsymbol{l})$，其中$\boldsymbol{y}$是一棵无标签树（又称为bracketed tree），而$\boldsymbol{l}$是树中所有区块的标签按一定顺序产生的标签序列.
 区块$(3,5，\texttt{VP})$可以等价表示为$\texttt{VP}_{3,5}$.
 
 为了能够适应Inside算法和CKY算法，我们用NLTK工具包\footnote{\url{https://www.nltk.org}}将原始的树转换为了遵循乔姆斯基范式（Chomsky Normal Form，CNF）的二叉树形式，如图~\ref{fig:con-binaried-tree}所示.
@@ -275,33 +271,8 @@ $\mathbf{r}_i^{l'}; \mathbf{r}_i^{r'}; \mathbf{r}_i^{s}$是词$w_i$分别作为�
 为了进行MBR解码，我们直接将区块分值$\mathrm{s}(i,j)$换成式~\ref{eq:tree-score}和式~\ref{eq:tree-argmax}的边缘概率$p((i,j)\mid\boldsymbol{x})$.
 然而，我们发现这在成分句法上带来了很微弱的提升.
 
-\input{tables/con-statistics.tex}
-
 \section{实验}
 \label{sec:con-experiments}
-\noindent\textbf{数据.}
-我们主要在三个中文和英文的数据集上进行实验.
-前两个数据集，即PTB和CTB5.1，是句法分析社区中比较常用的两个数据集.
-我们遵循了传统的Train/Dev/Test数据的分割.
-考虑到CTB5.1的Dev/Test都只有大约350句，为了得到更加稳定一致的结果，我们同样在更大的CTB7数据上进行了实验，相关的数据分割设置参考了官方手册建议.
-表~\ref{table:con-statistics}列出了相关数据的统计信息.
-可以看到CNF转换引入了很多新的区块标签，其中大部分（大约75\%）是源于连续单链的折叠过程.
-
-\noindent\textbf{评价.}
-正如前面提到的，在解析之后，我们将最佳的CNF树转化为了\textit{n}-ary树再进行评价.
-这里有必要提及一些有用的细节.
-由于解码算法没有相应的约束，预测的最佳CNF树可能包含很多不合法的产生式.
-以图~\ref{fig:con-binaried-tree}为例，模型可能输出$\texttt{VP}_{3,5} \rightarrow \texttt{PP}^{\ast}_{3,3} ~ \texttt{NP}_{4,5}$，其中 $\texttt{VP}$和$\texttt{PP}^{\ast}$是不兼容的.
-在\textit{n}-ary后处理过程中，我们直接忽略了``$\mathtt{\ast}$''符号之前具体的字符串$\texttt{PP}$.
-有鉴于此，如果解码的时候增加一定的约束，结果有可能进一步提高，这里我们留待后续的工作.
-
-我们使用了标准的区块级别的准确率、召回率和$\mathrm{F}_1$值（P/R/$\mathrm{F}_1$）作为评价指标，并使用\texttt{EVALB}工具\footnote{\url{https://nlp.cs.nyu.edu/evalb}}来评价.
-特别地，一个诸如$\texttt{VP}_{3,5}$的预测区块如果出现在了正确树中，那就被认为是正确的.\footnote{
-  由于一些研究者可能会实现他们自己的评价脚本，为了比较的公平，需要澄清一些细节：
-  1）一些诸如\{-NONE-\}的空区块在预处理的时候被移除了.
-  2）评价的时候作为根结点的区块（英语里是\{TOP，S1\}，中文里是空字符串) 被忽略了.
-  3）包含一些例如\{:，``，''，.，?，!\}这些标点的区块也被忽略了. 请注意中文标点会作为正常的字符被评价.
-  4）一些在同一集合中的标签，例如\{ADVP，PRT\}，被认为是等价的.}
 
 \noindent\textbf{参数设置.}
 我们直接采用\citep{dozat-etal-2017-biaffine}的依存句法分析器里面的大部分参数设置，没有进一步的改动.

@@ -1,4 +1,4 @@
-\chapter{基于树形条件随机场的高阶依存句法分析}\label{cha:dep-crf}
+\chapter{基于TreeCRF的高阶依存句法分析}\label{cha:dep-crf}
 
 本章深入详细的比较了与当前最佳的Biaffine Parser所采用的局部训练相比，基于全局树形条件随机场训练的方法的效果，并首次提出了在神经依存句法分析器上应用一个二阶树形条件随机场的拓展.
 由于高复杂度和低效一直以来都是困扰树形条件随机场的广泛应用的一个重要原因，因此我们提出了一个能够高效批次化Inside算法和Eisner算法的方法，来支持树形条件随机场在GPU上的大规模张量并行计算.
@@ -6,8 +6,8 @@
 我们在13个语言的27个数据集上进行了实验，实验结果和分析表明，在深度学习时代之前的技术，诸如结构化学习（全局树形条件随机场损失函数）和高阶建模仍然是有益的，并且可以进一步在最好的Biaffine Parser的基础上提升性能，尤其是在局部标注的场景下.
 
 \section{引言}
-\input{figures/dep-tree.tex}
-依存句法分析任务是NLP领域的一个基础性任务，由于其简洁性，以及可以方便的在多语言上获得句法和语义信息的特性，目前在这一任务上已经有了大量的研究. 如图\ref{fig:dep-tree-example}所示，给定一个句子$\boldsymbol{x}=w_0w_1\cdots w_n$，一棵依存树被定义为$\boldsymbol{y}=\{(i\rightarrow j,l)\mid 0\le i \le n,1 \le j \le n,l \in \mathcal{L}\}$，其中$(i\rightarrow j,l)$是一条从头（head）$w_i$到修饰词（modifier）$w_j$的弧，弧的标签为$l \in \mathcal{L}$. 目前在依存句法分析任务上有两个主流方法，分别是基于转移（transition-based）的方法，和基于图（graph-based）的方法，这里我们的方法主要关注于基于图的解析方式.
+依存句法分析任务是NLP领域的一个基础性任务，由于其简洁性，以及可以方便的在多语言上获得句法和语义信息的特性，目前在这一任务上已经有了大量的研究.
+目前在依存句法分析任务上有两个主流方法，分别是基于转移（transition-based）的方法，和基于图（graph-based）的方法，这里我们的方法主要关注于基于图的解析方式.
 
 在深度学习时代之前，基于图的解析依赖于很多手工特征的设计，比如词性、前缀、后缀等等.
 与神经网络方法相比，以前的方法有两个显著的不同.
@@ -16,7 +16,6 @@
 
 第二个显著的区别在于高阶特征的使用. 高阶特征为模型带来了显著的提升.
 基础的一阶模型将句法树的分值分解为若干条独立的弧的分值\citep{mcdonald-etal-2005-online}. 后续的工作进一步引入了二阶依存弧对对分值，比如邻接兄弟\citep{mcdonald-pereira-2006-online}和祖父-父亲-孩子这样的弧对\citep{carreras-2007-experiments,koo-collins-2010-efficient}，这些高阶扩展都带来了模型性能的显著提升\footnote{三阶和四阶模型的提升不大，这可能是由于特征稀疏的问题导致的\citep{koo-collins-2010-efficient,ma-zhao-2012-fourth}.}. 但是这些高阶模型需要引入更复杂的解码算法，导致了模型更加低效.
-
 
 相比之下，基于图的神经网络依存句法分析器的发展呈现出相反的趋势.
 \citep{pei-etal-2015-effective}提出利用前馈神经网络来自动学习\citep{chen-manning-2014-fast}的若干特征组合，并计算子树得分.
@@ -142,8 +141,6 @@ Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立�
   \caption{两种打分的子树结构.}
   \label{fig:scoring-part}
 \end{figure}
-
-
 
 \section{二阶TreeCRF}\label{2o-tree-crf}
 我们从两方面极大地拓展来Biaffine Parser：
@@ -327,25 +324,8 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 \end{figure}
 
 \section{实验结果及分析}\label{sec:dep-exps}
-\noindent\textbf{数据.}
-我们在13个语言的27个数据集上进行了实验和分析，包含两个广泛使用的数据集：英语的斯坦福依存规范\citep{chen-manning-2014-fast}的宾州树库（Penn Treebank, PTB）和中文的CoNLL09数据\citep{hajic-etal-2009-conll}.
-
-我们还采用了公开于NLPCC19跨领域句法分析任务的中文数据集\citep{peng-etal-2019-overview}，其中一共包含四个源领域和三个目标领域.
-方便起见，我们直接分别合并了四个领域的Train/Dev/Test数据到更大的数据集.
-这些数据的一个特征是大部分句子都是基于主动学习的局部标注.
-
-最后，遵循\citep{ji-etal-2019-graph}和\citep{zhang-etal-2019-empirical}，我们在Universal Dependencies (UD) v2.2和v2.3上进行了实验.
-我们采用了\citep{zeman-etal-2018-conll}中使用的300维多语言预训练词向量，以及使用CharLSTM表示作为输入.
-对于UD2.2，为了和\citep{ji-etal-2019-graph}公平比较我们和CoNLL18任务一样\citep{zeman-etal-2018-conll}使用了毛文本，并且直接使用了他们的句子分割和符号化的结果.
-对于UD2.3，为了与\citep{zhang-etal-2019-empirical}比较，我们报告了使用正确词性的结果.
 
 \input{tables/dep-dev-test.tex}
-
-\noindent\textbf{评价指标.}
-我们使用无标签/有标签附着分值(UAS/LAS)作为主要的评价指标.
-评价时，PTB中的词性会被忽略掉.
-对于局部标注的NLPCC19数据，我们采用了官方的评价脚本，直接忽略了没有正确头标注的词.
-我们采用了Dan Bikel的随机解析评价比较器来进行显著性检验.
 
 \noindent\textbf{参数设置.}
 我们直接采用了\citep{dozat-etal-2017-biaffine}的大部分参数设置，包含Dropout和初始化策略.

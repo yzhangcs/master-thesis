@@ -1,7 +1,7 @@
-\chapter{基于变分推断的高效句法分析方法}
+\chapter{基于变分推断的TreeCRF加速}
 \label{cha:vi}
 
-本章节在提出了章节~\ref{cha:dep-crf}和~\ref{cha:con-crf}提出的高阶句法解析器的基础上，尝试利用基于平均场变分推断来近似得到树的后验概率，并与精确推断的CRF相比较.
+本章节在章节~\ref{cha:dep-crf}和~\ref{cha:con-crf}提出的高阶句法分析器的基础上，尝试利用基于平均场变分推断来近似得到树的后验概率，并与精确推断的CRF相比较.
 我们在依存句法和成分句法的中英文常见的5个基准数据集上做了实验，并对比了加入BERT之后的效果.
 结果表明，我们采用的变分推断近似方法不仅从准确率上可以与章节~\ref{cha:dep-crf}和~\ref{cha:con-crf}里提出的二阶基于图的解析器相匹敌，并且训练和测试的速度要远远快于二阶CRF解析器.
 
@@ -52,7 +52,7 @@
 我们希望得到最佳的一棵树$\boldsymbol{y}=\arg\max_{\boldsymbol{y}^{\prime}}P(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})$.
 训练时，对于精确推断方法，我们需要计算共同的配分项$Z(\boldsymbol{x})\equiv\sum_{\boldsymbol{y}^{\prime}\in\mathcal{Y}}\mathrm{s}(\boldsymbol{x},\boldsymbol{y}^{\prime})$来得到正确树$\boldsymbol{y}^{\ast}$的概率.
 $Z(\boldsymbol{x})$代表指数级别空间的所有可能树的分值之和，由$O(n^3)$的复杂度的Inside算法得到.
-在本节我们展示了无需计算$Z(\boldsymbol{x})$，并通过\textsc{Mfvi}得到近似的树概率的方法.
+在本节我们展示了无需计算$Z(\boldsymbol{x})$，并通过变分推断得到近似的树概率的方法.
 
 第二阶段，我们的目标是为无标签树找到所有的标签$\boldsymbol{l}$.
 依存树上$\boldsymbol{l}$被分解为每条弧的标签，成分树上$\boldsymbol{l}$由每个组块的标签组成.
@@ -214,16 +214,6 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 
 \section{实验}\label{sec:vi-exp}
 
-\noindent\textbf{数据.}
-为了方面和章节~\ref{cha:dep-crf}提出的精确推断的高阶模型进行比较，我们主要在英文的PTB和中文的CNLL09上进行了依存句法的实验.
-同样的，我们在英文的PTB，中文的CTB51以及CTB7进行了成分句法分析实验.
-实验数据的详细设置在章节~\ref{cha:dep-crf}和章节~\ref{cha:con-crf}有详细的设置，这里简洁起见不再重复.
-
-\noindent\textbf{评价.}
-在依存句法分析上，我们主要采用了有标签和无标签附着分值（UAS/LAS）作为评价指标，英文PTB的标点被忽略.
-在成分句法分析上，我们采用了惯用的区块级别的准确率、召回率和$\mathrm{F}_1$值（P/R/$\mathrm{F}_1$）的指标，由标准工具\texttt{EVALB}来得到.
-成分句法树在训练和评价时采用的预处理和后处理行为我们保持和章节~\ref{cha:con-crf}一致.
-
 \noindent\textbf{参数设置.}
 我们保持两种句法分析模型的编码器和训练方法与前面的章节基本一致.
 对于二阶模型，我们设置依存句法分析中使用的兄弟特征以及成分句法分析使用的二阶特征的MLP层输出维度为100.
@@ -255,10 +245,8 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 然而，基于\textsc{Mfvi}方法的近似推断在解析效率上有很大的优越性（见章节~\ref{sub@sec:vi-speed}的复杂度分析）.
 
 \input{tables/vi-con-test.tex}
-% \subsection{分析}
 
-
-\subsection{样例学习}
+\subsection{样例分析}
 
 \begin{figure}[tb!]
   \centering
@@ -304,8 +292,8 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 可以看到，无论是依存句法还是成分句法模型，他们相应的\textsc{Mfvi}在CPU上每一次迭代都需要$O(n^3)$的复杂度，这和精确推断的2阶Inside算法的复杂度相当.
 而当利用GPU进行并行计算时，\textsc{Mfvi}每个位置的变量仅需要一次遍历来收集其他位置的信息\footnote{尽管现代的CUDA技术可以通过二叉树等数据结构让并行化的归约操作，例如$\mathrm{sum}$、$\mathrm{min}$和$\mathrm{max}$等，缩减到$O(\log n)$复杂度的时间\citep{wang-etal-2020-ain}，但是这里我们统一假设归约操作的复杂度为$O(n)$.}，因此GPU上的算法复杂度为$O(n)$，大大快于精确推断所需要的$O(n^2)$复杂度.
 
-从表中可以看到，利用\textsc{Mfvi}的依存句法在PTB的Test数据的解析速度为1126句/秒，是精确推断的二阶\textsc{Crf2o}（431）的近三倍快，同样也大大快于一阶\textsc{Crf}的653句/秒.
-成分句法的\textsc{Mfvi}模型的解析速度大约为905句/秒，同样显著快于一阶\textsc{Crf}的743句/秒和二阶\textsc{Crf2o}的598句/秒.
+从表中可以看到，利用\textsc{Mfvi}的依存句法在PTB的Test数据的解析速度为1126句每秒，是精确推断的二阶\textsc{Crf2o}（431）的近三倍快，同样也大大快于一阶\textsc{Crf}的653句每秒.
+成分句法的\textsc{Mfvi}模型的解析速度大约为905句每秒，同样显著快于一阶\textsc{Crf}的743句每秒和二阶\textsc{Crf2o}的598句每秒.
 
 \section{本章小结}
 

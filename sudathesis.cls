@@ -245,7 +245,7 @@ The LaTeX template for thesis of suda]
 %%%%%%%%%% reference %%%%%%%%%%
 % 参考文献
 
-\bibliographystyle{gbt7714-author-year} % 参考文献格式
+\bibliographystyle{sudathesis} % 参考文献格式
 \RequirePackage[authoryear]{natbib}
 \bibpunct{[}{]}{,}{n}{}{}
 \setlength{\bibsep}{0pt}
@@ -506,8 +506,8 @@ The LaTeX template for thesis of suda]
                 &\dlmu[9.2cm]{\zihao{4}\heiti{\suda@thesistitle}}\\ %[.4ex]%\hline
                 &\dlmu[9.2cm]{} \\
                 % english title 需要手动输入
-                &\dlmu[9.2cm]{\zihao{4}{Research on Fast and Accurate}} \\%[.4ex]
-                &\dlmu[9.2cm]{\zihao{4}{Syntactic Parsing Methods}} \\%[.4ex]
+                &\dlmu[9.2cm]{\zihao{4}{Research on High-Order Syntactic Parsing}} \\%[.4ex]
+                &\dlmu[9.2cm]{\zihao{4}{Methods based on TreeCRF}} \\%[.4ex]
             \end{tabular}
             \vskip 20bp
             ~~\\
@@ -588,7 +588,7 @@ The LaTeX template for thesis of suda]
 % 英文摘要
 \newenvironment{eabstract}{%
     \newpage
-    \chapter*{\zihao{-2}{Research on Fast and Accurate Syntactic Parsing Methods}\\
+    \chapter*{\zihao{-2}{Research on High-order Syntactic Parsing Methods based on TreeCRF}\\
     \vspace{2ex}
     \centerline{\zihao{-3}{Abstract}}}
     \setlength{\parindent}{24bp}
