@@ -206,7 +206,7 @@ Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}}\citep{
 
 \citet{martins-etal-2009-concise}将依存句法分析问题近似为整数线性规划（Integer Linear Programming, ILP）问题.
 与传统算法相比，他们利用了大量的局部和全局的丰富特征，例如兄弟、祖父特征和价键特征，作为线性约束，用ILP来求解，保证输出是一棵合法的依存树.
-\citet{koo-etal-2010-dual}将非投影依存句法分析形式化为对偶分解（Dual Decomposition, DD）问题，将一个难以求解的问题分解为若干个可求解的子问题，例如可以将输出树的问题分解到单条弧、连续兄弟、双头等子结构上\citep{martins-etal-2011-dual}.
+\citet{koo-etal-2010-dual}将非投影依存句法分析形式化为对偶分解（Dual Decomposition, DD）问题，将一个难以求解的问题分解为若干个可求解的子问题，例如可以将输出树的问题分解到单条弧、邻接兄弟、双头等子结构上\citep{martins-etal-2011-dual}.
 
 另一个和我们的在本文采用的平均场变分推断高度相关的方法是循环置信传播（Loopy Belief Propagation, LBP）.
 循环置信传播定义了一个包含多种局部和全局特征的由变量和因子构成的因子图，接着算法迭代式地让因子（变量）收集邻居变量（因子）的信息，最终收敛后得到后验概率.
