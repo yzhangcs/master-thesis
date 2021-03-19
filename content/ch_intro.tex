@@ -144,7 +144,7 @@
 PCFGs将一棵句法树的概率分解为所有产生式$A\rightarrow B_1B_2\dots B_n$的概率之积，其中$A$代表非终端结点，$B$代表一个终端/非终端结点，并寻求最大化该概率.
 \citet{collins-1997-three}在基于简单的头发现规则（head-finding rules）下为每个非终端结点$A$引入词汇化标记得到$A(w)$，将概率上下文无关文法拓展为了词汇化的概率上下文无关文法（Lexicalized PCFGs）.
 这推动了生成式模型的广泛流行.
-其中，\citet{dyer-etal-2016-recurrent}提出了循环神经网络文法（Recurrent Neural Network Grammar, RNNG），在一个自底向下的转移系统的基础上额外附加了一个生成动作$\textsc{Gen}(\cdot)$，最终模型建模句子和句法树的联合概率$p(\boldsymbol{x},\boldsymbol{y})$.
+其中，\citet{dyer-etal-2016-recurrent}提出了循环神经网络文法（Recurrent Neural Network Grammars, RNNGs），在一个自底向下的转移系统的基础上额外附加了一个生成动作$\textsc{Gen}(\cdot)$，最终模型建模句子和句法树的联合概率$p(\boldsymbol{x},\boldsymbol{y})$.
 \citet{kuncoro-etal-2017-recurrent}对RNNGs进行了详细的消融性分析，发现转移系统中的栈结构最为重要，相应的他们的Stack-only RNNGs达到了当时成分句法分析的最佳性能.
 
 与生成式模型相对的为判别式模型，其中包含两种代表性方法，即基于转移的方法和基于图的方法.
@@ -152,7 +152,7 @@ PCFGs将一棵句法树的概率分解为所有产生式$A\rightarrow B_1B_2\dot
 根据树的迭代和子树归约的次序不同，存在三类转移系统，分别为基于后序（post-order）遍历（或自底向上）、基于前序（pre-order）遍历（或自顶向下）以及基于中序（In-order）遍历\citet{liu-zhang-2017-order}的转移系统.
 解码时通常都采用集束搜索.
 基于转移的方法通常会遇到两个问题：1）曝光偏置（Exposure Bias），即训练时模型通常面对的都是正确的动作，而解析时可能得到错误预测，而根据错误动作继续进行预测时结果可能会越来越差；2）损失函数不匹配（Loss Mismatch），转移系统的训练采用了局部动作级别损失而忽视了全局的结构指标
-对于第一个问题，通常的解决办法为动态指导（Dynamic Oracle），即在预测偏离正确树之后指导模型向着错误相对更少的状态转移，例如在标签预测时，将不存在于正确zui树的区块的标签的答案设计为$\emptyset$，\citet{cross-huang-2016-span}应用了动态指导并给出了详细证明.
+对于第一个问题，通常的解决办法为动态指导（Dynamic Oracle），即在预测偏离正确树之后指导模型向着错误相对更少的状态转移，例如在标签预测时，将不存在于正确树的区块的标签的答案设计为$\emptyset$，\citet{cross-huang-2016-span}应用了动态指导并给出了详细证明.
 对于第二个问题，有研究者\citep{fried-klein-2018-policy}采取了策略梯度（Policy Gradient）的方法解决，策略梯度定义了一个风险函数，通常为负$\mathrm{F}_1$值，训练时模型用期望风险最小化的训练目标代替了局部动作损失.
 
 我们的成分句法分析器基于判别式的高性能基于双向LSTM编码器的现代神经网络分析器\citep{stern-etal-2017-minimal}，在基于图的模型上利用了minus feature\citep{cross-huang-2016-span}进行区块的打分.

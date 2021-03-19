@@ -506,8 +506,8 @@ The LaTeX template for thesis of suda]
                 &\dlmu[9.2cm]{\zihao{4}\heiti{\suda@thesistitle}}\\ %[.4ex]%\hline
                 &\dlmu[9.2cm]{} \\
                 % english title 需要手动输入
-                &\dlmu[9.2cm]{\zihao{4}{Research on High-Order Syntactic Parsing}} \\%[.4ex]
-                &\dlmu[9.2cm]{\zihao{4}{Methods based on TreeCRF}} \\%[.4ex]
+                &\dlmu[9.2cm]{\zihao{4}{TreeCRF-based High-Order Syntactic Parsing}} \\%[.4ex]
+                &\dlmu[9.2cm]{} \\%[.4ex]
             \end{tabular}
             \vskip 20bp
             ~~\\
@@ -588,7 +588,7 @@ The LaTeX template for thesis of suda]
 % 英文摘要
 \newenvironment{eabstract}{%
     \newpage
-    \chapter*{\zihao{-2}{Research on High-order Syntactic Parsing Methods based on TreeCRF}\\
+    \chapter*{\zihao{-2}{TreeCRF-based High-Order Syntactic Parsing}\\
     \vspace{2ex}
     \centerline{\zihao{-3}{Abstract}}}
     \setlength{\parindent}{24bp}

@@ -27,9 +27,13 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 
 基于这些对比，我们尝试在基于图的分析器的基础上，将前深度学习时代的一些方法与神经网络模型做一下连接.
 这里要解决的\textbf{第一个问题}是:
-\emph{以前的一些技术，比如结构化学习和高阶建模，能够进一步提升当前最佳的分析器Biaffine Parser的性能吗\footnote{
+\emph{
+  以前的一些技术，比如结构化学习和高阶建模，能够进一步提升当前最佳的分析器Biaffine Parser的性能吗
+  \footnote{
     尽管最近的一些工作汇报了相比Biaffin Parser更高的性能，但是都引入了一些外部资源，比如大规模语言模型的上下文词表示. 在相同网络和相同实验设置的场景下，这些工作的结果都是相近的.
-  }，如果可以，他们在哪些方面是有用的？}
+  }，
+  如果可以，他们在哪些方面是有用的？
+}
 
 对于结构化学习而言，相比Max Margin方法，我们采用更复杂且更不常用的TreeCRF.
 主要原因有两方面.
@@ -104,7 +108,7 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
   \label{fig:dep-framework}
 \end{figure}
 
-\subsection{局部词级别训练损失}
+\subsection{局部头选择训练损失}
 Biaffine Parser采用了一个简单的词级别非结构化损失函数，试着对每个词独立最大化正确头的局部概率.
 在一个训练实例中，对于一个正确的头-依赖对$(w_i, w_j$)，其对应的交叉熵损失为
 \begin{equation} \label{eq:biaffine-loss}
@@ -112,7 +116,7 @@ Biaffine Parser采用了一个简单的词级别非结构化损失函数，试�
 \end{equation}
 换句话说，模型的训练是基于一个简单的头选择目标，最终所有词的损失都被累加起来，而没有考虑任何树结构的约束.
 
-\subsection{解码}
+\subsection{解码算法}
 有了所有依存弧的分值，我们采用复杂度为$O(n^3)$的一阶Eisner算法来寻找最优的句法树.
 \begin{equation}
   \label{eq:map-decoding}
@@ -120,7 +124,7 @@ Biaffine Parser采用了一个简单的词级别非结构化损失函数，试�
     \sum_{i \rightarrow j \in \boldsymbol{y}}{\mathrm{s}(i\rightarrow j)} \right]
 \end{equation}
 
-\subsection{依存标签处理}\label{sub@sec:dep-crf-labeling}
+\subsection{依存标签分类}\label{sub@sec:dep-crf-labeling}
 Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立的任务.
 这里为了方便我们采取了相同的策略. 具体细节可以参考\citep{dozat-etal-2017-biaffine}.
 
@@ -437,7 +441,7 @@ UCM（Unlabeled Complete Match）代表无标签完全匹配率，即所有对�
 
 \input{tables/dep-ud-test.tex}
 
-\subsection{UD的结果}
+\subsection{多语言UD数据集上的结果}
 
 表~\ref{table:ud-test}比较了UD数据上不同模型的结果.
 在UD数据中包含了大量的非投影树.

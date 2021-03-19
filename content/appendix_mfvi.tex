@@ -14,7 +14,7 @@
     &=\arg\min_{Q} KL(Q\|P)\\
     &=\arg\min_{Q} E_{Q}\left[\log\frac{Q(\boldsymbol{y})}{P(\boldsymbol{y})}\right]\\
     &=\arg\min_{Q} E_{Q}\left[\log Q(\boldsymbol{y})\right] - E_{Q}\left[P(\boldsymbol{y})\right]\\
-    &=\arg\min_{Q} \log Z-\underbrace{\left[E_{Q}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q}\left[\log Q(\boldsymbol{y})\right]\right]}_{ELBo}
+    &=\arg\min_{Q} \log Z-\underbrace{\left(E_{Q}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q}\left[\log Q(\boldsymbol{y})\right]\right)}_{ELBo}
   \end{split}
 \end{equation}
 去掉配分项，定义
