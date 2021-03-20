@@ -1,9 +1,9 @@
 \chapter{基于TreeCRF的高阶依存句法分析}\label{cha:dep-crf}
 
-本章深入详细的比较了与当前最佳的Biaffine Parser所采用的局部训练相比，基于全局树形条件随机场训练的方法的效果，并首次提出了在神经依存句法分析器上应用一个二阶树形条件随机场的拓展.
-由于高复杂度和低效一直以来都是困扰树形条件随机场的广泛应用的一个重要原因，因此我们提出了一个能够高效批次化Inside算法和Eisner算法的方法，来支持树形条件随机场在GPU上的大规模张量并行计算.
+本章深入详细的比较了与当前最佳的Biaffine Parser所采用的局部训练相比，基于全局TreeCRF训练的方法的效果，并首次提出了在神经依存句法分析器上应用一个二阶TreeCRF的拓展.
+由于高复杂度和低效一直以来都是困扰TreeCRF的广泛应用的一个重要原因，因此我们提出了一个能够高效批次化Inside算法和Eisner算法的方法，来支持TreeCRF在GPU上的大规模张量并行计算.
 并且，我们还通过反向传播机制，避免了复杂Outside算法的计算.
-我们在13个语言的27个数据集上进行了实验，实验结果和分析表明，在深度学习时代之前的技术，诸如结构化学习（全局树形条件随机场损失函数）和高阶建模仍然是有益的，并且可以进一步在最好的Biaffine Parser的基础上提升性能，尤其是在局部标注的场景下.
+我们在13个语言的27个数据集上进行了实验，实验结果和分析表明，在深度学习时代之前的技术，诸如结构化学习（全局TreeCRF损失函数）和高阶建模仍然是有益的，并且可以进一步在最好的Biaffine Parser的基础上提升性能，尤其是在局部标注的场景下.
 
 \section{引言}
 依存句法分析任务是NLP领域的一个基础性任务，由于其简洁性，以及可以方便的在多语言上获得句法和语义信息的特性，目前在这一任务上已经有了大量的研究.
@@ -15,15 +15,15 @@
 通常此类方法采用的是Max Margin训练算法，首先用当前模型训练一棵分值最高的树，然后更新模型参数，以保证正确的树的分值要高于预测树.
 
 第二个显著的区别在于高阶特征的使用. 高阶特征为模型带来了显著的提升.
-基础的一阶模型将句法树的分值分解为若干条独立的弧的分值\citep{mcdonald-etal-2005-online}. 后续的工作进一步引入了二阶依存弧对对分值，比如邻接兄弟\citep{mcdonald-pereira-2006-online}和祖父-父亲-孩子这样的弧对\citep{carreras-2007-experiments,koo-collins-2010-efficient}，这些高阶扩展都带来了模型性能的显著提升\footnote{三阶和四阶模型的提升不大，这可能是由于特征稀疏的问题导致的\citep{koo-collins-2010-efficient,ma-zhao-2012-fourth}.}. 但是这些高阶模型需要引入更复杂的解码算法，导致了模型更加低效.
+基础的一阶模型将句法树的分值分解为若干条独立的弧的分值 \citep{mcdonald-etal-2005-online}. 后续的工作进一步引入了二阶依存弧对对分值，比如邻接兄弟 \citep{mcdonald-pereira-2006-online}和祖父-父亲-孩子这样的弧对 \citep{carreras-2007-experiments,koo-collins-2010-efficient}，这些高阶扩展都带来了模型性能的显著提升\footnote{三阶和四阶模型的提升不大，这可能是由于特征稀疏的问题导致的 \citep{koo-collins-2010-efficient,ma-zhao-2012-fourth}.}. 但是这些高阶模型需要引入更复杂的解码算法，导致了模型更加低效.
 
 相比之下，基于图的神经网络依存句法分析器的发展呈现出相反的趋势.
-\citep{pei-etal-2015-effective}提出利用前馈神经网络来自动学习\citep{chen-manning-2014-fast}的若干特征组合，并计算子树得分.
+\citep{pei-etal-2015-effective}提出利用前馈神经网络来自动学习 \citep{chen-manning-2014-fast}的若干特征组合，并计算子树得分.
 他们的工作表明引入二阶邻接兄弟子树的分值显著提高了性能.
-随后，\citep{wang-chang-2016-graph}和\citep{kiperwasser-goldberg-2016-simple}都建议使用双向LSTM作为编码器和，以及在一阶模型中利用minus-feature来对单条弧打分.
+随后， \citep{wang-chang-2016-graph}和 \citep{kiperwasser-goldberg-2016-simple}都建议使用双向LSTM作为编码器和，以及在一阶模型中利用minus-feature来对单条弧打分.
 这三个代表性方法都采用了全局的Max Margin方法.
 \citep{dozat-etal-2017-biaffine}提出了一种强大而高效的Biaffine Parser，并在各种数据集和语言上获得了最先进的精度.
-Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head selection）的方式\citep{zhang-etal-2017-head}，采用了更简单、更有效的非结构化训练方法.
+Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head selection）的方式 \citep{zhang-etal-2017-head}，采用了更简单、更有效的非结构化训练方法.
 
 基于这些对比，我们尝试在基于图的分析器的基础上，将前深度学习时代的一些方法与神经网络模型做一下连接.
 这里要解决的\textbf{第一个问题}是:
@@ -37,16 +37,16 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 
 对于结构化学习而言，相比Max Margin方法，我们采用更复杂且更不常用的TreeCRF.
 主要原因有两方面.
-首先，概率分布估计一直是当前数据驱动的NLP方法的一个核心的问题\citep{le-zuidema-2014-inside}.
+首先，概率分布估计一直是当前数据驱动的NLP方法的一个核心的问题 \citep{le-zuidema-2014-inside}.
 如果将分析器的输出应用到更高层的任务，一棵句法树的概率$p(\boldsymbol{y}\mid\boldsymbol{x})$比没有上下边界的分值$s (\boldsymbol{x},\boldsymbol{y})$一般而言要更加有用.
-其次，边缘概率是一种理论上比较可靠的方法来评估模型输出子树的置信度，可以用于最小贝叶斯风险（MBR）解码\citep{smith-smith-2007-probabilistic}，并且已经被证明了对于词级别基于局部标注句法树的主动学习（active learning）\citep{li-etal-2016-active}很有用.
+其次，边缘概率是一种理论上比较可靠的方法来评估模型输出子树的置信度，可以用于最小贝叶斯风险（MBR）解码 \citep{smith-smith-2007-probabilistic}，并且已经被证明了对于词级别基于局部标注句法树的主动学习（active learning） \citep{li-etal-2016-active}很有用.
 
 尽管很有用，但是TreeCRF不如Max Margin那么流行，其中一个原因是由于inside-outside算法的高复杂度，尤其是outside算法.
 据我们所知，所有现存的模型都是在CPU上运算inside-outside算法.
 而由于CPU/GPU巨大的效率差异，这一低效的问题在深度学习时代变得更加严重.
 这就引发了\textbf{第二个问题}:
 \emph{我们是否能够批次化inside-outside算法，并且直接在GPU上进行计算？}
-如果这样的话，我们就能够利用诸如PyTorch这样的高效深度学习张量库来进行计算，并且将高效的TreeCRF应用到更多的场景\citep{cai-etal-2017-crf,le-zuidema-2014-inside}.
+如果这样的话，我们就能够利用诸如PyTorch这样的高效深度学习张量库来进行计算，并且将高效的TreeCRF应用到更多的场景 \citep{cai-etal-2017-crf,le-zuidema-2014-inside}.
 
 总体而言，针对上面的两个问题，我们在本章节的贡献如下：
 \begin{itemize}%[leftmargin=10pt,topsep=3pt,itemsep=1pt，partopsep=1pt]
@@ -61,18 +61,18 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 \section{基线模型}
 \label{sec:dep-basic-model}
 
-我们复现了当前最好的Biaffine Parser\citep{dozat-etal-2017-biaffine}，并在两方面对其做了修改：1) 用CharLSTM代替原来的词性embedding，2) 用一阶Eisner算法\citep{eisner-2000-iwptbook}代替原来的MST算法来进行投影树解码.
+我们复现了当前最好的Biaffine Parser \citep{dozat-etal-2017-biaffine}，并在两方面对其做了修改：1) 用CharLSTM代替原来的词性embedding，2) 用一阶Eisner算法 \citep{eisner-2000-iwptbook}代替原来的MST算法来进行投影树解码.
 
 \subsection{打分方法}
-图~\ref{fig:dep-framework}展示了我们的打分架构，一共由四个部分组成.
+图~\ref{fig:dep-framework}展示了我们的打分方法，一共由四个部分组成.
 
-\textbf{输入向量.}
+\noindent\textbf{输入向量.}
 第$i$个输入向量可以分为两部分：词向量，以及词$w_i$的CharLSTM表示向量.
 \begin{equation}
   \label{eq:input}
   \mathbf{e}_i=\mathrm{emb}({w_i}) \oplus \mathrm{CharLSTM}(w_i)
 \end{equation}
-其中$\mathrm{CharLSTM}(w_i)$是由先将$w_i$输入到一个双向LSTM，然后拼接两个最后的隐向量获得\citep{lample-etal-2016-neural}.
+其中$\mathrm{CharLSTM}(w_i)$是由先将$w_i$输入到一个双向LSTM，然后拼接两个最后的隐向量获得 \citep{lample-etal-2016-neural}.
 我们发现用$\mathrm{CharLSTM}(w_i)$替换原有的词性embedding会带来稳定的提升，并且也简化了实验流程，尤其是对于多语言实验恶言，无需再用到词性标注器来额外生成输入句子的词性.
 
 \noindent\textbf{双向LSTM编码器.}
@@ -104,7 +104,7 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 \begin{figure}[tb]
   \centering
   \includegraphics[scale=1.5]{figures/dep-framework.pdf}
-  \caption{带二阶扩展的打分架构.}
+  \caption{带二阶扩展的打分方法.}
   \label{fig:dep-framework}
 \end{figure}
 
@@ -112,21 +112,20 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 Biaffine Parser采用了一个简单的词级别非结构化损失函数，试着对每个词独立最大化正确头的局部概率.
 在一个训练实例中，对于一个正确的头-依赖对$(w_i, w_j$)，其对应的交叉熵损失为
 \begin{equation} \label{eq:biaffine-loss}
-  \mathit{L}(i\rightarrow j) = -\log{\frac{e^{\mathrm{s}(i\rightarrow j)}}{\sum_{0 \le k \le n} e^{\mathrm{s}(k,j)}}}
+  \mathit{L}(i\rightarrow j) = -\log{\frac{\exp(\mathrm{s}(i\rightarrow j))}{\sum_{0 \le k \le n} \exp(\mathrm{s}(k,j))}}
 \end{equation}
 换句话说，模型的训练是基于一个简单的头选择目标，最终所有词的损失都被累加起来，而没有考虑任何树结构的约束.
 
-\subsection{解码算法}
-有了所有依存弧的分值，我们采用复杂度为$O(n^3)$的一阶Eisner算法来寻找最优的句法树.
+\subsection{解码方法}
+Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立的任务.
+这里为了方便我们采取了相同的两阶段解析策略.
+首先，给定所有依存弧的分值，我们采用复杂度为$O(n^3)$的一阶Eisner算法来寻找最优的骨干句法树.
 \begin{equation}
   \label{eq:map-decoding}
-  {\boldsymbol{y}}^* = \arg\max_{\boldsymbol{y}} \left[ \mathrm{s}(\boldsymbol{x},\boldsymbol{y}) \equiv
-    \sum_{i \rightarrow j \in \boldsymbol{y}}{\mathrm{s}(i\rightarrow j)} \right]
+  {\boldsymbol{y}}^* = \arg\max_{\boldsymbol{y}} \mathrm{s}(\boldsymbol{x},\boldsymbol{y}) \equiv
+  \sum_{i \rightarrow j \in \boldsymbol{y}}{\mathrm{s}(i\rightarrow j)}
 \end{equation}
-
-\subsection{依存标签分类}\label{sub@sec:dep-crf-labeling}
-Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立的任务.
-这里为了方便我们采取了相同的策略. 具体细节可以参考\citep{dozat-etal-2017-biaffine}.
+其次，给定最优的无标签骨干树，我们采用局部贪婪分类的方法为树中的每条弧分配一个标签，得到一棵最优的有标签树，具体细节可以参考 \citep{dozat-etal-2017-biaffine}.
 
 \begin{figure}[tb]
   \centering
@@ -146,12 +145,12 @@ Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立�
   \label{fig:scoring-part}
 \end{figure}
 
-\section{二阶TreeCRF}\label{2o-tree-crf}
-我们从两方面极大地拓展来Biaffine Parser：
+\section{二阶TreeCRF}\label{dep-2o-treecrf}
+我们从两方面极大拓展了Biaffine Parser：
 使用概率TreeCRF来进行结构化训练，以及显式引入高阶子树地分值.
 
 具体地我们在基本的一阶模型的基础上引入了二阶邻接子树的分值:\footnote{
-  我们还可以进一步扩展，引入祖父-父亲-孩子的子树分值，然后基于\citep{koo-collins-2010-efficient}提出的$O(n^4)$的Viterbi算法解码.
+  我们还可以进一步扩展，引入祖父-父亲-孩子的子树分值，然后基于 \citep{koo-collins-2010-efficient}提出的$O(n^4)$的Viterbi算法解码.
   这里我们留待作为未来的工作.
 }
 \begin{equation}\label{eq:score-definition-2o}
@@ -168,10 +167,10 @@ Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立�
 作为一个概率模型，TreeCRF以下面的方式计算一棵树的条件概率
 \begin{equation}\label{eq:prob-labeled}
   \begin{split}
-    & p(\boldsymbol{y}\mid\boldsymbol{x})  = \frac{e^{\mathrm{s}(\boldsymbol{x},\boldsymbol{y})}}{Z(\boldsymbol{x}) \equiv \sum_{\boldsymbol{y'} \in \mathcal{Y}(\boldsymbol{x})} {e^{\mathrm{s}(\boldsymbol{x},\boldsymbol{y'})}}}
+    & p(\boldsymbol{y}\mid\boldsymbol{x})  = \frac{\exp(\mathrm{s}(\boldsymbol{x},\boldsymbol{y}))}{Z(\boldsymbol{x}) \equiv \sum_{\boldsymbol{y'} \in \mathcal{Y}(\boldsymbol{x})} {\exp(\mathrm{s}(\boldsymbol{x},\boldsymbol{y'}))}}
   \end{split}
 \end{equation}
-其中$\mathcal{Y}(\boldsymbol{x})$是输入句子$\boldsymbol{x}$对应所有合法的句法树，$Z(\boldsymbol{x})$通常被成为normalization/partition term.
+其中$\mathcal{Y}(\boldsymbol{x})$是输入句子$\boldsymbol{x}$对应所有合法的句法树，$Z(\boldsymbol{x})$通常被成为配分项（partition term）.
 
 训练时，TreeCRF应用了下面的损失函数来最大化给定$\boldsymbol{x}$正确句法树$\boldsymbol{y}$的条件概率.
 \begin{equation}\label{eq:training-loss-treecrf}
@@ -209,8 +208,8 @@ Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立�
   % \vspace{-5pt}
 \end{figure}
 
-\subsection{二阶子树打分}
-为了避免对原有打分架构有大的改动，我们采用来一个直接的扩展来获得邻接子树的分值.
+\subsection{基于Triaffine的二阶子树打分}
+为了避免对原有打分方法有大的改动，我们采用了一个直接的扩展来获得邻接子树的分值.
 首先，我们用三个额外的MLP层来进行和Biaffine所需要的类似的特征提取
 \begin{equation}
   \label{mlp-sib}
@@ -220,8 +219,8 @@ $\mathbf{r}_i^{h'}; \mathbf{r}_i^{s}; \mathbf{r}_i^{m'}$是词$w_i$分别作为�
   另一种方式是重用一阶部分头和依赖的表示，但是我们的前置实验表明这种方法的结果要更差一点
 }
 
-然后，我们提出来一个对biaffine equation自然的扩展，triaffine结构，来通过上述的三个向量计算分值\footnote{
-  我们同样尝试了\citep{wang-etal-2019-second}的方法，他们用了三个biaffine操作来模拟三个输入向量的交互，但是这种方法的结果相对要差一点.
+然后，我们提出了一个对Biaffine自然的扩展，Triaffine结构，来通过上述的三个向量计算分值\footnote{
+  我们同样尝试了\citet{wang-etal-2019-second}的方法，他们用了三个biaffine操作来模拟三个输入向量的交互，但是这种方法的结果相对要差一点.
   篇幅限制我们省略了相应结果的汇报.
 }
 \begin{equation} \label{eq:triaffine}
@@ -246,30 +245,30 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 
 \subsection{高效的TreeCRF计算方法}
 
-如公式~\ref{eq:training-loss-treecrf}所示，计算TreeCRF损失的关键在于如何计算$\log Z(\boldsymbol{x})$.
+如公式~\ref{eq:training-loss-treecrf}所示，计算TreeCRF损失的关键在于如何计算配分项$Z(\boldsymbol{x})$.
 这个问题在前深度学习时代的非神经网络模型上已经被很好的解决了.
-我们可以在Viterbi算法的基础上，直接用sum product操作取代max-product操作，这样就可以以相同的多项式时间的复杂度得到$\log Z(\boldsymbol{x})$.
+我们可以在Viterbi算法的基础上，直接用sum product操作取代max-product操作，这样就可以以相同的多项式时间的复杂度得到$Z(\boldsymbol{x})$.
 然而，对非神经网络模型而言，由于缺乏自动求导机制，单独的计算Inside算法仍然是不够的.
 为了获取边缘概率，然后得到特征权重的梯度，我们还需要实现更加复杂的Outside算法，而这通常要两倍慢于Inside算法.
 这可能是TreeCRF在非神经网络上不如Max Margin流行的主要原因.
 
 \input{algorithms/eisner-2o.tex}
 
-据我们所知，所有以前的神经网络上TreeCRF解析的工作都显式地实现了Inside-Outside算法来进行梯度的计算\citep{zhang-etal-2019-empirical, jiang-etal-2018-supervised}.
+据我们所知，所有以前的神经网络上TreeCRF解析的工作都显式地实现了Inside-Outside算法来进行梯度的计算 \citep{zhang-etal-2019-empirical, jiang-etal-2018-supervised}.
 为来提升效率，这些计算通常被从GPU迁移到CPU，用Cython加速.
 
 这里我们表明Inside算法可以被高效的批次化，从而充分利用GPU并行计算的能力.
-图~\ref{fig:eisner-2o}和算法~\ref{alg:eisner-2o}展示了批次化版本的二阶Inside算法，这是\citep{mcdonald-pereira-2006-online}中的二阶Eisner算法的一个直接扩展，将其中的max-product操作用sum product取代.
+图~\ref{fig:eisner-2o}和算法~\ref{alg:eisner-2o}展示了批次化版本的二阶Inside算法，这是\citet{mcdonald-pereira-2006-online}中的二阶Eisner算法的一个直接扩展，将其中的max-product操作用sum product取代.
 为了简便，我们忽略了自右边位置$j$向左边位置$i$归并生成incomplete/complete/sibling区块的描述.
 
 具体地，对一个批次中$B$个句子，我们首先将不同位置但是相同宽度的区块($i, j$)的分值打包成为一个大的张量.
 接着，我们在GPU上通过高效的大规模张量并行操作来同时进行计算和归并.
 我们还可以以类似的方式来批次化解码算法，这里省略细节.
 
-值得注意的是，这里描述的技术同样可以在其他形式的文法里应用，比如CKY算法形式的成分句法分析\citep{finkel-etal-2008-efficient,drozdov-etal-2019-unsupervised}.
+值得注意的是，这里描述的技术同样可以在其他形式的文法里应用，比如CKY算法形式的成分句法分析 \citep{finkel-etal-2008-efficient,drozdov-etal-2019-unsupervised}.
 具体在章节~\ref{cha:con-crf}中描述.
 
-\subsection{Outside算法的替代：反向传播}
+\subsection{基于反向传播的Outside算法的替代}
 
 \citet{eisner-2016-inside}以成分句法分析（短语结构）为例，对反向传播机制和Outside算法的等价性进行了理论证明.
 这里我们同样在依存句法上验证了其等价性.
@@ -289,18 +288,18 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
   \end{split}
 \end{equation}
 因此偏导数等价于所有包含$i \rightarrow j$的弧的句法树的概率之和，即边缘概率$p(i \rightarrow j\mid\boldsymbol{x})$.
-对于TreeCRF分析器，我们可以通过将解码算法中的分值用边缘概率代替，进行\textbf{最小贝叶斯风险}（Minimum Bayesian Risk, MBR）解码\citep{smith-smith-2007-probabilistic}，从而带来一个稳定的提升，相关推导见附录~\ref{cha:mbr-decoding}.
+对于TreeCRF分析器，我们可以通过将解码算法中的分值用边缘概率代替，进行\textbf{最小贝叶斯风险}（Minimum Bayesian Risk, MBR）解码 \citep{smith-smith-2007-probabilistic}，从而带来一个稳定的提升，相关推导见附录~\ref{cha:mbr-decoding}.
 
 \subsection{局部标注处理}
 \label{sub@sec:partial-annotation}
 
-作为一个有吸引力的研究方向，很多研究证明构建或者收集局部标注数据很有效\citep{nivre-etal-2014-squibs,hwa-99-partial-annotation,pereira-92-inside-outside}，在依存句法分析中，一个句子可以关联一个局部标注树.
+作为一个有吸引力的研究方向，很多研究证明构建或者收集局部标注数据很有效 \citep{nivre-etal-2014-squibs,hwa-99-partial-annotation,pereira-92-inside-outside}，在依存句法分析中，一个句子可以关联一个局部标注树.
 当结合主动学习（active learning）时，局部标注可以发挥更大的作用，由于只需要标注部分较难的子树结构，这样可以极大减轻标注者的标注负担.
 \citep{li-etal-2016-active}中有关于这部分的详细调研.
-此外，\citep{peng-etal-2019-overview}最近基于这方面的研究公开了一个局部标注的多领域中文树库.
+此外，\citet{peng-etal-2019-overview}最近基于这方面的研究公开了一个局部标注的多领域中文树库.
 
 那么问题就变成了如何利用局部标注数据来训练模型.
-\citep{li-etal-2016-active}基于这个目的提出扩展TreeCRF到局部标注场景，并在非神经网络模型上取得了不错的效果.
+\citet{li-etal-2016-active}基于这个目的提出扩展TreeCRF到局部标注场景，并在非神经网络模型上取得了不错的效果.
 这里我们借鉴他们的研究到了神经网络模型中.
 我们尤其关注于在结构化学习和高阶建模上利用局部标注数据.
 
@@ -308,7 +307,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 与此相对的是，树结构约束允许标注弧影响未标注词的概率分布，并且高阶建模进一步促进了词之间的交互.
 因此，直觉上结构化学习和高阶建模都是非常有用的.
 
-对于局部标注，我们和\citep{li-etal-2016-active}一样，定义训练的目标函数如下:
+对于局部标注，我们和\citet{li-etal-2016-active}一样，定义训练的目标函数如下:
 \begin{equation}
   \label{eq:training-loss-treecrf-partial}
   \begin{split}
@@ -316,7 +315,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
     &= - \log \frac{Z(\boldsymbol{x}, {\boldsymbol{y}^p}) \equiv \sum\limits_{\boldsymbol{y} \in \mathcal{Y}(\boldsymbol{x}); \boldsymbol{y} \supseteq \boldsymbol{y}^p} e^{\mathrm{s}(\boldsymbol{x},\boldsymbol{y})}}{Z(\boldsymbol{x})}
   \end{split}
 \end{equation}
-其中$Z(\boldsymbol{x}, {\boldsymbol{y}^p})$ 只包含所有与给定局部标注树兼容的和法术，并且可以以与$Z(\boldsymbol{x})$类似的方式进行高效的计算.
+其中$Z(\boldsymbol{x}, {\boldsymbol{y}^p})$ 只包含所有与给定局部标注树兼容的句法树，并且可以以与$Z(\boldsymbol{x})$类似的方式进行高效的计算.
 
 \begin{figure}[tb]
   \centering
@@ -332,15 +331,15 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 \input{tables/dep-dev-test.tex}
 
 \noindent\textbf{参数设置.}
-我们直接采用了\citep{dozat-etal-2017-biaffine}的大部分参数设置，包含Dropout和初始化策略.
-对于CharLSTM，和\citep{lample-etal-2016-neural}一样，输入字向量的维度是50，输出向量的维度是100.
+我们直接采用了\citet{dozat-etal-2017-biaffine}的大部分参数设置，包含Dropout和初始化策略.
+对于CharLSTM，和\citet{lample-etal-2016-neural}一样，输入字向量的维度是50，输出向量的维度是100.
 对于二阶模型，我们设置$\mathbf{r}^{h'/s/m'}_i$的维度为100（进一步提升到300带来的提升很小）.
 我们训练模型最多1,000次迭代，并且如果在dev上的性能连续100次不提升那就停止训练.
 
 \noindent\textbf{模型.}
 \textsc{Loc}使用了局部交叉熵训练损失函数，并且解码时使用Eisner算法来获取最优的投影树.
 \textsc{Crf}和\textsc{Crf2o}各自代表一阶和二阶TreeCRF模型.
-$\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用和\citep{dozat-etal-2017-biaffine}一样的MST算法输出非投影树.
+$\textsc{Loc}^{\textsc{mst}}$代表基本的基线模型，但是解码时采用和\citet{dozat-etal-2017-biaffine}一样的MST算法输出非投影树.
 
 \subsection{效率比较}
 
@@ -358,7 +357,7 @@ $\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用
 
 表~\ref{table:dev-test}列出了Dev和Test数据上的结果.
 两个数据上的结果趋势大部分是一致的.
-为了能够与前人的结果公平比较，我们只比较了不利用外部资源的工作，例如ELMo\citep{peters-etal-2018-deep}或BERT\citep{devlin-etal-2019-bert}.
+为了能够与前人的结果公平比较，我们只比较了不利用外部资源的工作，例如ELMo \citep{peters-etal-2018-deep}或BERT \citep{devlin-etal-2019-bert}.
 可以看到我们的基线模型\textsc{Loc}在PTB和CoNLL09相较于前人达到了最好的性能
 
 在PTB上，\textsc{Crf}和\textsc{Crf2o}没有能够进一步提升解析准确率，这部分是由于这两个数据上的结果已经很高了.
@@ -383,7 +382,7 @@ $\textsc{Loc}_{\textsc{mst}}$代表基本的基线模型，但是解码时采用
 \end{figure*}
 
 \noindent\textbf{MBR解码的影响.}
-对于\textsc{Crf}和\textsc{Crf2o}，我们默认进行MBR解码，也就是直接在边缘概率上应用Eisner算法\citep{smith-smith-2007-probabilistic}来找到最优的句法树.
+对于\textsc{Crf}和\textsc{Crf2o}，我们默认进行MBR解码，也就是直接在边缘概率上应用Eisner算法 \citep{smith-smith-2007-probabilistic}来找到最优的句法树.
 \begin{equation}
   \begin{split}
     & {\boldsymbol{y}}^* = \arg\max_{\boldsymbol{y}} \sum_{i \rightarrow j \in \boldsymbol{y}}{p(i \rightarrow j|\boldsymbol{x})}
@@ -445,18 +444,18 @@ UCM（Unlabeled Complete Match）代表无标签完全匹配率，即所有对�
 
 表~\ref{table:ud-test}比较了UD数据上不同模型的结果.
 在UD数据中包含了大量的非投影树.
-我们采用了\citep{nivre-nilsson-2005-pseudo}的伪投影方法来将许多语言中大量存在的非投影树转换为投影树.
+我们采用了 \citep{nivre-nilsson-2005-pseudo}的伪投影方法来将许多语言中大量存在的非投影树转换为投影树.
 基本的想法是将非投影树转换为投影树的时候利用更多更复杂的标签来标记，以方便后处理的时候能够恢复.
 
-可以看到在基础的局部模型上，直接的基于MST算法的非投影解析方法$\textsc{Loc}_{\textsc{mst}}$和伪投影方法\textsc{Loc}达到了非常相似的性能.
+可以看到在基础的局部模型上，直接的基于MST算法的非投影解析方法$\textsc{Loc}^{\textsc{mst}}$和伪投影方法\textsc{Loc}达到了非常相似的性能.
 
 更重要的是，\textsc{Crf}和\textsc{Crf2o}在大部分语言上相比于基线模型都出现了一致的提升.
 在UD2.2和UD2.3上，我们提出的\textsc{Crf2o}模型在12个语言中的10个上达到了最高的解析准确率，并且在超过7个语言上获得的提升是显著的.
 总体上，平均分别在UD2.2和UD2.3各自达到了0.45和0.29的提升，这同样是显著的（$p<0.005$）.
 
-在UD2.2上，我们和CoNLL18任务一样采用的是毛文本，并且我们的\textsc{Crf2o}分析器上比\citep{ji-etal-2019-graph}平均要高2.30.
-在UD2.3上，\citep{zhang-etal-2019-empirical}使用了正确词性作为输入，我们平均比他们高0.91.
-需要注意的是\citep{ji-etal-2019-graph}里德语（de）结果错误的使用了正确的句子分割，符号化以及词性，而表中的结果是用了预测的词性，并重新运行他们的分析器得到的.
+在UD2.2上，我们和CoNLL18任务一样采用的是毛文本，并且我们的\textsc{Crf2o}分析器上比 \citep{ji-etal-2019-graph}平均要高2.30.
+在UD2.3上， \citep{zhang-etal-2019-empirical}使用了正确词性作为输入，我们平均比他们高0.91.
+需要注意的是 \citep{ji-etal-2019-graph}里德语（de）结果错误的使用了正确的句子分割，符号化以及词性，而表中的结果是用了预测的词性，并重新运行他们的分析器得到的.
 我们的\textsc{Crf2o}分析器在使用他们的词性之后平均的LAS达到了87.64.
 
 \section{本章小结}

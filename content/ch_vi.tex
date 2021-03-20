@@ -7,19 +7,19 @@
 
 \section{引言}\label{sec:vi-intro}
 近年来句法分析领域有了长足的进步.
-研究者针对句法分析任务提出了一系列的方法\citep{dozat-etal-2017-biaffine,gomez-rodriguez-vilares-2018-constituent,ji-etal-2019-graph,zhang-etal-2020-fast,wei-etal-2020-span}，将英语基准数据集宾州树库（Penn Treebank, PTB）的准确率刷新到了很高的水平.
+研究者针对句法分析任务提出了一系列的方法 \citep{dozat-etal-2017-biaffine,gomez-rodriguez-vilares-2018-constituent,ji-etal-2019-graph,zhang-etal-2020-fast,wei-etal-2020-span}，将英语基准数据集宾州树库（Penn Treebank, PTB）的准确率刷新到了很高的水平.
 本章中我们主要关注于基于图的句法分析方法.
 
 基于图的方法选择将一棵句法树分解为多个部分，然后分别打分，组成树的分值，并训练模型使得能够找到分值最大的句法树.
 其中最简单的一阶方法让树中的每个变量都互相独立.
-在深度学习时代之前，一阶方法通常需要结合结构化学习\citep{mcdonald-etal-2005-online,koo-etal-2007-structured,taskar-etal-2004-max}.
+在深度学习时代之前，一阶方法通常需要结合结构化学习 \citep{mcdonald-etal-2005-online,koo-etal-2007-structured,taskar-etal-2004-max}.
 得益于深度神经网络的强大上下文建模能力，近期的一些工作通常基于更简单的训练方法，其中\citet{dozat-etal-2017-biaffine}（Biaffine Parser）提出一个简单的基于头选择目标的解析器，训练时最大化每条弧的头的概率.
 \citet{gaddy-etal-2018-whats}则提出一个基于二分类目标的成分句法分析方法，训练模型判断每个可能位置是否组成组块.
-由于其高效率，并且取得了不逊色于结构化学习方法的结果\citep{zhang-etal-2019-empirical,falenska-kuhn-2019-non}，这些方法是目前最为流行的句法分析方法.
+由于其高效率，并且取得了不逊色于结构化学习方法的结果 \citep{zhang-etal-2019-empirical,falenska-kuhn-2019-non}，这些方法是目前最为流行的句法分析方法.
 
 与此对应的，研究者通常也尝试更多结构化约束引入神经网络模型中.
-一方面利用TreeCRF、Max Margin\citep{ma-hovy-2017-neural,falenska-kuhn-2019-non,stern-etal-2017-minimal}等结构化学习算法来全局最大化句法树的概率.
-另一方面，则是尝试利用高阶特征，建模兄弟、祖父等子树结构\citep{mcdonald-pereira-2006-online,koo-collins-2010-efficient}.
+一方面利用TreeCRF、Max Margin \citep{ma-hovy-2017-neural,falenska-kuhn-2019-non,stern-etal-2017-minimal}等结构化学习算法来全局最大化句法树的概率.
+另一方面，则是尝试利用高阶特征，建模兄弟、祖父等子树结构 \citep{mcdonald-pereira-2006-online,koo-collins-2010-efficient}.
 我们在章节~\ref{cha:dep-crf}和章节~\ref{cha:con-crf}的工作证明，在神经网络模型中，引入结构化学习给句法分析任务会给带来了一定的提升.
 在依存句法分析中我们还进一步尝试了二阶兄弟特征的高阶句法分析，是依存分析的结果超越了一系列前人的工作，达到了最佳水平.
 
@@ -27,12 +27,12 @@
 由于需要精确推断得到树概率，这需要$O(n^3)$的时间复杂度，因此大大慢于一阶方法.
 此外，如果进一步考虑其他高阶特征，例如共同父亲等等，这可能会导致动态规划结构难以设计，或者算法复杂度难以忍受.
 
-考虑到这种限制，因此，在本章中我们参考前人的一些工作\citep{smith-eisner-2008-dependency,wang-etal-2019-second,wang-tu-2020-second}，在利用高阶特征的同时，尝试用平均场变分推断（Mean Field Variational Inference, \textsc{Mfvi}）方法来近似获得后验概率.
+考虑到这种限制，因此，在本章中我们参考前人的一些工作 \citep{smith-eisner-2008-dependency,wang-etal-2019-second,wang-tu-2020-second}，在利用高阶特征的同时，尝试用平均场变分推断（Mean Field Variational Inference, \textsc{Mfvi}）方法来近似获得后验概率.
 在本章中，我们在依存句法分析和成分句法分析这两个句法分析任务上尝试了应用基于变分推断的近似学习算法.
 针对依存解析和成分解析两种任务的特性，我们分别在依存句法的变分推断中参考\cite{wang-tu-2020-second}引入了头选择的结构约束，而在成分句法中则采用了二分类的学习目标.
 我们发现近似算法在获取了和精确推断接近的准确率的同时，解析速度能够大大提高.
 
-% 近似方法\citep{smith-eisner-2008-dependency,gormley-etal-2015-approximation}，并使用$AD^3$\citep{martins-etal-2011-dual,martins-etal-2013-turning}来进行解码.
+% 近似方法 \citep{smith-eisner-2008-dependency,gormley-etal-2015-approximation}，并使用$AD^3$ \citep{martins-etal-2011-dual,martins-etal-2013-turning}来进行解码.
 总体而言，我们在本章节的工作如下：
 \begin{itemize}
   \item 我们提出在句法分析任务上应用引入二阶特征的变分推断方法近似得到后验概率来进行结构化学习，并和前述章节的精确推断方法做了比较.
@@ -58,7 +58,7 @@ $Z(\boldsymbol{x})$代表指数级别空间的所有可能树的分值之和，�
 依存树上$\boldsymbol{l}$被分解为每条弧的标签，成分树上$\boldsymbol{l}$由每个组块的标签组成.
 我们采取和前述一样的方法，以贪婪解码的方式，为无标签依存句法树的每条弧$i\rightarrow j$找到一个分值最大的标签，成分句法树的每个组块$(i,j)$找到一个最优的标签.
 
-\subsection{打分架构}
+\subsection{打分方法}
 
 在对句子中的每个词编码之后，我们得到上下文表示，其中第$i$个词的输出为$\mathbf{h}_i$.
 之后，我们将无标签树$\boldsymbol{y}$分解，并对每个结构打分.
@@ -93,7 +93,7 @@ $Z(\boldsymbol{x})$代表指数级别空间的所有可能树的分值之和，�
 \end{figure}
 
 在得到分值之后，我们的句法分析方法分为两阶段：1）构建无标签树；2）预测标签.
-在第二阶段预测标签的时候，我们以贪婪的方式给依存树的每条弧（见章节~\ref{sub@sec:dep-crf-labeling}）或者成分树的每个组块（见章节~\ref{sub@sec:con-crf-model-definition}）打上标签.
+在第二阶段预测标签的时候，我们以贪婪的方式给依存树的每条弧或者成分树的每个组块打上标签.
 而在第一阶段构建无标签树时，我们的目的是选择后验概率最大的句法树$\boldsymbol{y} = \arg\max_{\boldsymbol{y}^{\prime}} P(\boldsymbol{y}^{\prime}\mid \boldsymbol{x})$.
 通常这样的推断的复杂度较高，以至于无法计算.
 在句法分析领域我们可以应用复杂度为$O(n^3)$的Inside算法来进行精确计算，尽管在前面章节我们展示了可以通过批次化以及张量并行计算来降低复杂度，但是仍然十分影响计算效率.
@@ -105,7 +105,7 @@ $Z(\boldsymbol{x})$代表指数级别空间的所有可能树的分值之和，�
 
 \noindent\textbf{基于头选择的变分推断.}
 目前广泛使用的一阶局部模型（对应于章节~\ref{cha:dep-crf}的\textsc{Loc}方法，这里我们称为\textsc{Loc}$_{dep}$）在训练的时候采用了头选择（head selection）训练目标，要求句子中除了根结点之外的每个词有且仅有一个头.
-和\citep{wang-tu-2020-second}一样，我们选择在依存句法对应变分推断方法中引入头选择约束，相应的因子图见图~\ref{fig:dep-factors}..
+和 \citep{wang-tu-2020-second}一样，我们选择在依存句法对应变分推断方法中引入头选择约束，相应的因子图见图~\ref{fig:dep-factors}..
 对于每个位置$j$，我们定义变量取值为$y_j\in \{0,1,\cdots,i\neq j,\cdots,n\}$，代表词$w_j$的可能的头索引.
 
 具体地，对于每个变量$y_j$，一阶的势函数定义为
@@ -128,7 +128,7 @@ $s(y_j\rightarrow j)$是弧$y_j\rightarrow j$对应的分值，由公式~\ref{eq
 $s(y_j\rightarrow \{k,j\})$是兄弟子树$y_j\rightarrow \{k,j\}$的分值，由公式~\ref{eq:triaffine}计算得到.
 需要注意的是这里的兄弟$k$和二阶TreeCRF不一样，并不需要一定和$j$邻近.
 
-\textsc{Mfvi}迭代式地更新近似分布$Q(\cdot)$，来最小化其与真实分布$P(\cdot)$的KL散度，依存句法模型的迭代更新公式如下\citep{wang-tu-2020-second}：
+\textsc{Mfvi}迭代式地更新近似分布$Q(\cdot)$，来最小化其与真实分布$P(\cdot)$的KL散度，依存句法模型的迭代更新公式如下 \citep{wang-tu-2020-second}：
 \begin{equation}
   \label{eq:mfvi-dep}
   Q_{j}^{(t)}(i)\propto \exp\left(s(i\rightarrow j) +\sum_{k\neq i,j} Q_{k}^{(t-1)}(i)\cdot s(i\rightarrow {k,j}) \right)
@@ -137,7 +137,7 @@ $s(y_j\rightarrow \{k,j\})$是兄弟子树$y_j\rightarrow \{k,j\}$的分值，�
 每次迭代时，我们都会将$Q_j^{(0)}(\cdot)$的值在所有可能的头取值上进行归一化.
 
 \noindent\textbf{基于二分类的变分推断.}
-我们的成分句法分析模型采用了\citep{gaddy-etal-2018-whats}的方法作为基线方法，称为\textsc{Loc}$_{con}$.
+我们的成分句法分析模型采用了 \citep{gaddy-etal-2018-whats}的方法作为基线方法，称为\textsc{Loc}$_{con}$.
 具体来说，模型对短语树所有可能的位置进行一个简单的二分类，预测该位置是否是一个区块.
 \citep{dozat-manning-2018-simpler,wang-etal-2019-second}在语义依存分析中应用了这样的训练目标.
 \citep{gormley-eisner-2015-structured,naradowsky-etal-2012-grammarless}在成分句法分析中应用了这种方法，并采用循环置信传播（Loopy Belief Propagation, LBP）来近似获得后验概率，并设计了若干种局部和全局因子，比如\textsc{Exactly1}、\textsc{Tree}等.
@@ -239,7 +239,7 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 并且，\textsc{Mfvi}一致超越了基于二分类学习的\textsc{Loc}模型，在PTB、CTB51和CTB7上分别提升了0.11、0.52和0.35.
 
 当使用BERT之后，上述的几种推断算法在结果上没有显著差异.
-依存句法上，PTB中\textsc{Mfvi}表现最好，LAS为95.37，达到或超越了当前的最佳性能\citep{zhou-zhao-2019-head,wang-tu-2020-second}，CoNLL09上人仍然\textsc{Crf2o}最佳，但是\textsc{Mfvi}的差距十分微弱.
+依存句法上，PTB中\textsc{Mfvi}表现最好，LAS为95.37，达到或超越了当前的最佳性能 \citep{zhou-zhao-2019-head,wang-tu-2020-second}，CoNLL09上人仍然\textsc{Crf2o}最佳，但是\textsc{Mfvi}的差距十分微弱.
 成分句法中在PTB和CTB51这两个数据上，\textsc{Mfvi}的表现都是最好的，分别达到95.71和92.56的$\mathrm{F}_1$值，高于当前最佳的模型\cite{kitaev-etal-2019-multilingual}.
 在CTB7上表现最好的仍是\textsc{Crf2o}，$\mathrm{F}_1$值为91.62，而\textsc{Mfvi}的差距不到0.1.
 然而，基于\textsc{Mfvi}方法的近似推断在解析效率上有很大的优越性（见章节~\ref{sub@sec:vi-speed}的复杂度分析）.
@@ -290,7 +290,7 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 表~\ref{table:vi-speed}给出了\textsc{Mfvi}和前面章节提及的精确推断模型的速度和复杂度的比较.
 为了统一比较，所有的设置下都应用了MBR解码，并且每个任务都用了相同的解码算法.
 可以看到，无论是依存句法还是成分句法模型，他们相应的\textsc{Mfvi}在CPU上每一次迭代都需要$O(n^3)$的复杂度，这和精确推断的2阶Inside算法的复杂度相当.
-而当利用GPU进行并行计算时，\textsc{Mfvi}每个位置的变量仅需要一次遍历来收集其他位置的信息\footnote{尽管现代的CUDA技术可以通过二叉树等数据结构让并行化的归约操作，例如$\mathrm{sum}$、$\mathrm{min}$和$\mathrm{max}$等，缩减到$O(\log n)$复杂度的时间\citep{wang-etal-2020-ain}，但是这里我们统一假设归约操作的复杂度为$O(n)$.}，因此GPU上的算法复杂度为$O(n)$，大大快于精确推断所需要的$O(n^2)$复杂度.
+而当利用GPU进行并行计算时，\textsc{Mfvi}每个位置的变量仅需要一次遍历来收集其他位置的信息\footnote{尽管现代的CUDA技术可以通过二叉树等数据结构让并行化的归约操作，例如$\mathrm{sum}$、$\mathrm{min}$和$\mathrm{max}$等，缩减到$O(\log n)$复杂度的时间 \citep{wang-etal-2020-ain}，但是这里我们统一假设归约操作的复杂度为$O(n)$.}，因此GPU上的算法复杂度为$O(n)$，大大快于精确推断所需要的$O(n^2)$复杂度.
 
 从表中可以看到，利用\textsc{Mfvi}的依存句法在PTB的Test数据的解析速度为1126句每秒，是精确推断的二阶\textsc{Crf2o}（431）的近三倍快，同样也大大快于一阶\textsc{Crf}的653句每秒.
 成分句法的\textsc{Mfvi}模型的解析速度大约为905句每秒，同样显著快于一阶\textsc{Crf}的743句每秒和二阶\textsc{Crf2o}的598句每秒.
@@ -298,7 +298,7 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 \section{本章小结}
 
 在本章我们将包含二阶特征的\textsc{Mfvi}方法方法引入到了依存句法和成分句法分析中.
-根据两种句法分析的特点，在依存句法分析上，我们参考\citep{wang-tu-2020-second}实现了一个包含头选择约束的\textsc{Mfvi}方法，在成分句法分析上，我们引入了一个基于二分类学习目标的\textsc{Mfvi}方法.
+根据两种句法分析的特点，在依存句法分析上，我们参考 \citep{wang-tu-2020-second}实现了一个包含头选择约束的\textsc{Mfvi}方法，在成分句法分析上，我们引入了一个基于二分类学习目标的\textsc{Mfvi}方法.
 在这两个任务的中英文个五个数据集上的结果表明，\textsc{Mfvi}方法均超越了基于局部学习的\textsc{Loc}方法，并达到和精确推断的二阶\textsc{Crf2o}方法可比较的性能.
 此外\textsc{Mfvi}方法相比于精确推断的解析速度大大加快.
 在加入BERT之后，基于\textsc{Mfvi}方法的近似推断模型在所有的数据集上都达到或者接近了当前最佳的模型.

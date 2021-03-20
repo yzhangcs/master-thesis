@@ -1,7 +1,7 @@
 \chapter{用于结构化预测的平均场变分推断的推导}
 \label{appendix:mfvi-derivation}
 对于一般的结构化任务而言，我们需要得到后验分布$P(\boldsymbol{y}\mid\boldsymbol{x})$.
-我们可以将输出$\boldsymbol{y}$按照对应的因子图分解为若干个因子的集合\citep{sutton-etal-2012-crf}，相应的$P(\boldsymbol{y}\mid\boldsymbol{x})$定义为\footnote{后面方便起见我们省略输入$\boldsymbol{x}$的标记}
+我们可以将输出$\boldsymbol{y}$按照对应的因子图分解为若干个因子的集合 \citep{sutton-etal-2012-crf}，相应的$P(\boldsymbol{y}\mid\boldsymbol{x})$定义为\footnote{后面方便起见我们省略输入$\boldsymbol{x}$的标记}
 \begin{equation}\label{eq:posterior}
   P(\boldsymbol{y}\mid\boldsymbol{x}) =\frac{\prod_{\alpha} \psi_{\alpha}(y_{\alpha})}{Z(\boldsymbol{x})\equiv\sum_{\boldsymbol{y}^{\prime}}\prod_{\alpha} \psi_{\alpha}(y^{\prime}_{\alpha})}
 \end{equation}
