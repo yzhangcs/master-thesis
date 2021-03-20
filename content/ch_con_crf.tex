@@ -1,13 +1,15 @@
 \chapter{基于TreeCRF的高阶成分句法分析}
 \label{cha:con-crf}
 
-本章节提出了一个基于树形条件随机场的快速精准的神经成分句法分析器.
+本章节提出了一个基于树形条件随机场的高阶成分句法分析器.
 估计概率分布一直是自然语言处理领域的一个核心问题.
 但是，在深度学习时代和前深度学习时代，不同于线性链条件随机场（linear chain CRF）在序列标注任务中的大量应用，由于Inside-Outside算法的高复杂度，还很少有工作将树形条件随机场应用到成分句法分析任务当中.
 这里我们提出应用树形条件随机场到成分句法分析，核心的想法是批次化计算损失函数用到的Inside算法，使其能够支持在GPU上的大规模张量并行计算，与此同时结合基于高效自动求导机制的反向传播，避免了复杂的Outside算法的计算.
+考虑到高阶建模为依存句法模型带来的显著提升，我们还设计了一个二阶TreeCRF拓展到成分句法模型.
 我们同样提出一个简单的两阶段解析方法，bracketing-then-labeling，来进一步提升分析器的效率.
 为了提升解析的性能，受依存句法分析器的启发，我们引入了一个基于边界表示和仿射注意力的新打分方法，以及一个有效的Dropout策略.
-在PTB、CTB5.1和CTB7上的实验表明我们的两阶段条件随机场分析器在使用和不使用BERT的两种设置上，达到了新的最佳性能，并且解析速度达到了1,000句每秒.
+在PTB、CTB5.1和CTB7上的实验表明，二阶TreeCRF模型和一阶模型的结果相当.
+在一阶模型上，我们的两阶段条件随机场分析器在使用和不使用BERT的两种设置上，达到了新的最佳性能，并且解析速度达到了1,000句每秒.
 
 \section{引言}\label{sec:con-intro}
 
@@ -15,7 +17,7 @@
 由于诸如宾州树库（Penn Treebank，PTB）、中文宾州树库（Penn Chinese Treebank，CTB）等大规模树库的标注，成分句法分析吸引了一大批研究者的关注.
 同样的，句法分析输出的句法树也被证明对于大量的下游任务 \citep{akoury-etal-2019-syntactically,wang-etal-2018-tree}都有用.
 
-作为最有影响力的工作之一，\cite{collins-1997-three}将概率上下文无关文法 (Probabilistic Context-Free Grammars，PCFGs）扩展到了词汇化文法（Lexicalized PCFGs）.
+作为最有影响力的工作之一，\citet{collins-1997-three}首次将概率上下文无关文法 (Probabilistic Context-Free Grammars，PCFGs）扩展到了词汇化上下文无关文法（Lexicalized PCFGs）.
 由此开始，成分句法分析方法一直是这样的生成式模型（generative models）占据主导地位，并且其中广泛使用的Berkeley Parser采用了带隐式非终端结点标注的非词汇化概率上下文无关文法（Unlexicalized PCFGs） \citep{matsuzaki-etal-2005-probabilistic,petrov-klein-2007-improved}.
 而在判别式方法（discriminative models），存在着两种主要方向.
 第一种采取了以动态规划解码为基础的基于图的方法，训练时使用局部max-entropy估计 \citep{kaplan-etal-2004-speed}或者全局Max Margin方法 \citep{taskar-etal-2004-max}.
@@ -37,20 +39,18 @@
 而在深度学习时代，由于以前所有的工作都直接在CPU上运行Inside-Outside算法，而让模型频繁在CPU和GPU切换所需要的时间代价是昂贵的，因此效率问题变得更加严重.
 
 本章节通过极大拓展\cite{stern-etal-2017-minimal}的基于图的分析器，提出了一个TreeCRF成分句法分析器.
-主要的贡献在于我们为损失函数和梯度能够在GPU上能够直接计算，类似于章节\ref{cha:dep-crf}，我们提出了Inside算法的批次化方法.
-与此同时，我们发现Outside算法的可以通过自动的反向传播机制被高效的完成，使得Outside过程与Inside一样高效，这验证了\cite{eisner-2016-inside}出色的理论工作.
-类似的，我们也批次化了CKY（Cocke–Kasami–Younger）算法，以支持高效的解码.
+类似于章节\ref{cha:dep-crf}，我们应用了Inside算法的批次化方法，并且将Outside算法用高效的反向传播代替 \citep{eisner-2016-inside}.
+我们同样批次化了CKY（Cocke–Kasami–Younger）算法，以支持高效的解码.
+考虑到章节\ref{cha:dep-crf}发现引入高阶特征有显著的提升，因此我们进一步尝试在一阶TreeCRF的基础上提出了一个二阶TreeCRF的拓展.
 
 总体而言，我们在本章节做了如下的贡献.
 \begin{itemize}
-  \item 为了直接建模树和子树的概率，我们首次提出了一个快速精准的TreeCRF成分句法分析器.
+  \item 为了直接建模树和子树的概率，我们首次提出了一个基于TreeCRF的高阶成分句法分析器.
         通过批次化技术支持Inside算法和CKY算法在GPU上的直接计算，长期以来一直困扰句法分析社区的效率问题在这里被很好的解决了.
-
+        我们发现二阶模型和一阶TreeCRF的结果相当.
   \item 我们提出了一个两阶段的解析方法bracketing-then-labeling：先产生无标记树骨干树（bracketing）再标注标签（labeling）的解析方法，这不仅更加高效，并且达到了比一阶段解析方法稍好的性能.
-
-  \item 我们提出了基于区块表示的一个新的打分方法，以及基于仿射注意力机制的打分方法，比minus-feature方法表现的更好.
+  \item 我们提出了基于区块表示的一个新的打分方法，以及基于仿射注意力机制的打分方法，比minus feature方法表现的更好.
         我们同样表明，通过更好的模型及参数设置，比如Dropout，解析的性能可以被极大提升.
-
   \item 在中英文的三个基准数据集上的实验表明，我们提出的两阶段解析方法在使用BERT和不使用BERT \citep{devlin-etal-2019-bert}的两种设置下，在性能上都分别达到了新的最佳水准.
         在解析速度方面，我们的分析器可以达到大约1,000句每秒的解析速度.
 \end{itemize}
@@ -182,14 +182,14 @@ $\mathbf{r}_i^{l/r}$的维度$d$为500.
 \begin{equation} \label{eq:final-loss}
   \mathit{L}(\boldsymbol{x}, \boldsymbol{y}, \boldsymbol{l}) = \mathit{L}^{bracket}(\boldsymbol{x}, \boldsymbol{y}) + \mathit{L}^{label}(\boldsymbol{x}, \boldsymbol{y}, \boldsymbol{l})
 \end{equation}
-第一项是句子级的全局TreeCRF损失，目的是最大化树的条件概率:
+第一项是句子级的全局TreeCRF损失，目的是最大化无标签树的条件概率:
 \begin{equation}\label{eq:bracket-loss}
   \begin{split}
     \mathit{L}^{bracket}(\boldsymbol{x},\boldsymbol{y})
     &= -\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) + \log Z(\boldsymbol{x})
   \end{split}
 \end{equation}
-其中$\log Z(\boldsymbol{x})$可以利用Inside算法在$O(n^3)$的时间复杂度内被计算.
+其中$Z(\boldsymbol{x})$可以利用Inside算法在$O(n^3)$的时间复杂度内被计算.
 
 第二项是在labeling阶段，区块级别的标准交叉熵损失函数.
 
@@ -247,7 +247,7 @@ $\mathbf{r}_i^{l'}; \mathbf{r}_i^{r'}; \mathbf{r}_i^{s}$是词$w_i$分别作为�
 由于对所有的$0 \le i$,$j<n$,$~r$,$0\le b<B$而言，在GPU上的计算都是并行的，因此算法仅需要$O(n)$步.
 我们的代码会给出更多的技术细节.
 
-\subsection{基于反向传播的Outside算法的替代}
+\subsection{通过反向传播完成的Outside算法}
 
 传统上，Outside算法被认为对于子树边缘概率和特征梯度的计算是不可或缺的.
 事实上，Outside算法通常至少要两倍慢于Inside算法.
@@ -279,20 +279,20 @@ $\mathbf{r}_i^{l'}; \mathbf{r}_i^{r'}; \mathbf{r}_i^{s}$是词$w_i$分别作为�
 CharLSTM里自向量、词向量以及CharLSTM输出向量的维度分别为50、100和100.
 所有Dropout的比率为0.33.
 一个批次数据的大小约为5,000个词.
-训练过程持续至多不超过1,000次迭代，并且如果Dev数据上的最高结果连续100次不提示，那么训练就会提前停止.
+训练过程持续至多不超过1,000次迭代，并且如果Dev数据上的最高结果连续100次不提升，那么训练就会提前停止.
 
 \input{tables/con-dev.tex}
 
 \subsection{模型比较}
 
-我们在Dev数据上从两方面对模型进行深入探究：1）TreeCRF与Max Margin训练损失函数的对比；2）两阶段解析和一阶段解析的对比.
-表~\ref{table:con-dev}的前三行显示了相应的结果.
-这三个模型使用了相同的打分方法和参数设置.
+我们在Dev数据上从三个方面对模型进行深入探究：1）TreeCRF与Max Margin训练损失函数的对比；2）两阶段解析和一阶段解析的对比；2）一阶和二阶模型的对比.
+表~\ref{table:con-dev}的前三行以及最后一行显示了相应的结果.
+这四个模型使用了相同的打分方法和参数设置.
 参考前人的经验 \citep{stern-etal-2017-minimal}，一阶段解析的模型只用带标签的区块$\mathrm{s}((i,j),l)$的分值.
 为了验证两阶段解析的有效性，我们同样列出了``\textsc{Crf} (one-stage)''的结果，``\textsc{Crf} (one-stage)''是指直接在有标签区块上打分.
 \begin{equation} \label{eq:tree-label-score}
   \mathrm{s}(\boldsymbol{x},\boldsymbol{y},\boldsymbol{l}) =
-  \sum_{(i,j),l \in (\boldsymbol{y}, \boldsymbol{l})} \mathrm{s}((i,j),l)
+  \sum_{(i,j),l \in \boldsymbol{t}} \mathrm{s}((i,j),l)
 \end{equation}
 如章节\ref{sub@sec:con-crf-model-definition}的最后一段所讨论的，一阶段解析的Inside算法和CKY算法相比于两阶段解析要复杂一点.
 
@@ -305,13 +305,15 @@ Max Margin方法由额外的超参数，即margin值，该值根据在英语上�
 因此我们可以认为我们提出的两阶段解析在简单性和效率上要好于一阶段解析（参考表~\ref{table:speed}），并且没有损失性能.
 
 最后，我们比较了同样的两阶段解析设置下的一阶\textsc{Crf}模型和二阶\textsc{Crf2o}的模型的结果.
-与一阶模型相比，二阶模型在PTB上的结果几乎与一阶模型一样，这可能是由于英语数据的基线结果已经很好了.
-二阶模型在CTB5.1和CTB7上分别有0.3和0.4的提升，表明引入二阶结果对于成分句法分析仍然有一定的作用.
+除了引入了考虑分割点的二阶分值，\textsc{Crf2o}和一阶模型\textsc{Crf}完全一样，都采用了两阶段解析，一致的编码器和打分方法.
+可以看到在三个数据集上，\textsc{Crf2o}取得了最高的结果，但是提升并不显著.
+在三个数据集上的提升分别是0.07、0.05和0.12.
+这显示引入二阶特征的作用十分微弱.
 
 \subsection{消融实验}
 
 为了了解我们提出的框架中每个单独的模块所发挥的作用，我们在一阶模型上，通过每次去除一个模块，在Dev数据上进行了消融实验.
-结果见表~\ref{table:con-dev}的最后四行.
+结果见表~\ref{table:con-dev}的第三到六行.
 
 \noindent\textbf{MBR解码的影响.}
 我们默认在边缘概率上使用CKY解码.
@@ -321,45 +323,38 @@ Max Margin方法由额外的超参数，即margin值，该值根据在英语上�
 
 \noindent\textbf{打分方法的影响.}
 为了衡量我们提出的新的打分方法带来的影响，我们将仿射打分器恢复到了原来 \citep{stern-etal-2017-minimal}（参考公式~\ref{eq:minus-score}）采用的``minus feature''方法.
-可以清晰的看到我们提出的打分方法要优于广泛使用的minus-feature方法，并且在所有三个数据上有大约0.5$\mathrm{F}_1$值的显著一致的提升.
+可以清晰的看到我们提出的打分方法要优于广泛使用的minus feature方法，并且在所有三个数据上有大约0.5$\mathrm{F}_1$值的显著一致的提升.
 
 \noindent\textbf{Dropout策略的影响.}
 我们保持其他模型设置都不变，然后将我们参考自 \citep{dozat-etal-2017-biaffine}的Dropout策略换成 \citep{stern-etal-2017-minimal}采用的原始Dropout方式.
 这导致了三个数据集上结果的显著下降，分别是0.96、1.39和1.59$\mathrm{F}_1$值的下降.
-\citep{kitaev-klein-2018-constituency}用一个自注意力编码器替换了 \citep{stern-etal-2017-minimal}的双向LSTM编码器，通过分离上下文和位置注意力，达到了1.0 $\mathrm{F}_1$值的巨大提升.
+\citet{kitaev-klein-2018-constituency}用一个自注意力编码器替换了 \citet{stern-etal-2017-minimal}的双向LSTM编码器，通过分离上下文和位置注意力，达到了1.0 $\mathrm{F}_1$值的巨大提升.
 类似地，这里我们表明基于双向LSTM编码器的解析器，如果有合适的参数设置，那么和自注意力编码器相比仍然很有竞争力.
-
-\noindent\textbf{二阶特征的影响.}
-表个最后一行列出了引入二阶特征的模型\textsc{Crf2o}的结果.
-除了引入了考虑分割点的二阶分值，\textsc{Crf2o}和一阶模型\textsc{Crf}完全一样，都采用了两阶段解析，一致的编码器和打分方法.
-可以看到在三个数据集上，\textsc{Crf2o}取得了最高的结果，但是提升并不显著.
-在三个数据集上的提升分别是0.07、0.05和0.12.
-这显示引入二阶特征的作用十分微弱.
 
 \input{tables/con-speed.tex}
 
 \subsection{速度比较}
 表格~\ref{table:speed}列出了不同的解析器关于解析速度方面的比较.
-公平比较的需要，我们的模型都运行在Intel Xeon E5-2650 v4 CPU和Nvidia GeForce GTX 1080 Ti GPU.
+为了公平比较的需要，我们的模型都运行在Intel Xeon E5-2650 v4 CPU和Nvidia GeForce GTX 1080 Ti GPU.
 Berkeley Parser和ZPar是两个最具代表性的非神经网络的解析器，并且没法利用GPU.
-\citep{stern-etal-2017-minimal}应用了Max Margin方法训练并且在CPU上进行了类CKY的解码.
-\citep{kitaev-klein-2018-constituency}使用了自注意力编码器，并用Cython做了加速.
+\citet{stern-etal-2017-minimal}应用了Max Margin方法训练并且在CPU上进行了类CKY的解码.
+\citet{kitaev-klein-2018-constituency}使用了自注意力编码器，并用Cython做了加速.
 
 可以看到我们的一阶段TreeCRF解析器由于直接在GPU上解码，因此比前人的解析器要快得多.
-在一阶模型上，我们的两阶段解析器每秒可以解析1,092句，是 \citep{kitaev-klein-2018-constituency}的三倍快.
-当然，值得注意的是如果采用了我们提出的批次化技术， \citep{stern-etal-2017-minimal,kitaev-klein-2018-constituency}的方法可能和我们的一样快.
+在一阶模型上，我们的两阶段解析器每秒可以解析1,092句，是 \citet{kitaev-klein-2018-constituency}的三倍快.
+当然，值得注意的是如果采用了我们提出的批次化技术， \citet{stern-etal-2017-minimal,kitaev-klein-2018-constituency}的方法可能和我们的一样快.
 
-\citep{gomez-rodriguez-vilares-2018-constituent}的解析器将句法分析任务视为一个序列标注问题，因此同样十分高效.
+\citet{gomez-rodriguez-vilares-2018-constituent}的解析器将句法分析任务视为一个序列标注问题，因此同样十分高效.
 但是他们的结果还很差，如表~\ref{table:con-test}所示.
 
 两阶段解析器相比于一阶段解析器要快大约10\%.
 相比于我们之前讨论的时间复杂度差异（参考章节~\ref{sub@sec:con-crf-model-definition}），这个差距显得似乎不是特别明显.
-一个利用是这两种解析器都共享了相同的编码和打分组块，这可能占用了解析的大部分时间.
+一个理由是这两种解析器都共享了相同的编码和打分组块，这可能占用了解析的大部分时间.
 
 使用MBR解码额外需要运行一次Inside算法和反向传播来计算边缘概率，因此相对来说效率要差一些.
 如表~\ref{table:con-dev}所示，在有和没有MBR解码的两个设置下，结果的差异很小.
 
-在使用MBR解码和不使用MBR解码两种场景下，一阶模型都分别比二阶模型快了大约200句每秒，但是却达到了相似都性能（见表~\ref{table:con-test}）.
+在使用MBR解码和不使用MBR解码两种场景下，一阶模型都分别比二阶模型快了大约200句每秒，而二阶模型没有显示出性能上的优势（见表~\ref{table:con-test}）.
 
 \input{tables/con-test.tex}
 
@@ -376,7 +371,7 @@ Berkeley Parser和ZPar是两个最具代表性的非神经网络的解析器，�
 和在Dev数据上的趋势一致，我们的二阶模型\textsc{Crf2o}和一阶模型\textsc{Crf}的结果近乎一致，其中\textsc{Crf2o}在PTB和CTB7上的结果超越了\textsc{Crf}，在CTB51上要次于\textsc{Crf}，但是差异都不大.
 与之前最佳的自注意力解析器相比\citet{kitaev-klein-2018-constituency}，我们的一阶解析器分别在英文PTB和中文CTB5.1有0.16以及1.67的绝对提升，并且不包含任何语言特定的实验设置.
 
-\citet{zhou-zhao-2019-head}的CTB5.1结果得自重新运行他们开源的代码，使用了预测的词性.
+\citet{zhou-zhao-2019-head}的CTB5.1结果得自重新运行他们开源的代码，他们的模型使用了预测的词性.
 我们参考了他们描述\footnote{\url{https://github.com/DoodleJZ/HPSG-Neural-Parser}}来产生预测词性.
 值得注意的是他们的汇报的CTB5.1结果意外使用了正确的词性.
 我们用正确词性重新跑了他们的代码，在CTB5的Test数据的结果是92.14，与他们论文汇报的结果十分接近.
@@ -384,18 +379,19 @@ Berkeley Parser和ZPar是两个最具代表性的非神经网络的解析器，�
 关于他们论文的另一个细节需要澄清：对于中文上的依存句法分析，他们使用了两种不同的数据分割设置，并且都用了Stanford Dependencies 3.3.0以及正确词性.
 
 表格的最后三行列出了在使用ELMo/BERT设置下的结果.
-对于PTB，我们参考\citet{kitaev-etal-2019-multilingual}，使用了\texttt{bert-large-cased}\footnote{\url{https://github.com/huggingface/transformers}}（24 layers，1024 dimensions，16 heads），对于CTB则使用了\texttt{bert-base-chinese}（12 layers，768 dimensions，12 heads）.
+对于PTB，我们参考\citet{kitaev-etal-2019-multilingual}，使用了\texttt{bert-large-cased}\footnote{\url{https://github.com/huggingface/transformers}}（24 layers, 1024 dimensions, 16 heads），对于CTB则使用了\texttt{bert-base-chinese}（12 layers, 768 dimensions, 12 heads）.
 可以明显看到无论是在一阶\textsc{Crf}模型和二阶\textsc{Crf2o}模型上，使用BERT表示都可以极大帮助性能的提升，最终两种解析器的结果趋于一致.
 我们的解析器同样超过了\citet{kitaev-etal-2019-multilingual}的多语言解析器，这里他们用了额外了多语言资源.
 总体而言，我们的解析器在两个语言和不同的设置下都达到了当前最佳的结果.
 
 \section{本章小结}\label{sec:con-conclusions}
 
-本章中，我们提出了一个快速精准的神经TreeCRF成分句法分析器.
+本章中，我们提出了一个基于TreeCRF的高阶成分句法分析器.
 我们表明Inside算法和CKY算法可以被高效的批次化，以支持在GPU上的大规模张量并行计算，进而带来显著的效率提升.
 基于自动求导机制的反向传播和Inside算法一样高效，并且取代了Outside算法来进行梯度的计算.
-在中英文三个基准数据集上的实验展现了很多富有前景的发现.
-第一，简单的两阶段bracketing-then-labeling解析方法比一阶段解析更加高效，并且没有损害解析器的性能.
-第二，我们新提出的打分方法相比于前人的基于minus feature的方法达到了更高的结果.
-第三，我们引入的一些诸如Dropout的参数设置可以极大提升解析的性能.
+在中英文三个基准数据集上的实验给出了很多有意义的结论.
+第一，我们发现相比较一阶模型，二阶扩展的结果相当.
+第二，简单的两阶段bracketing-then-labeling解析方法比一阶段解析更加高效，并且没有损害解析器的性能.
+第三，我们新提出的打分方法相比于前人的基于minus feature的方法达到了更高的结果.
+第四，我们引入的一些诸如Dropout的参数设置可以极大提升解析的性能.
 最后，我们提出的解析器达到了新的最佳结果，并且可以解析超过1,000句每秒.

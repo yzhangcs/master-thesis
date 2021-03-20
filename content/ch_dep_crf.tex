@@ -20,7 +20,7 @@
 相比之下，基于图的神经网络依存句法分析器的发展呈现出相反的趋势.
 \citep{pei-etal-2015-effective}提出利用前馈神经网络来自动学习 \citep{chen-manning-2014-fast}的若干特征组合，并计算子树得分.
 他们的工作表明引入二阶邻接兄弟子树的分值显著提高了性能.
-随后， \citep{wang-chang-2016-graph}和 \citep{kiperwasser-goldberg-2016-simple}都建议使用双向LSTM作为编码器和，以及在一阶模型中利用minus-feature来对单条弧打分.
+随后， \citep{wang-chang-2016-graph}和 \citep{kiperwasser-goldberg-2016-simple}都建议使用双向LSTM作为编码器和，以及在一阶模型中利用minus feature来对单条弧打分.
 这三个代表性方法都采用了全局的Max Margin方法.
 \citep{dozat-etal-2017-biaffine}提出了一种强大而高效的Biaffine Parser，并在各种数据集和语言上获得了最先进的精度.
 Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head selection）的方式 \citep{zhang-etal-2017-head}，采用了更简单、更有效的非结构化训练方法.
@@ -268,7 +268,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 值得注意的是，这里描述的技术同样可以在其他形式的文法里应用，比如CKY算法形式的成分句法分析 \citep{finkel-etal-2008-efficient,drozdov-etal-2019-unsupervised}.
 具体在章节~\ref{cha:con-crf}中描述.
 
-\subsection{基于反向传播的Outside算法的替代}
+\subsection{通过反向传播完成的Outside算法}
 
 \citet{eisner-2016-inside}以成分句法分析（短语结构）为例，对反向传播机制和Outside算法的等价性进行了理论证明.
 这里我们同样在依存句法上验证了其等价性.

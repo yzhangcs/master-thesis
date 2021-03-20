@@ -222,17 +222,17 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 
 \input{tables/vi-dep-test.tex}
 
-\subsection{结果}
+\subsection{主要结果}
 表格~\ref{table:vi-dep-test}和表格~\ref{table:vi-con-test}分别给出了我们尝试的多种推断算法在依存句法和成分句法分析上的比较性实验结果.
 和章节~\ref{cha:dep-crf}以及章节~\ref{cha:con-crf}一样，我们在所有模型中都使用了预训练词向量作为输入.
 英文数据我们统一使用了100维的Glove词向量，中文数据则使用了word2vec在Giga数据上训练的100维词向.
 我们还汇报了BERT的结果，对于英文数据，我们使用了24层1024维的\texttt{bert-large-cased}作为双向LSTM的输入，并在训练时固定参数.
 中文数据我们则使用了12层768维的\texttt{bert-base-chinese}.
 
-可以看到在依存句法的结果上（表格~\ref{table:vi-dep-test}），由于英文PTB的结果非常高，因此这四种推断方法的结果都十分接近，\textsc{MFVI}方法超越了\textsc{Loc}，达到了最好的性能.
-中文CoNLL09上，精确推断的\textsc{Crf2o}仍然是最好的，但是\textsc{MFVI}超越了\textsc{Crf}达到了86.25的LAS.
-在两种语言上，\textsc{MFVI}都一致超越了没有全局结构约束的\textsc{Loc}方法.
-这验证了在近似推断的\textsc{MFVI}方法上应用二阶结构约束的有效性.
+可以看到在依存句法的结果上（表格~\ref{table:vi-dep-test}），由于英文PTB的结果非常高，因此这四种推断方法的结果都十分接近，\textsc{Mfvi}方法超越了\textsc{Loc}，达到了最好的性能.
+中文CoNLL09上，精确推断的\textsc{Crf2o}仍然是最好的，但是\textsc{Mfvi}超越了\textsc{Crf}达到了86.25的LAS.
+在两种语言上，\textsc{Mfvi}都一致超越了没有全局结构约束的\textsc{Loc}方法.
+这验证了在近似推断的\textsc{Mfvi}方法上应用二阶结构约束的有效性.
 
 在成分句法分析上（表格~\ref{table:vi-con-test}），中英文三个数据的结果中，无论是一阶\textsc{Crf}还是二阶\textsc{Crf2o}，精确推断算法都仍然是表现最好的.
 然而\textsc{Mfvi}都达到了和一阶\textsc{Crf}十分相近的性能.
