@@ -88,7 +88,7 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 其中$\mathbf{r}_i^{h}$和$\mathbf{r}_i^{m}$是词$w_i$分别作为一条弧的头和修饰词的表示.
 
 \noindent\textbf{Biaffine打分器.}
-\citep{dozat-etal-2017-biaffine}首次提出通过biaffine attention计算一条依存弧$i \rightarrow j$的分值
+\citet{dozat-etal-2017-biaffine}首次提出通过biaffine attention计算一条依存弧$i \rightarrow j$的分值
 \begin{equation} \label{eq:biaffine}
   \mathrm{s}(i,j) =  \left[
     \begin{array}{c}
@@ -112,7 +112,7 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 Biaffine Parser采用了一个简单的词级别非结构化损失函数，试着对每个词独立最大化正确头的局部概率.
 在一个训练实例中，对于一个正确的头-依赖对$(w_i, w_j$)，其对应的交叉熵损失为
 \begin{equation} \label{eq:biaffine-loss}
-  \mathit{L}(i\rightarrow j) = -\log{\frac{\exp(\mathrm{s}(i\rightarrow j))}{\sum_{0 \le k \le n} \exp(\mathrm{s}(k,j))}}
+  \mathit{L}(i\rightarrow j) = -\log{\frac{\exp(\mathrm{s}(i\rightarrow j))}{\sum_{0 \le i^{\prime} \le n} \exp(\mathrm{s}(i^{\prime}\rightarrow j))}}
 \end{equation}
 换句话说，模型的训练是基于一个简单的头选择目标，最终所有词的损失都被累加起来，而没有考虑任何树结构的约束.
 
@@ -149,16 +149,13 @@ Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立�
 我们从两方面极大拓展了Biaffine Parser：
 使用概率TreeCRF来进行结构化训练，以及显式引入高阶子树地分值.
 
-具体地我们在基本的一阶模型的基础上引入了二阶邻接子树的分值:\footnote{
+具体地，我们在基本的一阶模型的基础上引入了二阶邻接子树的分值:\footnote{
   我们还可以进一步扩展，引入祖父-父亲-孩子的子树分值，然后基于 \citep{koo-collins-2010-efficient}提出的$O(n^4)$的Viterbi算法解码.
   这里我们留待作为未来的工作.
 }
-\begin{equation}\label{eq:score-definition-2o}
+\begin{equation}\label{eq:dep-2otree-score}
   \mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) = \sum_{i\rightarrow j \in \boldsymbol{y}}\mathrm{s}(i\rightarrow j) + \sum_{
-    %\begin{array}{c}
-    i\rightarrow \{k,j\} \in \boldsymbol{y} %\
-    %  i\rightarrow k \in \boldsymbol{y}
-    %\end{array}
+    i\rightarrow \{k,j\} \in \boldsymbol{y}
   } \mathrm{s}(i\rightarrow \{k,j\})
 \end{equation}
 其中$k$和$j$是$i$的两个相邻的孩子，并且满足$i < k < j$或者$j < k < i$.
@@ -312,10 +309,10 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
   \label{eq:training-loss-treecrf-partial}
   \begin{split}
     \mathit{L}(\boldsymbol{x}, {\boldsymbol{y}^p}) &= -\log \sum\limits_{\boldsymbol{y} \in \mathcal{Y}(\boldsymbol{x}); \boldsymbol{y} \supseteq {\boldsymbol{y}^p}} p(\boldsymbol{y}\mid\boldsymbol{x})  \\
-    &= - \log \frac{Z(\boldsymbol{x}, {\boldsymbol{y}^p}) \equiv \sum\limits_{\boldsymbol{y} \in \mathcal{Y}(\boldsymbol{x}); \boldsymbol{y} \supseteq \boldsymbol{y}^p} e^{\mathrm{s}(\boldsymbol{x},\boldsymbol{y})}}{Z(\boldsymbol{x})}
+    &= - \log \frac{Z(\boldsymbol{x}, {\boldsymbol{y}^p}) \equiv \sum\limits_{\boldsymbol{y} \in \mathcal{Y}(\boldsymbol{x}); \boldsymbol{y} \supseteq \boldsymbol{y}^p} \exp(\mathrm{s}(\boldsymbol{x},\boldsymbol{y}))}{Z(\boldsymbol{x})}
   \end{split}
 \end{equation}
-其中$Z(\boldsymbol{x}, {\boldsymbol{y}^p})$ 只包含所有与给定局部标注树兼容的句法树，并且可以以与$Z(\boldsymbol{x})$类似的方式进行高效的计算.
+其中$Z(\boldsymbol{x}, {\boldsymbol{y}^p})$ 只包含所有与给定局部标注树兼容的句法树，并且可以用和$Z(\boldsymbol{x})$类似的方式进行高效的计算.
 
 \begin{figure}[tb]
   \centering
@@ -336,7 +333,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 对于二阶模型，我们设置$\mathbf{r}^{h'/s/m'}_i$的维度为100（进一步提升到300带来的提升很小）.
 我们训练模型最多1,000次迭代，并且如果在dev上的性能连续100次不提升那就停止训练.
 
-\noindent\textbf{模型.}
+\noindent\textbf{模型定义.}
 \textsc{Loc}使用了局部交叉熵训练损失函数，并且解码时使用Eisner算法来获取最优的投影树.
 \textsc{Crf}和\textsc{Crf2o}各自代表一阶和二阶TreeCRF模型.
 $\textsc{Loc}^{\textsc{mst}}$代表基本的基线模型，但是解码时采用和\citet{dozat-etal-2017-biaffine}一样的MST算法输出非投影树.
@@ -406,7 +403,7 @@ $\textsc{Loc}^{\textsc{mst}}$代表基本的基线模型，但是解码时采用
 UCM（Unlabeled Complete Match）代表无标签完全匹配率，即所有对应无标签树完全正确的句子的比率，而LCM进一步要求树上的所有标签也是正确的.
 
 对于SIB，我们评估了模型在邻接兄弟子树上的结果（系统输出和对应的正确子树）.
-根据公式~\ref{eq:score-definition-2o}，当且仅当词$w_k$和词$w_j$都是词$w_i$的同侧孩子，并且没有其他词$w_i$的孩子在这两者之间，才称$(i,k,j)$ 是一个邻接兄弟子树.
+根据公式~\ref{eq:dep-2otree-score}，当且仅当词$w_k$和词$w_j$都是词$w_i$的同侧孩子，并且没有其他词$w_i$的孩子在这两者之间，才称$(i,k,j)$ 是一个邻接兄弟子树.
 给定两棵树，我们可以收集所有的邻接兄弟子树，然后组成一个三元组集合.
 之后我们评估相应的P/R/$\mathrm{F}_1$值.
 请注意在局部标注下评估SIB是做不到的.

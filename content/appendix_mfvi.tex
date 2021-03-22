@@ -32,17 +32,17 @@
 
 Mean Field假设每个变量相互独立，即有$Q(\boldsymbol{y})=\prod_i{Q_i(y_i)}$. 因此上式可应用梯度上升法（Coordinate Ascent），每次迭代优化一个变量$Q_j(y_j)$，保持其余变量$Q_{-j}(y_{-j})$不变. 对于目标函数
 \begin{equation}
-  \mathcal{L}(Q)=\underbrace{E_{Q}\left[\log \tilde{P}(\boldsymbol{y})\right]}_{\textcircled{1}}-\underbrace{E_{Q}\left[\log Q(\boldsymbol{y})\right]}_{\textcircled{2}}
+  \mathcal{L}(Q)=\underbrace{E_{Q}\left[\log \tilde{P}(\boldsymbol{y})\right]}_{\tcircle{1}}-\underbrace{E_{Q}\left[\log Q(\boldsymbol{y})\right]}_{\tcircle{2}}
 \end{equation}
 分别有
 \begin{equation}
   \begin{split}
-    \textcircled{1}&=E_{Q}\left[\log \tilde{ P}(\boldsymbol{y})\right]\\
+    \tcircle{1}&=E_{Q}\left[\log \tilde{ P}(\boldsymbol{y})\right]\\
     &=\int_{\boldsymbol{y}}Q(\boldsymbol{y}) \log \tilde{P}(\boldsymbol{y})d\boldsymbol{y}\\
     &=\int_{\boldsymbol{y}}\prod_i{Q_i(y_i)} \log \tilde{P}(\boldsymbol{y})d\boldsymbol{y}\\
     &=\int_{y_j}Q_j(y_j)\left(\int_{\boldsymbol{y_{-j}}}Q_{-j}(y_{-j})\log \tilde{ P}(\boldsymbol{y}) dy_{-j}\right) dy_j\\
     &=\int_{y_j}Q_j(y_j)E_{Q_{-j}}\left[\log \tilde{ P}(\boldsymbol{y}) \right] dy_j\\
-    \textcircled{2}&=E_{Q}\left[\log Q(\boldsymbol{y}))\right]\\
+    \tcircle{2}&=E_{Q}\left[\log Q(\boldsymbol{y}))\right]\\
     &=\int_{\boldsymbol{y}}Q(\boldsymbol{y}) \sum_i\log Q_i(y_i) d\boldsymbol{y}\\
     &=\int_{\boldsymbol{y}}\prod_i{Q_i(y_i)} \sum_i\log Q_i(y_i) d\boldsymbol{y}\\
     &=\sum_i\int_{\boldsymbol{y}}Q_i(y_i)Q_{-i}(y_{-i})\log Q_i(y_i) d\boldsymbol{y}\\
@@ -55,7 +55,7 @@ Mean Field假设每个变量相互独立，即有$Q(\boldsymbol{y})=\prod_i{Q_i(
 $C$代表常数项，因此有
 \begin{equation}
   \begin{split}
-    \mathcal{L}(Q)&=\textcircled{1}-\textcircled{2}\\
+    \mathcal{L}(Q)&=\tcircle{1}-\tcircle{2}\\
     &=\int_{\boldsymbol{y_j}}Q_j(y_j)E_{Q_{-j}}\left[\log \tilde{P}(\boldsymbol{y}) \right] dy_j-\int_{y_j}Q_j(y_j)\log Q_j(y_j) dy_j +C\\
     &=-\int_{\boldsymbol{y_j}}Q_j(y_j)\log\frac{\exp\left(E_{Q_{-j}}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)}{Q_j(y_j)} dy_j +C\\
     &=KL\left(Q_j(y_j)\|\exp\left(E_{Q_{-j}}\left[\log \tilde{P}(\boldsymbol{y}) \right]\right)\right)+C

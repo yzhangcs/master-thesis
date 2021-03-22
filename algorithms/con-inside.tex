@@ -1,9 +1,8 @@
 \begin{algorithm}[tb]
   \caption{批次化的Inside算法.}
   \begin{algorithmic}[1]
-    % \renewcommand{\algorithmiccomment}[2][.6\linewidth]{\leavevmode\hfill\makebox[#1][l]{/~#2}}
-    % \renewcommand{\COMMENT}[2][.4\linewidth]{\leavevmode\hfill\makebox[#1][l]{$\rhd$~#2}}
     \setlength{\commentindent}{.3\textwidth}
+    \setlength{\algorithmicindent}{1.5em}
     \renewcommand{\algorithmiccomment}[1]{\unskip\hfill\makebox[\commentindent][l]{$\rhd$~#1}\par}
     \LetLtxMacro{\oldalgorithmic}{\algorithmic}
     \renewcommand{\algorithmic}[1][0]{%

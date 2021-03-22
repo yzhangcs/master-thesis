@@ -90,7 +90,7 @@
     & p(\boldsymbol{y}\mid\boldsymbol{x})  = \frac{\exp({\mathrm{s}(\boldsymbol{x},\boldsymbol{y}))}}{Z(\boldsymbol{x}) \equiv \sum\limits_{\boldsymbol{y'} \in \mathcal{Y}(\boldsymbol{x})} {\exp({\mathrm{s}(\boldsymbol{x},\boldsymbol{y'}))}}}
   \end{split}
 \end{equation}
-其中$Z(\boldsymbol{x})$被称为partition term，$\mathcal{Y}(\boldsymbol{x})$是输入句子$\boldsymbol{x}$对应的所有合法句法树的集合.
+其中$Z(\boldsymbol{x})$被称为配分项（partition term），$\mathcal{Y}(\boldsymbol{x})$是输入句子$\boldsymbol{x}$对应的所有合法句法树的集合.
 
 给定所有的区块分值$\mathrm{s}(i,j)$，我们可以用CKY算法来找到一棵最优的无标签句法树$\boldsymbol{y}$.
 \begin{equation} \label{eq:tree-argmax}
@@ -151,7 +151,7 @@ $\mathbf{h}_i$的维度为800.
 $\mathbf{r}_i^{l/r}$的维度$d$为500.
 正如 \citep{dozat-etal-2017-biaffine}所指出的，MLP层缩减了$\mathbf{h}_i$的维度，并且更重要的是只保留了句法相关的信息，因此能够减轻过拟合的风险.
 
-\noindent\textbf{仿射打分.}
+\noindent\textbf{Biaffine打分器.}
 给定边界表示，对于候选区块$(i,j)$，我们在左边界词$w_i$的表示和右边界词$w_j$的表示上利用仿射注意力为该区块打分.
 \begin{equation} \label{eq:con-biaffine}
   \mathrm{s}(i,j) =  \left[
@@ -180,12 +180,12 @@ $\mathbf{r}_i^{l/r}$的维度$d$为500.
 
 对于一个训练的例子$(\boldsymbol{x},\boldsymbol{y},\boldsymbol{l})$，训练损失函数由两部分组成.
 \begin{equation} \label{eq:final-loss}
-  \mathit{L}(\boldsymbol{x}, \boldsymbol{y}, \boldsymbol{l}) = \mathit{L}^{bracket}(\boldsymbol{x}, \boldsymbol{y}) + \mathit{L}^{label}(\boldsymbol{x}, \boldsymbol{y}, \boldsymbol{l})
+  \mathit{L}(\boldsymbol{x}, \boldsymbol{y}, \boldsymbol{l}) = \mathit{L}^{tree}(\boldsymbol{x}, \boldsymbol{y}) + \mathit{L}^{label}(\boldsymbol{x}, \boldsymbol{y}, \boldsymbol{l})
 \end{equation}
 第一项是句子级的全局TreeCRF损失，目的是最大化无标签树的条件概率:
 \begin{equation}\label{eq:bracket-loss}
   \begin{split}
-    \mathit{L}^{bracket}(\boldsymbol{x},\boldsymbol{y})
+    \mathit{L}^{tree}(\boldsymbol{x},\boldsymbol{y})
     &= -\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) + \log Z(\boldsymbol{x})
   \end{split}
 \end{equation}

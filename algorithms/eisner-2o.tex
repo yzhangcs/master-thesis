@@ -2,6 +2,7 @@
     \begin{algorithmic}[1]
         \newlength{\commentindent}
         \setlength{\commentindent}{.3\textwidth}
+        \setlength{\algorithmicindent}{1.5em}
         \renewcommand{\algorithmiccomment}[1]{\unskip\hfill\makebox[\commentindent][l]{$\rhd$~#1}\par}
         \LetLtxMacro{\oldalgorithmic}{\algorithmic}
         \renewcommand{\algorithmic}[1][0]{

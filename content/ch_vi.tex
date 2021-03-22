@@ -27,7 +27,7 @@
 由于需要精确推断得到树概率，这需要$O(n^3)$的时间复杂度，因此大大慢于一阶方法.
 此外，如果进一步考虑其他高阶特征，例如共同父亲等等，这可能会导致动态规划结构难以设计，或者算法复杂度难以忍受.
 
-考虑到这种限制，因此，在本章中我们参考前人的一些工作 \citep{smith-eisner-2008-dependency,wang-etal-2019-second,wang-tu-2020-second}，在利用高阶特征的同时，尝试用平均场变分推断（Mean Field Variational Inference, \textsc{Mfvi}）方法来近似获得后验概率.
+考虑到这种限制，因此，在本章中我们参考前人的一些工作 \citep{smith-eisner-2008-dependency,wang-etal-2019-second,wang-tu-2020-second}，在利用高阶特征的同时，尝试用平均场变分推断（Mean Field Variational Inference, MFVI）方法来近似获得后验概率.
 在本章中，我们在依存句法分析和成分句法分析这两个句法分析任务上尝试了应用基于变分推断的近似学习算法.
 针对依存解析和成分解析两种任务的特性，我们分别在依存句法的变分推断中参考\cite{wang-tu-2020-second}引入了头选择的结构约束，而在成分句法中则采用了二分类的学习目标.
 我们发现近似算法在获取了和精确推断接近的准确率的同时，解析速度能够大大提高.
@@ -41,36 +41,41 @@
         并且，在依存和成分句法分析上分别可以达到到1,126句和905句每秒的解析速度.
 \end{itemize}
 
-\section{方法}\label{sec:vi-approach}
+\section{基于MFVI的二阶模型}\label{sec:vi-2o-approach}
 
-本章和章节~\ref{cha:dep-crf}以及章节~\ref{cha:con-crf}一致，利用Biaffine Parser \citep{dozat-etal-2017-biaffine,wang-tu-2020-second}作为模型的基本架构.
-具体而言，给定一个句子$\boldsymbol{x}$，模型将对应的词向量输入到3层双向LSTM来计算上下文表示，然后将上下文表示分别输入到两个不同的模块进行两阶段解析.
+本章在章节~\ref{cha:dep-crf}以及章节~\ref{cha:con-crf}的基础上，分别设计了一个基于变分推断的二阶依存句法和成分句法模型.
+本章保持了前面章节提出的二阶模型架构，区别是用MFVI近似算法代替了精确推断的TreeCRF方法，从而大大降低了复杂度.
 
-第一阶段，我们的目标是找到一棵最优的无标签树$\boldsymbol{y}$.
-无标签树$\boldsymbol{y}$被分为多个独立的部分.
-依存句法中无标签树由多条有向弧组成，成分句法则由多个组块构成一棵合法的$\boldsymbol{y}$.
-我们希望得到最佳的一棵树$\boldsymbol{y}=\arg\max_{\boldsymbol{y}^{\prime}}P(\boldsymbol{y}^{\prime}\mid\boldsymbol{x})$.
-训练时，对于精确推断方法，我们需要计算共同的配分项$Z(\boldsymbol{x})\equiv\sum_{\boldsymbol{y}^{\prime}\in\mathcal{Y}}\mathrm{s}(\boldsymbol{x},\boldsymbol{y}^{\prime})$来得到正确树$\boldsymbol{y}^{\ast}$的概率.
-$Z(\boldsymbol{x})$代表指数级别空间的所有可能树的分值之和，由$O(n^3)$的复杂度的Inside算法得到.
-在本节我们展示了无需计算$Z(\boldsymbol{x})$，并通过变分推断得到近似的树概率的方法.
+\subsection{模型定义}\label{sec:vi-model-definition}
 
-第二阶段，我们的目标是为无标签树找到所有的标签$\boldsymbol{l}$.
+我们保持了和精确推断模型一致的两阶段解析策略.
+
+\noindent\textbf{第一阶段}：给定输入句子$\boldsymbol{x}$，目标是找到一棵最优（概率最高）的无标签树$\boldsymbol{y}=\arg\max_{\boldsymbol{y}^{\prime}}p(\boldsymbol{x},\boldsymbol{y}^{\prime})$.
+在精确推断方法中，为了得到树概率，我们需要通过$O(n^3)$复杂度的Inside算法计算配分项$Z(\boldsymbol{x})\equiv\sum_{\boldsymbol{y}^{\prime}\in\mathcal{Y}}\mathrm{s}(\boldsymbol{x},\boldsymbol{y}^{\prime})$，来对分值$\mathrm{s}(\boldsymbol{x},\boldsymbol{y})$全局归一化，因此十分低效.
+
+在本节我们提出利用高效的基于平均场理论的变分推断法（Mean Field Variational Inference, MFVI）来近似得到后验概率的方法.
+MFVI假设句法树$\boldsymbol{y}$每个位置的变量相互独立，因此可以在线性时间内通过不断迭代得到后验概率的近似分布$Q(\cdot)$.
+关于MFVI的通用更新公式以及相关推导见附录~\ref{appendix:mfvi-derivation}.
+根据任务目标的不同，我们为依存句法和成分句法分别设计了两种不同的因子图，以及相应的更新方法.
+
+\noindent\textbf{第二阶段}：我们的目标是为预测的无标签树$\boldsymbol{x}$的每个部分预测标签，得到标签序列$\boldsymbol{l}$.
 依存树上$\boldsymbol{l}$被分解为每条弧的标签，成分树上$\boldsymbol{l}$由每个组块的标签组成.
 我们采取和前述一样的方法，以贪婪解码的方式，为无标签依存句法树的每条弧$i\rightarrow j$找到一个分值最大的标签，成分句法树的每个组块$(i,j)$找到一个最优的标签.
 
-\subsection{打分方法}
+\subsection{二阶子树打分}
 
-在对句子中的每个词编码之后，我们得到上下文表示，其中第$i$个词的输出为$\mathbf{h}_i$.
-之后，我们将无标签树$\boldsymbol{y}$分解，并对每个结构打分.
-对于依存句法，我们利用公式~\ref{eq:biaffine}得到每条弧$i\rightarrow j$的分值$s(i\rightarrow j)$，对于成分句法，我们采用公式~\ref{eq:con-biaffine}得到每个组块$(i, j)$的分值$s(i, j)$.
+具体而言，给定一个句子$\boldsymbol{x}$，我们的模型将对应的词向量输入到3层双向LSTM来计算每个位置的上下文表示，其中第$i$个词的输出为$\mathbf{h}_i$.
+接着，我们利用$\mathbf{h}_i$对句法树的每个子结构进行打分.
+对于依存句法，我们利用公式~\ref{eq:biaffine}得到每条弧$i\rightarrow j$的分值$\mathrm{s}(i\rightarrow j)$，对于成分句法，我们用公式~\ref{eq:con-biaffine}得到每个组块$(i, j)$的分值$\mathrm{s}(i, j)$.
 
-在\textsc{Mfvi}中，我们和前面一致，利用了二阶子结构特征.
-依存句法中，和章节~\ref{cha:dep-crf}一样，我们利用公式~\ref{eq:triaffine}得到$s(i\rightarrow\{k,j\})$，代表子树$i\rightarrow \{k,j\}$的分值，其中$k$是$j$的兄弟并且父亲为$i$.
-成分句法中，我们利用公式~\ref{eq:con-triaffine}得到$s(i,k,j)$，代表子树$i,k,j$的分值，$k$和$j$是两个组块的右边界位置，并且左边界为$i$，即由$(i,k)$和$(i,j)$组块构成的子树.
+我们在变分推断方法中还引入了二阶子树特征.
+其中，依存句法中，我们采用了和章节~\ref{cha:dep-crf}一样的兄弟子树结构.
+我们利用公式~\ref{eq:triaffine}得到兄弟子树$i\rightarrow \{k,j\}$的分值$\mathrm{s}(i\rightarrow\{k,j\})$，其中$k$是$j$的兄弟并且两者的父亲均为$i$.
+成分句法中，参考章节~\ref{cha:con-crf}，我们利用公式~\ref{eq:con-triaffine}得到$\mathrm{s}(i,k,j)$，代表由$(i,k)$和$(i,j)$两个组块构成的子树$(i,k,j)$的分值，$k$和$j$分别是两个组块的右边界位置，并且左边界均为$i$.
 
-对于标签的分值，我们利用Biaffine结构，分别得到依存树每条弧的每个标签的分值$s(i,\rightarrow,l)$，成分句法树每个组块上的每个标签的分值$s((i,j),l)$.
+对于标签的分值，我们利用Biaffine结构，分别得到依存树每条弧上的每个标签的分值$\mathrm{s}(i\rightarrow j,l)$，以及成分句法树每个组块上的每个标签的分值$\mathrm{s}((i,j),l)$.
 
-\subsection{变分推断}
+\subsection{依存句法的MFVI方法}\label{sec:dep-vi}
 
 \begin{figure}[tb!]
   \centering
@@ -92,21 +97,9 @@ $Z(\boldsymbol{x})$代表指数级别空间的所有可能树的分值之和，�
   \label{fig:vi-factors}
 \end{figure}
 
-在得到分值之后，我们的句法分析方法分为两阶段：1）构建无标签树；2）预测标签.
-在第二阶段预测标签的时候，我们以贪婪的方式给依存树的每条弧或者成分树的每个组块打上标签.
-而在第一阶段构建无标签树时，我们的目的是选择后验概率最大的句法树$\boldsymbol{y} = \arg\max_{\boldsymbol{y}^{\prime}} P(\boldsymbol{y}^{\prime}\mid \boldsymbol{x})$.
-通常这样的推断的复杂度较高，以至于无法计算.
-在句法分析领域我们可以应用复杂度为$O(n^3)$的Inside算法来进行精确计算，尽管在前面章节我们展示了可以通过批次化以及张量并行计算来降低复杂度，但是仍然十分影响计算效率.
-因此在本节我们提出利用基于平均场理论的变分推断法（Mean Field Variational Inference, \textsc{Mfvi}）来近似得到后验概率.
-\textsc{Mfvi}假设句法树$\boldsymbol{y}$每个位置的变量相互独立，因此可以在线性时间内通过迭代的方法得到后验概率的近似值$Q(\boldsymbol{y})$.
-
-关于\textsc{Mfvi}的通用更新公式以及相关推导见附录~\ref{appendix:mfvi-derivation}.
-根据依存句法和成分句法任务目标的不同，我们在下面两小节详细阐述了通用公式针对具体任务的特化版本，以及相关的势函数（potential function）和因子图（factor graph）的设计.
-
-\noindent\textbf{基于头选择的变分推断.}
-目前广泛使用的一阶局部模型（对应于章节~\ref{cha:dep-crf}的\textsc{Loc}方法，这里我们称为\textsc{Loc}$_{dep}$）在训练的时候采用了头选择（head selection）训练目标，要求句子中除了根结点之外的每个词有且仅有一个头.
-和 \citep{wang-tu-2020-second}一样，我们选择在依存句法对应变分推断方法中引入头选择约束，相应的因子图见图~\ref{fig:dep-factors}..
-对于每个位置$j$，我们定义变量取值为$y_j\in \{0,1,\cdots,i\neq j,\cdots,n\}$，代表词$w_j$的可能的头索引.
+目前广泛使用的一阶局部模型（对应于章节~\ref{cha:dep-crf}的\textsc{Loc}方法，这里我们称为\textsc{Loc}$_{dep}$）在训练的时候采用了头选择（head selection）的训练损失函数，要求句子中除了根结点之外的每个词有且仅有一个头.
+和\citet{wang-tu-2020-second}一样，我们选择在依存句法对应变分推断方法中引入头选择约束，相应的因子图设计见图~\ref{fig:dep-factors}.
+对于每个位置$j$，我们定义变量取值$y_j\in \{0,1,\cdots,i\neq j,\cdots,n\}$，代表词$w_j$的可能的头索引.
 
 具体地，对于每个变量$y_j$，一阶的势函数定义为
 \begin{equation}
@@ -115,7 +108,7 @@ $Z(\boldsymbol{x})$代表指数级别空间的所有可能树的分值之和，�
 \end{equation}
 $s(y_j\rightarrow j)$是弧$y_j\rightarrow j$对应的分值，由公式~\ref{eq:biaffine}计算得到.
 
-对于两个变量$y_{j}$和$y_{k}$，我们使用和章节~\ref{cha:dep-crf}一致的二阶特征，对应的二阶势函数定义为
+对于包含两个变量$y_{j}$和$y_{k}$的二阶因子，对应的势函数定义为
 \begin{equation}
   \label{eq:2o-dep-potential}
   \psi_{j,k}(y_j,y_k)=\left\{
@@ -126,26 +119,29 @@ $s(y_j\rightarrow j)$是弧$y_j\rightarrow j$对应的分值，由公式~\ref{eq
   \right.
 \end{equation}
 $s(y_j\rightarrow \{k,j\})$是兄弟子树$y_j\rightarrow \{k,j\}$的分值，由公式~\ref{eq:triaffine}计算得到.
-需要注意的是这里的兄弟$k$和二阶TreeCRF不一样，并不需要一定和$j$邻近.
+需要注意的是这里的兄弟$k$和二阶TreeCRF不同，并不需要一定和$j$邻近 \citep{smith-eisner-2008-dependency}.
+我们要求子树$y_j\rightarrow \{k,j\}$中没有环存在，即有$k\neq {0,j,y_j}$.
 
-\textsc{Mfvi}迭代式地更新近似分布$Q(\cdot)$，来最小化其与真实分布$P(\cdot)$的KL散度，依存句法模型的迭代更新公式如下 \citep{wang-tu-2020-second}：
+MFVI迭代式地更新近似分布$Q(\cdot)$，来最小化其与真实分布$P(\cdot)$的KL散度.
+依存句法模型的迭代更新公式如下 \citep{wang-tu-2020-second}：
 \begin{equation}
   \label{eq:mfvi-dep}
   Q_{j}^{(t)}(i)\propto \exp\left(s(i\rightarrow j) +\sum_{k\neq i,j} Q_{k}^{(t-1)}(i)\cdot s(i\rightarrow {k,j}) \right)
 \end{equation}
-后验概率$Q_j^{(0)}(i)$初始化为一阶势函数$\psi_j(i)$.
-每次迭代时，我们都会将$Q_j^{(0)}(\cdot)$的值在所有可能的头取值上进行归一化.
+后验分布$Q_j^{(0)}(i)$初始化为一阶势函数的值$\psi_j(i)$.
+每次迭代时，我们都会将$Q_j^{(t)}(\cdot)$的值在所有可能的头取值上进行归一化.
+经过$T$次迭代后，我们得到最终的近似后验分布$Q_j^{(T)}(\cdot)$.
 
-\noindent\textbf{基于二分类的变分推断.}
-我们的成分句法分析模型采用了 \citep{gaddy-etal-2018-whats}的方法作为基线方法，称为\textsc{Loc}$_{con}$.
+\subsection{成分句法的MFVI方法}\label{sec:con-vi}
+
+我们的成分句法分析模型采用了\citet{gaddy-etal-2018-whats}的方法作为基线方法，称为\textsc{Loc}$_{con}$.
 具体来说，模型对短语树所有可能的位置进行一个简单的二分类，预测该位置是否是一个区块.
-\citep{dozat-manning-2018-simpler,wang-etal-2019-second}在语义依存分析中应用了这样的训练目标.
-\citep{gormley-eisner-2015-structured,naradowsky-etal-2012-grammarless}在成分句法分析中应用了这种方法，并采用循环置信传播（Loopy Belief Propagation, LBP）来近似获得后验概率，并设计了若干种局部和全局因子，比如\textsc{Exactly1}、\textsc{Tree}等.
-我们将其引入到了基于\textsc{Mfvi}的成分句法分析中，但是简单起见仅仅采用了一个一阶因子和一个二阶因子，对应的因子图见图~\ref{fig:con-factors}.
-我们考虑将引入更多因子约束的近似算法留待作为未来工作.
+\citet{dozat-manning-2018-simpler,wang-etal-2019-second}在语义依存分析中应用了这样的训练目标.
+\citet{gormley-eisner-2015-structured,naradowsky-etal-2012-grammarless}在成分句法分析中应用了这种方法.
+我们将其引入到了基于MFVI的成分句法分析中，并采用了一个一阶因子和一个二阶因子，对应的因子图见图~\ref{fig:con-factors}.
 
-
-具体地，每个位置$ij$的可能的变量取值$y_{ij}\in \{0,1\}$. 对于单个变量$y_{ij}$，一阶的势函数定义为
+具体地，每个位置$ij$的可能的变量取值$y_{ij}\in \{0,1\}$.
+其中单个变量$y_{ij}$的一阶的势函数定义为
 \begin{equation}
   \label{eq:con-1o-potential}
   \psi_{ij}(y_{ij})=\left\{
@@ -155,9 +151,9 @@ $s(y_j\rightarrow \{k,j\})$是兄弟子树$y_j\rightarrow \{k,j\}$的分值，�
   \end{array}
   \right.
 \end{equation}
-$s(i,j)$是区块$(i,j)$的分值，由公式~\ref{eq:con-biaffine}计算得到，这里我们要求$i<j$.
+$s(i,j)$是由公式~\ref{eq:con-biaffine}计算得到的区块$(i,j)$的分值，这里我们要求$i<j$.
 
-给定两个变量$y_{ij}$和$y_{lk}$，我们考虑使用和章节~\ref{cha:con-crf}一致的二阶兄弟特征，因此二阶的势函数定义为
+给定两个变量$y_{ij}$和$y_{lk}$，我们使用章节~\ref{cha:con-crf}的二阶兄弟特征，因此二阶的势函数定义为
 \begin{equation}
   \label{eq:2o-con-potential}
   \psi_{ij,lk}(y_{ij},y_{lk})=\left\{
@@ -167,9 +163,10 @@ $s(i,j)$是区块$(i,j)$的分值，由公式~\ref{eq:con-biaffine}计算得到�
   \end{array}
   \right.
 \end{equation}
-$s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的分值，由公式~\ref{eq:con-triaffine}计算得到，这里$k$的位置不受动态规划算法的约束，并不要求一定位于$(i,j)$之间，即有$i<j,k$.
+$s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的分值，由公式~\ref{eq:con-triaffine}计算得到.
+需要注意的是这里$k$的位置不受动态规划算法的约束，并不要求一定位于$(i,j)$之间，即有$i<k,k\neq j$.
 
-成分句法模型的\textsc{Mfvi}迭代更新公式如下：
+成分句法模型的MFVI迭代更新公式如下：
 \begin{equation}
   \label{eq:mfvi-con}
   \begin{array}{l}
@@ -178,39 +175,38 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
   \end{array}
 \end{equation}
 后验概率$Q_{ij}^{(0)}(y_{ij})$初始化为一阶势函数$\psi_{ij}(y_{ij})$.
-每次迭代时，我们将$Q_{ij}^{(0)}(\cdot)$在取值$\{0,1\}$上进行归一化.
+每次迭代时，我们将$Q_{ij}^{(t)}(\cdot)$在取值$\{0,1\}$上进行归一化.
+经过$T$次迭代后，我们得到成分句法最终的近似后验分布$Q_{ij}^{(T)}(\cdot)$.
 
-
-\subsection{训练}
+\subsection{训练损失函数}
 
 我们的训练损失函数分为两部分，分别是无标签树的损失和对应标签的损失.
 给定所有正确标签，我们的目标是最大化树上每个标签的概率，和前面的章节一致，我们采用了弧/区块级别的标准交叉熵损失函数.
-给定输入句子$\boldsymbol{x}$和对应正确的无标签句法树$\boldsymbol{y}^{\ast}$，我们的目标是最大化句法树的概率$P(\boldsymbol{y}^{\ast}\mid\boldsymbol{x})$.
-由于\textsc{Mfvi}将概率在每个变量上分解，得到近似概率$Q(\boldsymbol{y}^{\ast})$，因此训练目标等价于最大化每个变量的后验概率.
+给定输入句子$\boldsymbol{x}$和对应正确的无标签句法树$\boldsymbol{y}^{\ast}$，我们的目标是最大化句法树的概率$p(\boldsymbol{y}^{\ast}\mid\boldsymbol{x})$.
+由于MFVI将真实分布在每个变量上分解得到近似概率分布$Q(\cdot)$，因此训练目标等价于最大化每个变量的后验概率.
 
-对于每个句子，依存句法分析相应无标签句法树的目标函数为
+其中，对于每个句子，依存句法分析树采用了弧分解策略，每个位置的变量取值为所有可能的头，因此相应无标签句法树的损失函数为
 \begin{equation}
   \label{eq:dep-vi-arc-loss}
-  L_{dep}^{arc}=-\sum_{j\neq 0}\log Q_j(\boldsymbol{y}^{\ast}_j)
+  L_{dep}^{tree}=-\sum_{j\neq 0}\log Q_j(y^{\ast}_j)
 \end{equation}
 
-成分句法的无标签句法树的目标函数为
+成分句法的无标签句法树按照组块分解，每个组块可能的取值为$\{0,1\}$，因此目标函数为
 \begin{equation}
   \label{eq:con-vi-bracket-loss}
-  L_{con}^{bracket}=-\sum_{i<j}\log Q_{ij}(\boldsymbol{y}^{\ast}_{ij})
+  L_{con}^{tree}=-\sum_{i<j}\log Q_{ij}(y^{\ast}_{ij})
 \end{equation}
-对于最终的目标函数，我们新引入了一个参数$\lambda$用于平衡无标签句法树以及标签的损失，相应的最终训练目标为
+参考\citet{dozat-manning-2018-simpler}，我们还新引入了一个参数$\lambda$用于平衡无标签句法树以及标签的损失，相应的成分句法的最终训练目标为
 \begin{equation}
   \label{eq:con-vi-loss}
-  L_{con}=\lambda L_{con}^{label}+(1-\lambda)L_{con}^{bracket}
+  L_{con}=\lambda L_{con}^{label}+(1-\lambda)L_{con}^{tree}
 \end{equation}
 
 \subsection{解码}
-在\textsc{Mfvi}模型中，解码时我们直接应用了MBR解码.
-我们直接用\textsc{Mfvi}近似得到的后验概率作为解码算法的输入.
+我们在MFVI模型中解码时直接应用了MBR解码的策略.
+我们采用MFVI近似得到的后验概率$Q(\cdot)$代替边缘概率作为解码算法的输入.
 依存句法中，我们将由公式~\ref{eq:mfvi-dep}得到的概率$Q_i(\cdot)$作为输入，并利用了Eisner算法来解码，加速时采用了算法~\ref{alg:eisner-2o}的批次化技术.
 成分句法中，我们将由公式~\ref{eq:mfvi-con}得到的概率$Q_{ij}(\cdot)$作为输入，并利用了和章节~\ref{cha:con-crf}一样的类CKY算法来解码，采用了算法~\ref{alg:inside}的批次化技术来加速.
-
 
 \section{实验}\label{sec:vi-exp}
 
@@ -219,6 +215,12 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 对于二阶模型，我们设置依存句法分析中使用的兄弟特征以及成分句法分析使用的二阶特征的MLP层输出维度为100.
 我们设置变分推断的迭代次数统一为3次.
 对于在成分句法分析中的用于平衡标签和无标签树的训练损失的参数$\lambda$，我们设置$\lambda$为0.1.
+
+\noindent\textbf{模型定义.}
+我们在每种句法分析上都比较了四种模型：\textsc{Loc}、\textsc{Crf}、\textsc{Crf2o}和\textsc{Mfvi}，这里有必要对于他们的记号做一下说明.
+\textsc{Loc}表示采用了局部损失函数的模型，\textsc{Crf}和\textsc{Crf2o}指的是使用了一阶和二阶精确推断的TreeCRF模型，\textsc{Mfvi}表示采用平均场变分推断的模型.
+相同记号的在各自任务的指导不同，例如依存模型中的\textsc{Loc}采用了头选择损失函数，而成分模型的\textsc{Loc}采用了二分类损失函数.
+有时候我们会附加下标$dep$和$con$以示区分.
 
 \input{tables/vi-dep-test.tex}
 
@@ -240,7 +242,7 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 
 当使用BERT之后，上述的几种推断算法在结果上没有显著差异.
 依存句法上，PTB中\textsc{Mfvi}表现最好，LAS为95.37，达到或超越了当前的最佳性能 \citep{zhou-zhao-2019-head,wang-tu-2020-second}，CoNLL09上人仍然\textsc{Crf2o}最佳，但是\textsc{Mfvi}的差距十分微弱.
-成分句法中在PTB和CTB51这两个数据上，\textsc{Mfvi}的表现都是最好的，分别达到95.71和92.56的$\mathrm{F}_1$值，高于当前最佳的模型\cite{kitaev-etal-2019-multilingual}.
+成分句法中在PTB和CTB51这两个数据上，\textsc{Mfvi}的表现都是最好的，分别达到95.71和92.56的$\mathrm{F}_1$值，高于当前最佳的模型\citep{kitaev-etal-2019-multilingual}.
 在CTB7上表现最好的仍是\textsc{Crf2o}，$\mathrm{F}_1$值为91.62，而\textsc{Mfvi}的差距不到0.1.
 然而，基于\textsc{Mfvi}方法的近似推断在解析效率上有很大的优越性（见章节~\ref{sub@sec:vi-speed}的复杂度分析）.
 
@@ -268,7 +270,7 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
   \label{fig:vi-probs}
 \end{figure}
 
-图~\ref{fig:vi-probs}给出了一个例句分别在依存和成分句法模型上的分值（log potentials）与经过\textsc{Mfvi}迭代近似得到的后验概率的热力图对比.
+图~\ref{fig:vi-probs}给出了一个例句分别在依存和成分句法模型上的分值（log potentials）与经过MFVI迭代近似得到的后验概率的热力图对比.
 图中颜色的深浅反应了分值/概率的大小.
 
 左边的图反应的是模型直接输出的分值之间的对比，这对应于一阶模型的输出.
@@ -277,11 +279,11 @@ $s(i,k,j)$可以视为$(i,j)$和$(i,k)$都作为组块时，组成的子树的�
 成分句法的热力图中，由于采用了二分类的目标，因此颜色较深的位置表示更可能成为一个区块.
 然而由于没有类似于依存句法的头约束，直接通过对每个位置$\arg\max$得到的所有区块可能无法组成一棵合法的句法树，因此我们仍需要CKY算法来获得全局最优的合法句法树.
 
-当我们利用\textsc{Mfvi}算法，得到的近似后验概率的热力图如右边图所示.
+当我们利用MFVI算法，得到的近似后验概率的热力图如右边图所示.
 可以看到，在进一步考虑了二阶特征的分值并聚合到每个变量位置之后，后验概率的置信度远远高于分值.
 对于依存句法而言，每个词都有一个最可能的头，并且概率几乎为1，对应于热力图中每列仅有一个红色结点.
 对于成分句法而言，如果对图中每个位置的后验概率取$\arg\max$得到可能的区块，每个区块的概率同样近似为1，并且对于图中的例句而言，这种贪婪解码得到的句法树可以直接组成一棵合法的短语结构树，例如，红色结点$(She_1,tennis_4)$和$(playing_3,tennis_4)$对应了例句正确的无标签树左二叉化之后的两个区块.
-这显示了\textsc{Mfvi}在引入二阶结构打分之后，对于模型结构预测更强大的约束作用.
+这显示了MFVI在引入二阶结构打分之后，对于模型结构预测更强大的约束作用.
 
 
 \subsection{速度和时间复杂度比较}
