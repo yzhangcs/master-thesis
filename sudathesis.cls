@@ -247,7 +247,7 @@ The LaTeX template for thesis of suda]
 
 \bibliographystyle{sudathesis} % 参考文献格式
 \RequirePackage[authoryear]{natbib}
-\bibpunct{[}{]}{,}{n}{}{}
+\bibpunct{[}{]}{,}{s}{,}{\textsuperscript{,}}
 \setlength{\bibsep}{0pt}
 \newcommand{\upcite}[1]{\textsuperscript{\cite{#1}}}
 \renewcommand{\citep}[1]{(\citet{#1})}

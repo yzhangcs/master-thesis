@@ -23,7 +23,7 @@
     % \STATE $S_{i, i+1} = s_{i, i+1}$ \COMMENT{$w$ is 1}
     \FOR [span width]{$w = 1$ \TO $n$}
     \STATE \emph{Parallel computation on $0 \le i$,$j<n$,$~r$,$0\le b<B$}
-    \STATE $S_{i, j=i+w} = \log \sum\limits_{i \le r < j} \exp \left( S_{i, r}+S_{r+1, j} \right)  + s(i, j) $ \label{line:sum-product}\\
+    \STATE $S_{i, j=i+w} = \log \sum\limits_{i \le r < j} \exp \left( S_{i, r}+S_{r+1, j} \right)  + \mathrm{s}(i, j) $ \label{line:sum-product}\\
     %\textbf{batchify:} $0 \le i$; $j=i+w < n$
     \ENDFOR
     \RETURN $S_{0, n-1} \equiv \log Z(\boldsymbol{x})$
