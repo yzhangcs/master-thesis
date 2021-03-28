@@ -136,7 +136,8 @@ CKY的时间复杂度为$O(n^3)$.
 其次，相同LSTM层在不同的时间步（词）共享相同的dropout掩码 \citep{yarin-etal-2016-dropout}.
 
 \noindent\textbf{边界表示.}
-对于每个词$w_i$，我们参考 \citet{stern-etal-2017-minimal}的做法来组成上下文词向量\footnote{我们的前置实验表明$\mathbf{f}_i \oplus \mathbf{b}_{i+1}$相比于$\mathbf{f}_i \oplus \mathbf{b}_i$有稳定的提升. 可能的原因是$\mathbf{f}_i$和$\mathbf{b}_i$都使用$\mathbf{e}_i$作为输入，因此提供的信息冗余.}
+对于每个词$w_i$，我们参考 \citet{stern-etal-2017-minimal}的做法来组成上下文词向量\footnote{我们的前置实验表明$\mathbf{f}_i \oplus \mathbf{b}_{i+1}$相比于$\mathbf{f}_i \oplus \mathbf{b}_i$有稳定的提升.
+  可能的原因是$\mathbf{f}_i$和$\mathbf{b}_i$都使用$\mathbf{e}_i$作为输入，因此提供的信息冗余.}
 \begin{equation}
   \mathbf{h}_i = \mathbf{f}_i \oplus \mathbf{b}_{i+1}
 \end{equation}

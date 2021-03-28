@@ -8,7 +8,8 @@
   The main bottleneck leading to the inefficiency of TreeCRF lies in the Inside-Outside algorithm, especially the calculation of the Outside pass.
   To solve this, on the one hand, we propose to batchify the Inside algorithm, so as to utilize the parallel computing power of GPU to speed up.
   On the other hand, we also propose to replace the complex Outside algorithm with efficient back-propagation.
-  In deep learning era, models are greatly simplified. It's a trend to adopt local loss (classification) for both dependency and constituency parsing.
+  In deep learning era, models are greatly simplified.
+  It's a trend to adopt local loss (classification) for both dependency and constituency parsing.
   We propose a higher-order extension based on the first-order TreeCRF.
   High order modeling further increases the time complexity.
   To this end, we also try to apply the approximate mean field variational inference algorithm as an alternative to exact inference of TreeCRF method, improving the parsing efficiency greatly.

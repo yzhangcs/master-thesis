@@ -30,6 +30,8 @@ INTEGERS {
 
 FUNCTION {load.config}
 {
+  #1 'link.title :=
+  #0 'show.url :=
   #2 'citation.et.al.min :=
   #1 'citation.et.al.use.first :=
   #4 'bibliography.et.al.min :=
@@ -57,6 +59,7 @@ FUNCTION {load.config}
   #0 'show.preprint :=
   #0 'show.note :=
   #0 'show.english.translation :=
+  #99 'bibliography.et.al.min :=
 }
 
 ENTRY

@@ -246,10 +246,9 @@ The LaTeX template for thesis of suda]
 % 参考文献
 
 \bibliographystyle{sudathesis} % 参考文献格式
-\RequirePackage[authoryear]{natbib}
+\RequirePackage[sort&compress]{natbib}
 \bibpunct{[}{]}{,}{s}{,}{\textsuperscript{,}}
 \setlength{\bibsep}{0pt}
-\newcommand{\upcite}[1]{\textsuperscript{\cite{#1}}}
 \renewcommand{\citep}[1]{(\citet{#1})}
 
 %%%%%%%%%% table %%%%%%%%%%
