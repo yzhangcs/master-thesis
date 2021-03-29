@@ -1,8 +1,8 @@
 % !Mode:: "TeX:UTF-8"
 
 \begin{eabstract}
-  Syntactic parsing is one of the most important intermediate processes of sentence comprehension task.
-  However, in both deep learning (DL) and pre-DL eras, very few works have adopted global probabilistic models, mainly due to the high complexity of algorithm for inference of syntax tree probabilities.
+  Syntactic parsing is one of the most important intermediate processes of sentence comprehension.
+  However, in both deep learning (DL) and pre-DL eras, very few works have adopted global probabilistic models, mainly due to the high complexity of probabilistic inference algorithm for syntax trees.
   In this thesis, we propose to apply TreeCRF to dependency and constituency parsing.
   Compared with previous works, the advantage of TreeCRF is to obtain tree/subtree probabilities, which is more useful for downstream tasks.
   The main bottleneck leading to the inefficiency of TreeCRF lies in the Inside-Outside algorithm, especially the calculation of the Outside pass.
@@ -33,14 +33,14 @@
           Moreover, we propose a simple two-stage parsing approach, which has comparable results with previous one-stage methods, but is more efficient.
           We also refer to the model architecture and parameter settings of dependency models, and propose to replace the traditional scoring method with a biaffine scoring mechanism.
           We find that the parsing performance can be largely improved via better encoder settings like Dropout configuration, leading to similar results with current state-of-the-art Transformer encoder.
-          Experimental results on three benchmark datasets in Chinese and English show that our proposed models significantly surpass existing methods.
+          Experimental results on three Chinese and English benchmark datasets show that our proposed models significantly surpass existing methods.
           In terms of parsing speed, our first-order and second-order models can parse over 1,000/598 sentences/s.
           After using BERT, our models achieve new state-of-the-art performance on all datasets.
     \item We propose an efficient syntactic parsing method based on variational inference.
           In order to deal with the high complexity of the TreeCRF method for exact inference, this thesis proposes to introduce an approximate method based on mean field variational inference for dependency and constituency parsing.
           Compared with higher-order TreeCRF, variational inference reduces the time complexity on GPU from $O(n^2)$ to $O(n)$, improving the model efficiency greatly.
           We design different factor graphs and corresponding variational inference updating algorithms for dependency and constituency parsing.
-          Experimental results on five datasets in Chinese and English show that our second-order variational inference method significantly outperforms the first-order model, and achieves comparable results with second-order TreeCRF models.
+          Experimental results on five Chinese and English datasets show that our second-order variational inference method significantly outperforms the first-order model, and achieves comparable results with second-order TreeCRF models.
           Meanwhile, our models can parse over 1,126 and 905 sentences/s on dependency parsing and constituency parsing respectively, greatly surpassing the exact inference of second-order TreeCRF methods .
           Moreover, after using BERT, our variational inference method achieves or approaches the performance of current state-of-the-art models.
   \end{enumerate}
@@ -50,6 +50,7 @@
   We find it greatly improves the parsing speed while has a similar performance to exact high-order modeling.
   \vskip 21bp
     {\bf\zihao{-4} Key words: }
+  Syntactic Parsing,
   Dependency Parsing,
   Constituency Parsing,
   TreeCRF,
