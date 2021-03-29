@@ -30,8 +30,6 @@ INTEGERS {
 
 FUNCTION {load.config}
 {
-  #1 'link.title :=
-  #0 'show.url :=
   #2 'citation.et.al.min :=
   #1 'citation.et.al.use.first :=
   #4 'bibliography.et.al.min :=
