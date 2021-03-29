@@ -12,7 +12,5 @@
 *.bst
 *.toc
 .vscode
-img
-figure*
 anthology.bib
 __latexindent_temp.tex

@@ -64,7 +64,7 @@
 
 \section{两阶段TreeCRF解析}\label{sec:2stage-parsing}
 
-如图~\ref{fig:con-tree-original}所示，对于一个由$n$个词组成的句子$\boldsymbol{x}=w_1,\dots，w_{n}$，一棵成分句法树$\boldsymbol{t}=\{((i, j),l)\mid 1\le i \le n,i \le j \le n,l \in \mathcal{L}\}$可以被分解为两个部分，即，$\boldsymbol{t}=(\boldsymbol{y}, \boldsymbol{l})$，其中$\boldsymbol{y}$是一棵无标签树（又称为bracketed tree），而$\boldsymbol{l}$是树中所有区块的标签按一定顺序产生的标签序列.
+如图~\ref{fig:con-original-tree}所示，对于一个由$n$个词组成的句子$\boldsymbol{x}=w_1,\dots，w_{n}$，一棵成分句法树$\boldsymbol{t}=\{((i, j),l)\mid 1\le i \le n,i \le j \le n,l \in \mathcal{L}\}$可以被分解为两个部分，即，$\boldsymbol{t}=(\boldsymbol{y}, \boldsymbol{l})$，其中$\boldsymbol{y}$是一棵无标签树（又称为bracketed tree），而$\boldsymbol{l}$是树中所有区块的标签按一定顺序产生的标签序列.
 区块$(3,5，\texttt{VP})$可以等价表示为$\texttt{VP}_{3,5}$.
 
 为了能够适应Inside算法和CKY算法，我们用NLTK工具包\footnote{\url{https://www.nltk.org}}将原始的树转换为了遵循乔姆斯基范式（Chomsky Normal Form，CNF）的二叉树形式，如图~\ref{fig:con-binaried-tree}所示.

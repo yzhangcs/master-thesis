@@ -24,7 +24,7 @@
 \input{figures/con-tree.tex}
 成分句法则旨在构建一个层次化的树结构.
 如图\ref{fig:con-tree-full-figure}，其中每个叶子结点是输入句子的每个词，而非终端结点作为区块（Constituents），如$\texttt{VP}_{3,5}$.
-正式地，给定一个由$n$个词组成的句子$\boldsymbol{x}=w_1,\dots，w_{n}$，如图~\ref{fig:con-tree-original}所示，一棵成分句法树可以表示为$\boldsymbol{t}=\{((i, j),l)\mid 1\le i \le n,i \le j \le n,l \in \mathcal{L}\}$，其中$((i,j),l) \in \boldsymbol{t}$是一个包含$w_{i}...w_{j}$的区块，对应的句法标签为$l \in \mathcal{L}$.
+正式地，给定一个由$n$个词组成的句子$\boldsymbol{x}=w_1,\dots，w_{n}$，如图~\ref{fig:con-original-tree}所示，一棵成分句法树可以表示为$\boldsymbol{t}=\{((i, j),l)\mid 1\le i \le n,i \le j \le n,l \in \mathcal{L}\}$，其中$((i,j),l) \in \boldsymbol{t}$是一个包含$w_{i}...w_{j}$的区块，对应的句法标签为$l \in \mathcal{L}$.
 本文中，为了方便模型处理，我们还将原始的树转换为了二叉树形式，如图~\ref{fig:con-binaried-tree}所示.
 成分句法分析相比于依存句法而言，研究历史更加悠久，尽管目前没有依存句法技术那么流行，但是以其分析技术为基础衍生出了一系列在其他任务上的解析方法，例如UCCA语义分析 \citep{jiang-etal-2019-hlt}、嵌套命名实体识别 \citep{fu-etal-2021-nested}等等.
 
