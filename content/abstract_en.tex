@@ -14,7 +14,7 @@
 	High order modeling further increases the time complexity.
 	To this end, we also try to apply the approximate mean field variational inference algorithm as an alternative to exact inference of TreeCRF method, improving the parsing efficiency greatly.
 	We conduct experiments on several benchmark datasets of dependency and constituency parsing, and find that exact inference of high-order TreeCRF brings significant improvement.
-	The proposed variational inference method achieves or approaches the performance of high-order TreeCRF method, and greatly speeds up the parsing speed.
+	The proposed variational inference method achieves or approaches the performance of high-order TreeCRF method, and greatly improves the parsing speed.
 	
 	Overall, the main research content of this thesis includes three aspects:
 	
@@ -34,7 +34,7 @@
 		      We also refer to the model architecture and parameter settings of dependency models, and propose to replace the traditional scoring method with a biaffine scoring mechanism.
 		      We find that the parsing performance can be largely improved via better encoder settings like Dropout configuration, leading to similar results with current state-of-the-art Transformer encoder.
 		      Experimental results on three Chinese and English benchmark datasets show that our proposed models significantly surpass existing methods.
-		      In terms of parsing speed, our first-order and second-order models can parse over 1,000/598 sentences/s.
+		      In terms of parsing speed, our first-order and second-order models can parse over 1,092/598 sentences/s.
 		      After using BERT, our models achieve new state-of-the-art performance on all datasets.
 		\item We propose an efficient syntactic parsing method based on variational inference.
 		      In order to deal with the high complexity of the TreeCRF method for exact inference, this thesis proposes to introduce an approximate method based on mean field variational inference for dependency and constituency parsing.

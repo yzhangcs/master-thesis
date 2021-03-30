@@ -9,7 +9,7 @@
 我们同样提出一个简单的两阶段解析方法，bracketing-then-labeling，来进一步提升分析器的效率。
 为了提升解析的性能，受依存句法分析器的启发，我们引入了一个基于边界表示和仿射注意力的新打分方法，以及一个有效的Dropout策略。
 在PTB、CTB5.1和CTB7上的实验表明，二阶TreeCRF模型和一阶模型的结果相当。
-在一阶模型上，我们的两阶段条件随机场分析器在使用和不使用BERT的两种设置上，达到了新的最佳性能，并且解析速度达到了1,000句每秒。
+在一阶模型上，我们的两阶段条件随机场分析器在使用和不使用BERT的两种设置上，达到了新的最佳性能，并且解析速度达到了1,092句每秒。
 
 \section{引言}\label{sec:con-intro}
 
@@ -67,7 +67,7 @@
 如图~\ref{fig:con-original-tree}所示，对于一个由$n$个词组成的句子$\boldsymbol{x}=w_1,\dots，w_{n}$，一棵成分句法树$\boldsymbol{t}=\{((i, j),l)\mid 1\le i \le n,i \le j \le n,l \in \mathcal{L}\}$可以被分解为两个部分，即，$\boldsymbol{t}=(\boldsymbol{y}, \boldsymbol{l})$，其中$\boldsymbol{y}$是一棵无标签树（又称为bracketed tree），而$\boldsymbol{l}$是树中所有区块的标签按一定顺序产生的标签序列。
 区块$(3,5，\texttt{VP})$可以等价表示为$\texttt{VP}_{3,5}$。
 
-为了能够适应Inside算法和CKY算法，我们用NLTK工具包\footnote{\url{https://www.nltk.org}}将原始的树转换为了遵循乔姆斯基范式（Chomsky Normal Form，CNF）的二叉树形式，如图~\ref{fig:con-binaried-tree}所示。
+为了能够适应Inside算法和CKY算法，我们用NLTK工具包\footnote{\url{https://www.nltk.org}}将原始的树转换为了遵循乔姆斯基范式的二叉树形式，如图~\ref{fig:con-binaried-tree}所示。
 特别地，连续的单链产生式被压缩为了一个标签，比如$\texttt{X}_{i,j} \rightarrow \texttt{Y}_{i,j}$会被压缩为一个$\texttt{X+Y}_{i,j}$。
 根据前置实验，我们在二叉化原始树的时候，采用了左二叉。
 在用CKY解码获得一棵最佳的树之后，CNF树会被恢复为原来的\textit{n}-ary形式。
