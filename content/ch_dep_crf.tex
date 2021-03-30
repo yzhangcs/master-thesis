@@ -282,8 +282,8 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
     & = \frac{\partial \log Z}{\partial Z} \cdot \frac{\partial Z}{\partial \mathrm{s}(i\rightarrow j)}\\
     & =\frac{1}{Z} \cdot \frac{\partial \sum_{\boldsymbol{y}} \exp \left(\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) \right)}{\partial \mathrm{s}(i\rightarrow j)}\\
     & =\frac{1}{Z} \cdot \frac{\partial \sum_{\boldsymbol{y}:i\rightarrow j \in \boldsymbol{{y}}} \exp \left(\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) \right)}{\partial \mathrm{s}(i\rightarrow j)}\\
-    & =\frac{1}{Z} \cdot \frac{\sum_{\boldsymbol{y}:i\rightarrow j \in \boldsymbol{{y}}} \exp \left( \sum_{i^{\prime}\rightarrow j^{\prime} \in \boldsymbol{y}\setminus i\rightarrow j} \mathrm{s}(i^{\prime}\rightarrow j^{\prime}) \right)\cdot \partial \exp(\mathrm{s}(i\rightarrow j))}{\partial \mathrm{s}(i\rightarrow j)}\\
-    & =\sum_{\boldsymbol{y}:i\rightarrow j \in \boldsymbol{{y}}} \frac{\exp \left( \sum_{i^{\prime}\rightarrow j^{\prime} \in \boldsymbol{y}\setminus i\rightarrow j} \mathrm{s}(i^{\prime}\rightarrow j^{\prime})\right)\cdot \exp(\mathrm{s}(i\rightarrow j))}{Z}\\
+    & =\frac{1}{Z} \cdot \frac{\sum_{\boldsymbol{y}:i\rightarrow j \in \boldsymbol{{y}}} \exp \left( \mathrm{s}(\boldsymbol{y}) -\mathrm{s}(i\rightarrow j)  \right)\cdot \partial \exp(\mathrm{s}(i\rightarrow j))}{\partial \mathrm{s}(i\rightarrow j)}\\
+    & =\sum_{\boldsymbol{y}:i\rightarrow j \in \boldsymbol{{y}}} \frac{\exp \left( \mathrm{s}(\boldsymbol{y})\right)}{Z}\\
     &= \sum_{\boldsymbol{y}:i\rightarrow j \in \boldsymbol{{y}}} p(\boldsymbol{y}\mid\boldsymbol{x})\\
     &= p(i \rightarrow j\mid\boldsymbol{x})
   \end{split}
