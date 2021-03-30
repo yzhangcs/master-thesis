@@ -1,64 +1,64 @@
 % !Mode:: "TeX:UTF-8"
 
 \begin{eabstract}
-  Syntactic parsing is one of the most important intermediate processes of sentence comprehension.
-  However, in both deep learning (DL) and pre-DL eras, very few works have adopted global probabilistic models, mainly due to the high complexity of probabilistic inference algorithm for syntax trees.
-  In this thesis, we propose to apply TreeCRF to dependency and constituency parsing.
-  Compared with previous works, the advantage of TreeCRF is to obtain tree/subtree probabilities, which is more useful for downstream tasks.
-  The main bottleneck leading to the inefficiency of TreeCRF lies in the Inside-Outside algorithm, especially the calculation of the Outside pass.
-  To solve this, on the one hand, we propose to batchify the Inside algorithm, so as to utilize the parallel computing power of GPU to speed up.
-  On the other hand, we also propose to replace the complex Outside algorithm with efficient back-propagation.
-  In deep learning era, models are greatly simplified.
-  It's a trend to adopt local loss (classification) for both dependency and constituency parsing.
-  We propose a higher-order extension based on the first-order TreeCRF.
-  High order modeling further increases the time complexity.
-  To this end, we also try to apply the approximate mean field variational inference algorithm as an alternative to exact inference of TreeCRF method, improving the parsing efficiency greatly.
-  We do experiments on several benchmark datasets of dependency and constituency parsing, and find that exact inference of high-order TreeCRF brings significant improvement.
-  The proposed variational inference method achieves or approaches the performance of high-order TreeCRF method, and greatly speeds up the parsing speed.
-
-  Overall, the main research content of this thesis includes three aspects:
-
-  \begin{enumerate}
-    \item We propose a TreeCRF-based high-order method for dependency parsing.
-          This thesis proposes a second-order TreeCRF extension to Biaffine Parser that adopts a local training objective, and uses adjacent sibling subtrees as second-order features.
-          To integrate second-order subtree scores more effectively, inspired by biaffine scorer, we propose a novel triaffine structure for scoring.
-          Second-order TreeCRF method causes severe efficiency issues.
-          To overcome this, we propose to batchify the Inside algorithm and use the GPU parallel computing ability to reduce the time complexity from $O(n^3)$ to $O(n^2)$.
-          In addition, we replace the complex Outside algorithm with back-propagation based on auto-differentiation, which significantly improves the efficiency and makes the model speed up to 400 sentences/s.
-          We conduct detailed experiments on 27 datasets in 13 languages.
-          Results show that second-order models lead to better convergence performance, perform well on global metrics, and is especially useful for partially annotated data.
-    \item We propose a TreeCRF-based high-order method for constituency parsing.
-          This thesis proposes to apply high-order TreeCRF to constituency parsing.
-          To solve the efficiency issue, we apply batchification techiques and back-propagation consistent with the dependency model to accelerate.
-          Moreover, we propose a simple two-stage parsing approach, which has comparable results with previous one-stage methods, but is more efficient.
-          We also refer to the model architecture and parameter settings of dependency models, and propose to replace the traditional scoring method with a biaffine scoring mechanism.
-          We find that the parsing performance can be largely improved via better encoder settings like Dropout configuration, leading to similar results with current state-of-the-art Transformer encoder.
-          Experimental results on three Chinese and English benchmark datasets show that our proposed models significantly surpass existing methods.
-          In terms of parsing speed, our first-order and second-order models can parse over 1,000/598 sentences/s.
-          After using BERT, our models achieve new state-of-the-art performance on all datasets.
-    \item We propose an efficient syntactic parsing method based on variational inference.
-          In order to deal with the high complexity of the TreeCRF method for exact inference, this thesis proposes to introduce an approximate method based on mean field variational inference for dependency and constituency parsing.
-          Compared with higher-order TreeCRF, variational inference reduces the time complexity on GPU from $O(n^2)$ to $O(n)$, improving the model efficiency greatly.
-          We design different factor graphs and corresponding variational inference updating algorithms for dependency and constituency parsing.
-          Experimental results on five Chinese and English datasets show that our second-order variational inference method significantly outperforms the first-order model, and achieves comparable results with second-order TreeCRF models.
-          Meanwhile, our models can parse over 1,126 and 905 sentences/s on dependency parsing and constituency parsing respectively, greatly surpassing the exact inference of second-order TreeCRF methods .
-          Moreover, after using BERT, our variational inference method achieves or approaches the performance of current state-of-the-art models.
-  \end{enumerate}
-
-  In summary, we propose an efficient second-order TreeCRF extension for both dependency and constituency parsing, achieving the current state-of-the-art performance.
-  We also apply the variational method to syntactic parsing.
-  We find it greatly improves the parsing speed while has a similar performance to exact high-order modeling.
-  \vskip 21bp
-    {\bf\zihao{-4} Key words: }
-  Syntactic Parsing,
-  Dependency Parsing,
-  Constituency Parsing,
-  TreeCRF,
-  Variational Inference
+	Syntactic parsing is one of the most important intermediate processes of sentence comprehension.
+	However, in both deep learning (DL) and pre-DL eras, very few works have adopted global probabilistic models, mainly due to the high complexity of probabilistic inference algorithm for syntax trees.
+	In this thesis, we propose to apply TreeCRF to dependency and constituency parsing.
+	Compared with previous works, the advantage of TreeCRF is to obtain tree/subtree probabilities, which is more useful for downstream tasks.
+	The main bottleneck leading to the inefficiency of TreeCRF lies in the Inside-Outside algorithm, especially the calculation of the Outside pass.
+	To solve this, on the one hand, we propose to batchify the Inside algorithm, so as to utilize the parallel computing power of GPU to speed up.
+	On the other hand, we also propose to replace the complex Outside algorithm with efficient back-propagation.
+	In deep learning era, models are greatly simplified.
+	It's a trend to adopt local loss (classification) for both dependency and constituency parsing.
+	We propose a higher-order extension based on the first-order TreeCRF.
+	High order modeling further increases the time complexity.
+	To this end, we also try to apply the approximate mean field variational inference algorithm as an alternative to exact inference of TreeCRF method, improving the parsing efficiency greatly.
+	We do experiments on several benchmark datasets of dependency and constituency parsing, and find that exact inference of high-order TreeCRF brings significant improvement.
+	The proposed variational inference method achieves or approaches the performance of high-order TreeCRF method, and greatly speeds up the parsing speed.
+	
+	Overall, the main research content of this thesis includes three aspects:
+	
+	\begin{enumerate}
+		\item We propose a TreeCRF-based high-order method for dependency parsing.
+		      This thesis proposes a second-order TreeCRF extension to Biaffine Parser that adopts a local training objective, and uses adjacent sibling subtrees as second-order features.
+		      To integrate second-order subtree scores more effectively, inspired by biaffine scorer, we propose a novel triaffine structure for scoring.
+		      Second-order TreeCRF method causes severe efficiency issues.
+		      To overcome this, we propose to batchify the Inside algorithm and use the GPU parallel computing ability to reduce the time complexity from $O(n^3)$ to $O(n^2)$.
+		      In addition, we replace the complex Outside algorithm with back-propagation based on auto-differentiation, which significantly improves the efficiency and makes the model speed up to 400 sentences/s.
+		      We conduct detailed experiments on 27 datasets in 13 languages.
+		      Results show that second-order models lead to better convergence performance, perform well on global metrics, and is especially useful for partially annotated data.
+		\item We propose a TreeCRF-based high-order method for constituency parsing.
+		      This thesis proposes to apply high-order TreeCRF to constituency parsing.
+		      To solve the efficiency issue, we apply batchification techiques and back-propagation consistent with the dependency model to accelerate.
+		      Moreover, we propose a simple two-stage parsing approach, which has comparable results with previous one-stage methods, but is more efficient.
+		      We also refer to the model architecture and parameter settings of dependency models, and propose to replace the traditional scoring method with a biaffine scoring mechanism.
+		      We find that the parsing performance can be largely improved via better encoder settings like Dropout configuration, leading to similar results with current state-of-the-art Transformer encoder.
+		      Experimental results on three Chinese and English benchmark datasets show that our proposed models significantly surpass existing methods.
+		      In terms of parsing speed, our first-order and second-order models can parse over 1,000/598 sentences/s.
+		      After using BERT, our models achieve new state-of-the-art performance on all datasets.
+		\item We propose an efficient syntactic parsing method based on variational inference.
+		      In order to deal with the high complexity of the TreeCRF method for exact inference, this thesis proposes to introduce an approximate method based on mean field variational inference for dependency and constituency parsing.
+		      Compared with higher-order TreeCRF, variational inference reduces the time complexity on GPU from $O(n^2)$ to $O(n)$, improving the model efficiency greatly.
+		      We design different factor graphs and corresponding variational inference updating algorithms for dependency and constituency parsing.
+		      Experimental results on five Chinese and English datasets show that our second-order variational inference method significantly outperforms the first-order model, and achieves comparable results with second-order TreeCRF models.
+		      Meanwhile, our models can parse over 1,126 and 905 sentences/s on dependency parsing and constituency parsing respectively, greatly surpassing the exact inference of second-order TreeCRF methods .
+		      Moreover, after using BERT, our variational inference method achieves or approaches the performance of current state-of-the-art models.
+	\end{enumerate}
+	
+	In summary, we propose an efficient second-order TreeCRF extension for both dependency and constituency parsing, achieving the current state-of-the-art performance.
+	We also apply the variational method to syntactic parsing.
+	We find it greatly improves the parsing speed while has a similar performance to exact high-order modeling.
+	\vskip 21bp
+	{\bf\zihao{-4} Key words: }
+	Syntactic Parsing,
+	Dependency Parsing,
+	Constituency Parsing,
+	TreeCRF,
+	Variational Inference
 \end{eabstract}
 
 \begin{flushright}
-  Written by Yu Zhang
-
-  Supervised by Zhenghua Li
+	Written by ***
+	
+	Supervised by ***
 \end{flushright}
