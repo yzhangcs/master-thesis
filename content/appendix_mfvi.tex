@@ -13,7 +13,7 @@
 		Q^{\ast}(\boldsymbol{y})
 		&=\arg\min_{Q} KL(Q\|P)\\
 		&=\arg\min_{Q} E_{Q}\left[\log\frac{Q(\boldsymbol{y})}{P(\boldsymbol{y})}\right]\\
-		&=\arg\min_{Q} E_{Q}\left[\log Q(\boldsymbol{y})\right] - E_{Q}\left[P(\boldsymbol{y})\right]\\
+		&=\arg\min_{Q} E_{Q}\left[\log Q(\boldsymbol{y})\right] - E_{Q}\left[\log P(\boldsymbol{y})\right]\\
 		&=\arg\min_{Q} \log Z-\underbrace{\left(E_{Q}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q}\left[\log Q(\boldsymbol{y})\right]\right)}_{ELBo}
 	\end{split}
 \end{equation}
@@ -42,7 +42,7 @@ Mean Field假设每个变量相互独立，即有$Q(\boldsymbol{y})=\prod_i{Q_i(
 		\tcircle{1}&=E_{Q}\left[\log \tilde{P}(\boldsymbol{y})\right]\\
 		&=\int_{\boldsymbol{y}}Q(\boldsymbol{y}) \log \tilde{P}(\boldsymbol{y})d\boldsymbol{y}\\
 		&=\int_{\boldsymbol{y}}\prod_i{Q_i(y_i)} \log \tilde{P}(\boldsymbol{y})d\boldsymbol{y}\\
-		&=\int_{y_j}Q_j(y_j)\left(\int_{\boldsymbol{y_{-j}}}Q_{-j}(y_{-j})\log \tilde{P}(\boldsymbol{y}) dy_{-j}\right) dy_j\\
+		&=\int_{y_j}Q_j(y_j)\left(\int_{y_{-j}}Q_{-j}(y_{-j})\log \tilde{P}(\boldsymbol{y}) dy_{-j}\right) dy_j\\
 		&=\int_{y_j}Q_j(y_j)E_{Q_{-j}}\left[\log \tilde{P}(\boldsymbol{y}) \right] dy_j\\
 		\tcircle{2}&=E_{Q}\left[\log Q(\boldsymbol{y}))\right]\\
 		&=\int_{\boldsymbol{y}}Q(\boldsymbol{y}) \sum_i\log Q_i(y_i) d\boldsymbol{y}\\
