@@ -31,7 +31,7 @@
 
 
 Mean Field假设每个变量相互独立，即有$Q(\boldsymbol{y})=\prod_i{Q_i(y_i)}$。
-因此上式可应用梯度上升法（Coordinate Ascent），每次迭代优化一个变量$Q_j(y_j)$，保持其余变量$Q_{-j}(y_{-j})$不变。
+因此上式可应用坐标上升法（Coordinate Ascent），每次迭代优化一个变量$Q_j(y_j)$，保持其余变量$Q_{-j}(y_{-j})$不变。
 对于目标函数
 \begin{equation}
 	\mathcal{L}(Q)=\underbrace{E_{Q}\left[\log \tilde{P}(\boldsymbol{y})\right]}_{\tcircle{1}}-\underbrace{E_{Q}\left[\log Q(\boldsymbol{y})\right]}_{\tcircle{2}}
