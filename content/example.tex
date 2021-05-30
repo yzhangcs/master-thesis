@@ -84,70 +84,70 @@
 %
 %\end{tikzpicture}
 %%\end{center}
-%\caption{Example of  ORL and dependency structures. 
+%\caption{Example of  ORL and dependency structures.
 %}
 %\label{graph:example}
 %\end{figure}
 %\fi
 
 \begin{figure}[tb]
-\small
-
-%\begin{center}
-\begin{tikzpicture}
-\centering
-
-\node [inner sep=0pt] (a1) {Cardoso};
-\node [inner sep=0pt, left of = a1, node distance = 2.5em] (a0) {\$};
-\node [inner sep=2pt, right of = a1, node distance = 4.3em] (a2) {says};
-\node [inner sep=0pt, right of = a2, node distance = 4.5em] (a3) {challenge};
-\node [inner sep=0pt, right of = a3, node distance = 4em] (a4) {facing};
-\node [inner sep=0pt, right of = a4, node distance = 3.5em] (a5) {Chavez};
-\node [inner sep=0pt, right of = a5, node distance = 3.0em] (a6) {is};
-\node [inner sep=0pt, right of = a6, node distance = 2.0em] (a7) {…};
-
-
-%gold ref
-\node [compose, black, fill = a2czy, opacity=.8, below of = a1, minimum height = 1.5em,  minimum width = 3.6em, inner sep=0pt,  node distance = 1.5em]   (span-a1a3){Holder};
-\node [compose, black, fill = pink!80, opacity=.8, below of = a2, minimum height = 1.5em,  minimum width = 4.4em, inner sep=1pt,  node distance = 1.5em]   (span-a4){Expression};
-\node [compose, black, fill = green!50, opacity=.8, below of = a4, minimum height = 1.5em,  minimum width = 11.3em, inner sep=0pt,  node distance = 1.5em]   (){Target};
-
-\node [inner sep=0pt, above of = a0, node distance = 0.5em] (ba0) {};
-\node [inner sep=0pt, above of = a1, node distance = 0.5em] (ba1) {};
-
-\node [inner sep=0pt, above of = a2, node distance = 0.5em] (ba2) {};
-\node [inner sep=0pt, right of = ba2, node distance = 0.5em] (rba2) {};
-\node [inner sep=0pt, left of = ba2, node distance = 0.5em] (lba2) {};
-\node [inner sep=0pt, above of = a3, node distance = 0.5em] (ba3) {};
-
-\node [inner sep=0pt, above of = a4, node distance = 0.5em] (ba4) {};
-\node [inner sep=0pt, left of = ba4, node distance = 0.5em] (lba4) {};
-\node [inner sep=0pt, right of = ba4, node distance = 0.5em] (rba4) {};
-
-\node [inner sep=0pt, above of = a5, node distance = 0.5em] (ba5) {};
-\node [inner sep=0pt, right of = ba5, node distance = 0.5em] (rba5) {};
-\node [inner sep=0pt, above of = a6, node distance = 0.5em] (ba6) {};
-\node [inner sep=0pt, right of = ba6, node distance = 0.3em] (rba6) {};
-\node [inner sep=0pt, left of = ba6, node distance = 0.4em] (lba6) {};
-\node [inner sep=0pt, above of = a7, node distance = 0.5em] (ba7) {};
-\node [inner sep=0pt, left of = ba7, node distance = 0.5em] (lba7) {};
-
-
-
-\path [draw, thick, ->] (lba2) to [out=80, in=100] (ba1.north) {};
-\path [draw, thick,->] (ba0) to [out=80, in=95] (ba2.north) {};
-\path [draw, thick,->] (lba4) to [out=100, in=80] (ba3.north) {};
-
-\path [draw, thick, ->] (lba6) to [out=100, in=80] (ba4.north) {};
-\path [draw, thick, ->] (rba2) to [out=70, in=120] (ba6.north) {};
-
-\path [draw, thick, ->] (rba4) to [out=80, in=100] (ba5.north) {};
-\path [draw, thick, ->] (rba6) to [out=80, in=100] (ba7.north) {};
-
-
-\end{tikzpicture}
-%\end{center}
-\caption{An Example of ORL (bottom) and syntactic dependency tree (top) for ``Cardoso says challenge facing Chavezis is reestablishing normalcy.'' 
-}
-\label{graph:example}
+	\small
+	
+	%\begin{center}
+	\begin{tikzpicture}
+		\centering
+		
+		\node [inner sep=0pt] (a1) {Cardoso};
+		\node [inner sep=0pt, left of = a1, node distance = 2.5em] (a0) {\$};
+		\node [inner sep=2pt, right of = a1, node distance = 4.3em] (a2) {says};
+		\node [inner sep=0pt, right of = a2, node distance = 4.5em] (a3) {challenge};
+		\node [inner sep=0pt, right of = a3, node distance = 4em] (a4) {facing};
+		\node [inner sep=0pt, right of = a4, node distance = 3.5em] (a5) {Chavez};
+		\node [inner sep=0pt, right of = a5, node distance = 3.0em] (a6) {is};
+		\node [inner sep=0pt, right of = a6, node distance = 2.0em] (a7) {…};
+		
+		
+		%gold ref
+		\node [compose, black, fill = a2czy, opacity=.8, below of = a1, minimum height = 1.5em,  minimum width = 3.6em, inner sep=0pt,  node distance = 1.5em]   (span-a1a3){Holder};
+		\node [compose, black, fill = pink!80, opacity=.8, below of = a2, minimum height = 1.5em,  minimum width = 4.4em, inner sep=1pt,  node distance = 1.5em]   (span-a4){Expression};
+		\node [compose, black, fill = green!50, opacity=.8, below of = a4, minimum height = 1.5em,  minimum width = 11.3em, inner sep=0pt,  node distance = 1.5em]   (){Target};
+		
+		\node [inner sep=0pt, above of = a0, node distance = 0.5em] (ba0) {};
+		\node [inner sep=0pt, above of = a1, node distance = 0.5em] (ba1) {};
+		
+		\node [inner sep=0pt, above of = a2, node distance = 0.5em] (ba2) {};
+		\node [inner sep=0pt, right of = ba2, node distance = 0.5em] (rba2) {};
+		\node [inner sep=0pt, left of = ba2, node distance = 0.5em] (lba2) {};
+		\node [inner sep=0pt, above of = a3, node distance = 0.5em] (ba3) {};
+		
+		\node [inner sep=0pt, above of = a4, node distance = 0.5em] (ba4) {};
+		\node [inner sep=0pt, left of = ba4, node distance = 0.5em] (lba4) {};
+		\node [inner sep=0pt, right of = ba4, node distance = 0.5em] (rba4) {};
+		
+		\node [inner sep=0pt, above of = a5, node distance = 0.5em] (ba5) {};
+		\node [inner sep=0pt, right of = ba5, node distance = 0.5em] (rba5) {};
+		\node [inner sep=0pt, above of = a6, node distance = 0.5em] (ba6) {};
+		\node [inner sep=0pt, right of = ba6, node distance = 0.3em] (rba6) {};
+		\node [inner sep=0pt, left of = ba6, node distance = 0.4em] (lba6) {};
+		\node [inner sep=0pt, above of = a7, node distance = 0.5em] (ba7) {};
+		\node [inner sep=0pt, left of = ba7, node distance = 0.5em] (lba7) {};
+		
+		
+		
+		\path [draw, thick, ->] (lba2) to [out=80, in=100] (ba1.north) {};
+		\path [draw, thick,->] (ba0) to [out=80, in=95] (ba2.north) {};
+		\path [draw, thick,->] (lba4) to [out=100, in=80] (ba3.north) {};
+		
+		\path [draw, thick, ->] (lba6) to [out=100, in=80] (ba4.north) {};
+		\path [draw, thick, ->] (rba2) to [out=70, in=120] (ba6.north) {};
+		
+		\path [draw, thick, ->] (rba4) to [out=80, in=100] (ba5.north) {};
+		\path [draw, thick, ->] (rba6) to [out=80, in=100] (ba7.north) {};
+		
+		
+	\end{tikzpicture}
+	%\end{center}
+	\caption{An Example of ORL (bottom) and syntactic dependency tree (top) for ``Cardoso says challenge facing Chavezis is reestablishing normalcy.''
+	}
+	\label{graph:example}
 \end{figure}

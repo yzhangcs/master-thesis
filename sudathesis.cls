@@ -109,7 +109,7 @@ The LaTeX template for thesis of suda]
     \fancyhead[LE]{\zihao{-5}\songti{摘~~~要}\vspace{0mm}}
     \fancyhead[LO,RE]{\zihao{-5}\songti\suda@thesistitle\vspace{0mm}}
 
-    \fancyfoot[C]{\zihao{5}\thepage}
+    \fancyfoot[C]{\zihao{-5}\thepage}
 }
 \fancypagestyle{enfrontmatter}{
     %\renewcommand{\headrulewidth}{0pt}
@@ -119,7 +119,7 @@ The LaTeX template for thesis of suda]
     \fancyhead[LE]{\zihao{-5}\songti{Abstract}\vspace{0mm}}
     \fancyhead[LO,RE]{\zihao{-5}\songti\suda@thesistitleeng\vspace{0mm}}
 
-    \fancyfoot[C]{\zihao{5}\thepage}
+    \fancyfoot[C]{\zihao{-5}\thepage}
 }
 
 \fancypagestyle{mainmatter}{
@@ -131,7 +131,7 @@ The LaTeX template for thesis of suda]
     \fancyhead[RO]{\zihao{-5}\songti\leftmark\vspace{0mm}}
     \fancyhead[LO,RE]{\zihao{-5}\songti\suda@thesistitle\vspace{0mm}}
 
-    \fancyfoot[C]{\zihao{5}\thepage}
+    \fancyfoot[C]{\zihao{-5}\thepage}
 
 }
 

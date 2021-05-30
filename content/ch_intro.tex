@@ -25,7 +25,7 @@
 成分句法则旨在构建一个层次化的树结构.
 如图\ref{fig:con-tree-full-figure}，其中每个叶子结点是输入句子的每个词，而非终端结点作为区块（Constituents），如$\texttt{VP}_{3,5}$.
 正式地，给定一个由$n$个词组成的句子$\boldsymbol{x}=w_1,\dots，w_{n}$，如图~\ref{fig:con-original-tree}所示，一棵成分句法树可以表示为$\boldsymbol{t}=\{((i, j),l)\mid 1\le i \le n,i \le j \le n,l \in \mathcal{L}\}$，其中$((i,j),l) \in \boldsymbol{t}$是一个包含$w_{i}...w_{j}$的区块，对应的句法标签为$l \in \mathcal{L}$.
-本文中，为了方便模型处理，我们还将原始的树转换为了二叉树形式，如图~\ref{fig:con-binaried-tree}所示.
+本文中，为了方便模型处理，我们还将原始的树转换为了符合乔姆斯基范式（Chomsky Normal Form, CNF）的二叉树形式，如图~\ref{fig:con-binaried-tree}所示.
 成分句法分析相比于依存句法而言，研究历史更加悠久，尽管目前没有依存句法技术那么流行，但是以其分析技术为基础衍生出了一系列在其他任务上的解析方法，例如UCCA语义分析 \citep{jiang-etal-2019-hlt}、嵌套命名实体识别 \citep{fu-etal-2021-nested}等等.
 
 目前，针对句法分析任务，已经有大量的句法分析范式被提出，主要的有生成式方法、判别式方法，以及基于转移的方法、基于图的方法等等.
@@ -43,11 +43,11 @@
 类似地，\citet{stern-etal-2017-minimal}在双向LSTM编码器的基础上采取了Max Margin训练目标最大化正确树的分值，而\citet{gaddy-etal-2018-whats}更进一步，直接采取二分类方法判断短语树的每个组块是否存在.
 这些方法由于建模简单，速度很快，因此一直是当前最为流行的句法分析方法.
 
-有鉴于此，我们尝试在本文中将传统方法与现代的句法分析器做一个连接.
+有鉴于此，我们尝试在本文中将传统方法与现代的句法分析器相结合.
 首先，我们在章节~\ref{cha:dep-crf}和章节~\ref{cha:con-crf}中采用了TreeCRF代替了当前流行的局部训练损失目标或者Max Margin方法.
 与这些方法相比，TreeCRF的主要优势在于可以获得树/子树概率.
 不同于没有上下界的分值，树/子树概率是评估解析置信度的更好指标，此外也可以作为一种软特征方便地作为下游任务的输入 \citep{zhang-etal-2019-syntax,zhang-etal-2020-syntax}.
-主要限制TreeCRF应用的原因在于Inside-Outside算法的高复杂度问题，尤其是Outside过程，一般两倍慢于Inside.
+主要限制TreeCRF应用的原因在于Inside-Outside算法的高复杂度问题，尤其是Outside过程，通常而言Outside算法要两倍慢于Inside.
 对此，我们主要从两个方面尝试解决：
 1）我们为Inside算法设计了精巧的批次化方法，使得TreeCRF能够利用GPU的并行计算能力大大加速；
 2）得益于集成了自动求导机制的深度学习库的出现，我们无需和前人一样需要在CPU上进行完整的Inside-Outside过程得到梯度，而是将Outside过程由高效的反向传播机制代替.
@@ -74,7 +74,7 @@
 方便起见，我们直接合并了四个领域的Train/Dev/Test数据到更大的数据集.
 这些数据的一个特征是大部分句子都是利用基于主动学习的局部标注得到的.
 表~\ref{table:dep-statistics}列出了相关数据的统计信息.
-最后，遵循 \citep{ji-etal-2019-graph}和 \citep{zhang-etal-2019-empirical}，我们在Universal Dependencies (UD) v2.2和v2.3上进行了实验.
+最后，遵循 \citet{ji-etal-2019-graph}和 \citet{zhang-etal-2019-empirical}，我们在Universal Dependencies (UD) v2.2和v2.3上进行了实验.
 我们采用了\citet{zeman-etal-2018-conll}使用的300维多语言预训练词向量，并采用CharLSTM表示作为输入.
 对于UD2.2，为了和\citet{ji-etal-2019-graph}公平比较，我们和CoNLL18任务一样 \citep{zeman-etal-2018-conll}，使用了毛文本，并且直接使用了他们的句子分割和符号化的结果.
 对于UD2.3，为了与\citet{zhang-etal-2019-empirical}比较，我们报告的结果使用了正确词性.
@@ -83,7 +83,7 @@
 前两个数据集，即PTB和CTB5.1，是句法分析社区中比较常用的两个数据集.
 我们遵循了传统的Train/Dev/Test数据分割.
 考虑到CTB5.1的Dev/Test都只有大约350句，为了得到更加稳定一致的结果，我们还在更大的CTB7数据上进行了实验，相关的数据分割设置参考了官方手册建议.
-表~\ref{table:con-statistics}列出了相关数据的统计信息.
+表~\ref{table:con-statistics}列出了相关数据的统计信息，其中UD的数据较多，因此不一一列举.
 可以看到CNF转换引入了很多新的区块标签，其中大部分（大约75\%）都源于连续单链的折叠过程.
 
 \input{tables/con-statistics.tex}
@@ -94,7 +94,7 @@
 对于局部标注的NLPCC19数据，我们采用了官方的评价脚本，直接忽略了没有正确头标注的词.
 我们采用了Dan Bikel的随机解析评价比较器来进行显著性检验.
 
-对于成分句法分析，正如前面提到的，在解析之后，我们将最佳的CNF树转化为了\textit{n}-ary树再进行评价.
+对于成分句法分析，在解析之后，我们将最佳的CNF树转化为\textit{n}-ary树再进行评价.
 这里有必要提及一些有用的细节.
 由于解码算法没有相应的约束，预测的最佳CNF树可能包含很多不合法的产生式.
 以图~\ref{fig:con-binaried-tree}为例，模型可能输出$\texttt{VP}_{3,5} \rightarrow \texttt{PP}^{\ast}_{3,3} ~ \texttt{NP}_{4,5}$，其中 $\texttt{VP}$和$\texttt{PP}^{\ast}$是不兼容的.
@@ -102,12 +102,12 @@
 有鉴于此，如果解码的时候增加一定的约束，结果有可能进一步提高，这里我们留待作为后续的工作.
 我们使用了标准的区块级别的准确率、召回率和$\mathrm{F}_1$值（$\mathrm{P}$/$\mathrm{R}$/$\mathrm{F}_1$）作为评价指标，并使用\texttt{EVALB}工具\footnote{\url{https://nlp.cs.nyu.edu/evalb}}来评价.
 特别地，一个例如$\texttt{VP}_{3,5}$的预测区块如果出现在了正确树中，那就被认为是正确的.\footnote{
-  由于一些研究者可能会实现他们自己的评价脚本，为了比较的公平，需要澄清一些细节：
-  1）一些诸如\texttt{\{-NONE-\}}的空区块在预处理的时候被移除了.
-  2）评价的时候作为根结点的区块（英语里是\texttt{\{TOP，S1\}}，中文里是空字符串) 被忽略了.
-  3）包含一些例如\texttt{\{:，``，''，.，?，!\}}这些标点的区块也被忽略了.
-  请注意中文标点会作为正常的字符被评价.
-  4）一些在同一集合中的标签，例如\texttt{\{ADVP，PRT\}}，被认为是等价的.}
+	由于一些研究者可能会实现他们自己的评价脚本，为了比较的公平，需要澄清一些细节：
+	1）一些诸如\texttt{\{-NONE-\}}的空区块在预处理的时候被移除了；
+	2）评价的时候作为根结点的区块（英语里是\texttt{\{TOP，S1\}}，中文里是空字符串) 被忽略了；
+	3）包含一些例如\texttt{\{:，``，''，.，?，!\}}这些标点的区块也被忽略了；
+	请注意中文标点会作为正常的字符被评价；
+	4）一些在同一集合中的标签，例如\texttt{\{ADVP，PRT\}}，被认为是等价的.}
 
 \section{相关工作}
 \label{sec:relworks}
@@ -115,17 +115,17 @@
 \subsection{依存句法分析}
 
 目前依存句法分析的两种主流方法分别是基于图的方法和基于转移的方法.
-\textbf{基于图的方法}旨在从一个有向完全图中找到一棵概率（分值）最大的树，基于转移的方法将句法树的构建转化为一个移进和归约的动作序列，并寻求得到最优序列.
+\textbf{基于图的方法}旨在从一个有向完全图中找到一棵概率（分值）最大的树，\textbf{基于转移的方法}将句法树的构建转化为一个移进和归约的动作序列，并寻求得到最优序列.
 
 \citet{mcdonald-etal-2005-online}首先提出了基于图的训练方法.
 他们提出采用基于动态规划的Eisner算法从有向完全图中得到分值最大的投影树，然后用Max Margin方法来训练.
 后来\citet{mcdonald-etal-2005-non}将方法拓展到了非投影树解析领域，使用了ChuLiu/Edmods算法 \citep{chu-1965-shortest}得到分值最高的树.
-由于学习和解码算法的高复杂度的问题，基于图的方法在给树打分时需要很强的独立性假设，其中最简单的弧分解假设认为树的每条弧相互独立（称为一阶模型），相应的树分值为所有弧的分值之和.
+由于学习和解码算法的复杂度很高，基于图的方法在给树打分时需要很强的独立性假设，其中最简单的弧分解假设认为树的每条弧相互独立（称为一阶模型），相应的树分值为所有弧的分值之和.
 后来有研究者提出放宽独立性假设，将邻接兄弟、祖父、共同父亲等子结构的分值也引入树的打分中，基于此，他们提出了一系列的二阶 \citep{mcdonald-pereira-2006-online,carreras-2007-experiments}、三阶 \citep{koo-collins-2010-efficient}模型，并在依存句法上得到了可观的准确率提升.
 解码时一阶方法通常采用Eisner和MST算法来进行投影/非投影解码，高阶方法在使用一阶算法解码时一般需要结合最小贝叶斯风险（Minimum Bayesian Risk, MBR ）解码 \citep{smith-smith-2007-probabilistic}.
 值得一提的是\citet{mcdonald-pereira-2006-online}发现二阶非投影解析是NP-hard问题，无法设计相应的动态规划结构融入高阶分值，因此基于图的高阶方法仅限于投影解析.
 
-\textbf{基于转移的方法}则旨在将寻找句法树归约为搜索一个最优动作序列的问题.
+基于转移的方法则旨在将寻找句法树归约为搜索一个最优动作序列的问题.
 一个转移系统一般由一个栈以及一个队列组成，分别储存部分解码的序列和未处理的词，接着系统定义了一系列的动作进行入栈/出栈、合并子树等操作，最终消耗完毕所有词，得到一棵完整句法树.
 常见的转移系统有Arc-standard和Arc-eager等.
 原始的基于转移的方法采用了局部的贪心算法来逐步预测每个动作，这可能导致错误传播（error propagation）的问题.
@@ -133,23 +133,23 @@
 
 进入到深度学习时代，得益于神经网络编码器上下文编码能力的进步，有大量的工作尝试了不同的神经网络模型，
 \citet{chen-manning-2014-fast}首先将前馈神经网络引入到基于转移的方法中，\citet{kiperwasser-goldberg-2016-simple,wang-chang-2016-graph}在基于图的模型中引入了双向LSTM编码器，\citet{li-etal-2019-attentive}则首次将Transformer用于依存句法分析模型，依存句法分析的性能得到了飞跃.
-其中，\citet{dozat-etal-2017-biaffine}在3层双向LSTM编码器的基础上，采用了一个简单的基于头选择的训练目标，首次将PTB的性能推进到了94.08.
+其中，\citet{dozat-etal-2017-biaffine}在3层双向LSTM编码器的基础上，采用了一个简单的基于头选择的训练目标，首次将PTB的LAS性能推进到了94.08.
 这些模型大都采用了简单的一阶基于图的模型，而基于转移的方法渐渐式微，其中\citet{ma-etal-2018-stack}是最近的基于转移的工作之一，他们不再采用经典的转移系统，而是用Seq2Seq框架结合Pointer Network，达到了和基于图模型相近的性能.
 
-近期开始有研究者开始探索将传统的结构化学习和高阶建模技术应用到在神经网络中.
+近期开始有研究者探索将传统的结构化学习和高阶建模技术应用到在神经网络中.
 \citet{zhang-etal-2019-empirical}探索了在一阶Biaffine Parser上结构化学习的作用.
 他们在多语言数据上比较了局部头选择损失、全局Max Margin损失和TreeCRF损失的性能.
 他们表明全局的TreeCRF损失总体上要稍微好于Max Margin损失，并且对大多数语言而言，结构化学习带来了虽然不多但是显著的LAS提升.
-他们表明结构化学习，特别是TreeCRF，极大的提升了句子级匹配的准确率，这与我们的观察相仿.
+他们表明结构化学习，特别是TreeCRF，极大地提升了句子级匹配的准确率，这与我们的观察相仿.
 
 \citet{falenska-kuhn-2019-non}则提出了一个在依存句法上的分析性工作.
 通过将\citet{kiperwasser-goldberg-2016-simple}的一阶基于图的方法扩展到二阶，他们尝试探究有多少结构化上下文被双向LSTM编码器捕捉.
 他们拼接3层LSTM的在$i,k,j$位置的输出向量来给邻接兄弟子树打分，并采用了Max Margin训练损失和二阶Eisner解码算法 \citep{mcdonald-pereira-2006-online}.
 基于他们相对负面的结果和分析，他们认为高阶建模是多余的，因为双向LSTM已经可以有效的隐式捕捉足够的结构化上下文.
-在我们的工作中，我们使用了一个更强的基线模型，并且发现了相比于他们的工作更显著的UAS/LAS提升.
-特别地，我们提出了深入的分析，显示显式建模高阶信息可以帮助句法模型，因此与双向LSTM编码器是互补的.
+在我们的工作中，我们使用了一个更强的基线模型，并且得到了相比于他们的工作更显著的UAS/LAS提升.
+特别地，我们进行了深入的分析，表明显式建模高阶信息可以帮助句法模型，因此与双向LSTM编码器是互补的.
 
-\citet{ji-etal-2019-graph}引入了高阶结构信息，并用在Biaffine Parser \citep{dozat-etal-2017-biaffine}上用图神经网络来隐式建模.
+\citet{ji-etal-2019-graph}引入了高阶结构信息，并在Biaffine Parser \citep{dozat-etal-2017-biaffine}上用图神经网络来隐式建模.
 他们使用了多层的图注意力网络（Graph Attention Network，GAT） \citep{velickovic-etal-2018-graph}作为组块，每层GAT的每个节点通过集聚邻居节点信息产生新的表示.
 通过多次迭代，一个节点渐渐的收集到多跳的高阶信息作为单条弧打分的全局证据.
 训练时他们遵循了原始的头选择训练损失.
@@ -157,12 +157,12 @@
 
 \subsection{成分句法分析}
 
-成分句法分析领域最简单的\textbf{生成式模型}为的概率上下文无关文法（Probabilistic Context-Free Grammars, PCFGs）.
+成分句法分析领域最简单的\textbf{生成式模型}为概率上下文无关文法（Probabilistic Context-Free Grammars, PCFGs）.
 PCFGs将一棵句法树的概率分解为所有产生式$A\rightarrow B_1B_2\dots B_n$的概率之积，其中$A$代表非终端结点，$B$代表一个终端/非终端结点，并寻求最大化该概率.
 \citet{collins-1997-three}在基于简单的头发现规则（head-finding rules）下为每个非终端结点$A$引入词汇化标记得到$A(w)$，将概率上下文无关文法拓展为了词汇化的概率上下文无关文法（Lexicalized PCFGs）.
 这推动了生成式模型的广泛流行.
 \citet{matsuzaki-etal-2005-probabilistic}和\citet{petrov-etal-2006-learning}（Berkeley Parser）利用隐变量对非终端结点进行自动标记，并通过EM算法来训练产生细粒度的上下文无关规则，该方法首次超越了Lexicalized PCFGs方法.
-最近的工作中，\citet{dyer-etal-2016-recurrent}提出了循环神经网络文法（Recurrent Neural Network Grammars, RNNGs），在一个自底向下的转移系统的基础上额外附加了一个生成动作$\textsc{Gen}(\cdot)$，最终模型建模句子和句法树的联合概率$p(\boldsymbol{x},\boldsymbol{y})$.
+最近的工作中，\citet{dyer-etal-2016-recurrent}提出了循环神经网络文法（Recurrent Neural Network Grammars, RNNGs），在一个自顶向下的转移系统的基础上额外附加了一个生成动作$\textsc{Gen}(\cdot)$，最终模型建模句子和句法树的联合概率$p(\boldsymbol{x},\boldsymbol{y})$.
 \citet{kuncoro-etal-2017-recurrent}对RNNGs进行了详细的消融性分析，发现转移系统中的栈结构最为重要，相应的他们的Stack-only RNNGs达到了当时成分句法分析的最佳性能.
 
 与生成式模型相对的为\textbf{判别式模型}，其中包含两种代表性方法，即基于转移的方法和基于图的方法.
@@ -182,13 +182,13 @@ PCFGs将一棵句法树的概率分解为所有产生式$A\rightarrow B_1B_2\dot
 
 与此同时，近期有许多工作没有显式考虑结构化约束或者CKY解码，极大简化了成分句法分析任务.
 \citet{gomez-rodriguez-vilares-2018-constituent}通过对每个词设计复杂的标签编码树信息，尝试采用序列标注方法解决成分句法分析任务.
-\citet{vilares-etal-2019-better}通过一系列的增强技术，例如多任务学习和策略梯度，进一步增强的序列标注方法.
+\citet{vilares-etal-2019-better}通过一系列的增强技术，例如多任务学习和策略梯度，进一步增强了序列标注方法.
 \citet{shen-etal-2018-straight}提出对于正确树中的每个邻居词对预测一个数值距离，并应用自底向上的贪婪解码找到一棵最优的树.
 然而，所有上面的工作仍然在解析性能上极大的落后于主流的方法.
 
 \subsection{TreeCRF加速方法}
 
-TreeCRF方法在计算句法树概率时需要在全局空间上对句法树对分值进行归一化，这带来了效率低下的问题，因此目前关于TreeCRF的句法分析的工作相对较少.
+TreeCRF方法在计算句法树概率时需要在全局空间上对句法树的分值进行归一化，这带来了效率低下的问题，因此目前关于TreeCRF的句法分析的工作相对较少.
 \citet{finkel-etal-2008-efficient}首先提出了一个基于非神经网络的引入丰富特征的TreeCRF成分句法分析器.
 \citet{durrett-klein-2015-neural}拓展了\citet{finkel-etal-2008-efficient}的工作，使用一个带非线性激活的前馈神经网络来打分产生式.
 这两个工作都在CPU上显式进行了Inside-Outside计算，带来了严重的效率问题.
@@ -206,7 +206,7 @@ TreeCRF方法在计算句法树概率时需要在全局空间上对句法树对�
 我们首次提出分别在依存和成分句法上批次化树形结构的Inside和Viterbi（Eisner/CKY）计算，以便于利用GPU加速.
 
 \citet{eisner-2016-inside}在成分句法分析上提出了一个关于Outside算法和反向传播机制等价性的理论证明，并同样讨论了其他类似于依存文法的范式.
-我们在本文中的工作中借鉴了他们的理论性工作，在依存和成分文法中完全取代了Outside算法，显著提升了解析效率.
+我们在本文的工作中借鉴了他们的理论性工作，在依存和成分文法中用反向传播完全取代了Outside算法，显著提升了解析效率.
 作为一个经验性分析，我们相信我们的尝试能够让TreeCRF在现实系统中应用起来.
 
 Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}} \citep{rush-2020-torch}是我们的方法之外一个同期独立完成的工作，他们同样为依存句法和成分句法实现了批次化的Eisner/CKY算法，并且和我们一样，将Outside算法用Inside过程以及基于自动求导的反向传播代替.
@@ -226,7 +226,7 @@ Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}} \citep
 与传统算法相比，他们利用了大量的局部和全局的丰富特征，例如兄弟、祖父特征和价键特征，作为线性约束，用ILP来求解，保证输出是一棵合法的依存树.
 \citet{koo-etal-2010-dual}将非投影依存句法分析形式化为对偶分解（Dual Decomposition, DD）问题，将一个难以求解的问题分解为若干个可求解的子问题，例如可以将输出树的问题分解到单条弧、邻接兄弟、双头等子结构上 \citep{martins-etal-2011-dual}.
 
-另一个和我们的在本文采用的平均场变分推断高度相关的方法是循环置信传播（Loopy Belief Propagation, LBP）.
+另一个和本文采用的平均场变分推断高度相关的方法是循环置信传播（Loopy Belief Propagation, LBP）.
 LBP定义了一个包含多种局部和全局特征的由变量和因子构成的因子图，接着算法迭代式地让因子（变量）收集邻居变量（因子）的信息，最终收敛后得到后验概率.
 \citet{smith-eisner-2008-dependency,gormley-etal-2015-approximation}在依存句法分析上引入了LBP.
 除了上面提到的兄弟（\textsc{Sib}）、祖父（\textsc{Grand}）因子，他们还引入了丰富的全局因子，例如\textsc{Exactly1}约束每个词有且仅有一个头，\textsc{Tree}要求所有词必须组成一棵树等等.
@@ -247,22 +247,22 @@ LBP定义了一个包含多种局部和全局特征的由变量和因子构成�
 
 本文共分为五个章节，各章节具体安排如下:
 
-第一章 绪论.
+第一章：绪论.
 本章介绍本文中每个工作的任务背景和意义，并阐述一下与工作相关的有关文献的进展和内容，以及与我们方法的对比.
 
-第二章 基于树形条件随机场的高阶依存句法分析方法.
+第二章：基于树形条件随机场的高阶依存句法分析方法.
 本章在当前最佳的依存句法分析器的基础上，提出了一个二阶树形条件随机场的拓展，进一步提升了句法分析的性能.
 为了解决效率问题，我们还提出了批次化技术在GPU上对训练和解码算法进行加速，以及用高效的反向传播代替Outside算法.
 
-第三章 基于树形条件随机场的高阶成分句法分析方法.
+第三章：基于树形条件随机场的高阶成分句法分析方法.
 本章将树形条件随机场的应用到了神经成分句法分析器当中.
 我们应用了和依存模型一样的加速方法解决了树形条件随机场效率低下的问题.
 我们提出了一个简单的两阶段解析方法，来进一步提升分析器的效率.
 参考依存句法的模型架构和参数设置，我们还为解析器引入了新的打分方法，以及有效的Dropout策略，使得解析器达到了新的最佳水平.
 
-第四章 基于变分推断的高效句法分析方法.
+第四章：基于变分推断的高效句法分析方法.
 本章在前面章节提出的高阶句法分析器的基础上，提出利用平均场变分推断方法来近似推断后验概率.
 与精确推断的高阶TreeCRF方法相比，变分推断显著降低了复杂度，并达到了和高阶TreeCRF接近或相当的结果.
 
 第五章 总结与展望.
-本章总结本文的主要内容，并展望后续可能的研究方向.
+本章总结本文的主要内容，并展望后续可能的句法分析方法.
