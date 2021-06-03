@@ -4,7 +4,7 @@
 \section{研究背景和意义}
 
 自然语言处理（Natural Language Processing, NLP）是目前人工智能方兴未艾的领域之一.
-一个完整的自然语言处理句子分析流程主要分为三个部分：1）词法分析；2）句法分析；3）语义分析.
+一个完整的自然语言处理句子分析流程主要分为三个部分：1）词法分析；2）句法分析；3）语义分析\cite{zhang-2014-chinese-joint}.
 其中词法分析包含了词性标注（Part-of-Speech Tagging）、命名实体识别（Named Entity Recognition, NER）以及消歧（Disambiguation）等子任务，中文中由于词语之间没有天然边界，还需要额外进行中文分词.
 句法分析的目的是以句法树的形式刻画句子结构，主要包含了依存句法（Dependency Parsing）和成分句法（Constituency Parsing）分析这两种范式.
 语义分析则是为了理解句子的内含语义，包含语义角色标注（Semantic Role Labeling, SRL）、语义依存分析（Semantic Dependency Parsing, SDP）和抽象语义表示（Abstract Meaning Representation, AMR）等子任务.
@@ -17,7 +17,7 @@
 依存句法分析的目的是识别句子中词语的修饰关系.
 如图\ref{fig:dep-tree-example}所示，给定一个句子$\boldsymbol{x}=w_0,w_1,\cdots,w_n$，一棵依存树被定义为$\boldsymbol{t}=\{(i\rightarrow j,l)\mid 0\le i \le n,0 < j \le n,l \in \mathcal{L}\}$，其中$(i\rightarrow j,l)$是一条从头（head）$w_i$到修饰词（modifier）$w_j$的弧，弧的标签为$l \in \mathcal{L}$.
 有标签树$\boldsymbol{t}$可以进一步被分解为$(\boldsymbol{y},\boldsymbol{l})$，即一棵无标签树$\boldsymbol{y}$和树上所有标签组成的序列$\boldsymbol{l}$.
-得益于基准数据集宾州书库（Penn Treebank, PTB）的发布，以及深度学习技术的发展，目前依存句法分析技术得到了广泛研究.
+得益于基准数据集宾州书库（Penn Treebank, PTB）的发布，以及深度学习技术的发展，目前依存句法分析技术得到了广泛研究\cite{li-2013-chinese-dep}.
 其中计算自然语言学习会议（Conference on Computational Natural Language Learning, CoNLL）连续多年针对依存句法任务发布了评测任务，尤其是近年来依托通用依存（Universal Dependencies, UD） \citep{nivre-etal-2017-universal}项目发布的多语言评测比赛，大大推动了依存句法分析技术的进步.
 由于结构简单、形式直观的特点，依存句法分析一直被广泛的应用在多个其他任务中，例如机器翻译 \citep{zhang-etal-2019-syntax}、关系抽取 \citep{song-etal-2019-leveraging}、意见挖掘 \citep{zhang-etal-2020-syntax}等等.
 
@@ -264,5 +264,5 @@ LBP定义了一个包含多种局部和全局特征的由变量和因子构成�
 本章在前面章节提出的高阶句法分析器的基础上，提出利用平均场变分推断方法来近似推断后验概率.
 与精确推断的高阶TreeCRF方法相比，变分推断显著降低了复杂度，并达到了和高阶TreeCRF接近或相当的结果.
 
-第五章 总结与展望.
+第五章 总结与���望.
 本章总结本文的主要内容，并展望后续可能的句法分析方法.
