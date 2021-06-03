@@ -163,10 +163,10 @@ $\mathbf{r}_i^{l/r}$的维度$d$为500.
 	\right]^\mathrm{T}
 	\mathbf{W} \mathbf{r}_{j}^{r}
 \end{equation}
-其中$\mathbf{W} \in \mathbb{R}^{d \times d}$.
+其中$\mathbf{W} \in \mathbb{R}^{(d+1) \times (d)}$.
 
 计算区块标签的分值$\mathrm{s}((i,j),l)$时，需要在$\mathbf{h}_i$上应用额外两层MLP来获取相应的边界表示$\bar{\mathbf{r}}^{l/r}_i$（维度为$\bar{d}$）.
-接着我们使用$|\mathcal{L}|$个Biaffine（$\mathbb{R}^{\bar{d} \times \bar{d}}$）来获取所有标签的分值.
+接着我们使用$|\mathcal{L}|$个Biaffine（$\mathbb{R}^{(\bar{d}+1) \times (\bar{d}+1)}$）来获取所有标签的分值.
 由于$|\mathcal{L}|$非常大，我们对于$\bar{\mathbf{r}}^{l/r}_i$使用了稍小的维度$\bar{d}=100$（对于${\mathbf{r}}^{l/r}_i$则是500）以减轻内存和计算负担.
 
 \noindent\textbf{前人打分方法.}
@@ -229,7 +229,7 @@ $\mathbf{r}_i^{l'}; \mathbf{r}_i^{r'}; \mathbf{r}_i^{s}$是词$w_i$分别作为�
 		\end{array}
 	\right]
 \end{equation}
-其中$\mathbf{W}^\textit{triaffine} \in \mathbb{R}^{d' \times d' \times d'}$是一个三维的张量.
+其中$\mathbf{W}^\textit{triaffine} \in \mathbb{R}^{(d') \times (d'+1) \times (d'+1)}$是一个三维的张量.
 我们设置$d'$的维度为100.
 
 \input{algorithms/con-inside.tex}
