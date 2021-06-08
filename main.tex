@@ -45,6 +45,10 @@
 % 中英封面、提名页、授权书
 \maketitle
 
+\includepdf[page=-]{content/duchuang.pdf}
+\includepdf[page=-]{content/blank.pdf}
+\includepdf[page=-]{content/shouquan.pdf}
+\includepdf[page=-]{content/blank.pdf}
 % 正文前页码是大写罗马字母
 \pagenumbering{Roman}
 % 前言页眉页脚样式 % 摘要
@@ -101,5 +105,6 @@
 % 附页
 \include{content/achievement}
 \include{content/thanks}
-
+\includepdf[page=-]{content/blank.pdf}
+\includepdf[page=-]{content/jueyi.pdf}
 \end{document}
