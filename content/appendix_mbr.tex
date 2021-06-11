@@ -9,7 +9,7 @@
 \end{equation}
 上述正是\textbf{最小贝叶斯风险}（Minimum Bayesian Risk, MBR）的内涵：给定输入$\boldsymbol{x}$及对应的后验分布，选择$\boldsymbol{y}$，使得\textit{期望}代价（即风险，\textit{Risk}）最小化 \citep{stoyanov-eisner-2012-minimum}。
 
-对句法分析,或其他结构化预测任务而言，通常我们采用的是最大后验概率（Maximum \textit{A Posteriori}, MAP）解码，即寻求一个使得后验概率最大化的答案。
+对句法分析,或其他结构化预测任务而言，通常我们采用的是最大后验概率（Maximum \textit{A Posteriori}, MAP）解码，即寻求一个使得后验概率最大化的答案\cite{jiang-2019-structured-latent}.
 这是MBR解码的一个特例，而对应的代价函数$\ell^{MAP}(\cdot)$为一个简单的0-1指示函数，判断$\boldsymbol{y}$与$\boldsymbol{y}^{\prime}$是否一致
 \begin{equation}
 	\ell^{MAP}(\boldsymbol{y},\boldsymbol{y}^{\prime}) = \mathbbm{1}(\boldsymbol{y}\neq\boldsymbol{y}^{\prime})
@@ -58,4 +58,3 @@
 因此，在一阶依存句法分析的场景下，MBR解码只需要给定弧的边缘概率，然后直接应用和MAP解码一样的解码算法即可 \citep{smith-smith-2007-probabilistic, smith-2011-linguistic}。
 
 \noindent$\blacksquare$
-

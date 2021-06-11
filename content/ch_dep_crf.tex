@@ -6,35 +6,35 @@
 我们在13个语言的27个数据集上进行了实验，实验结果和分析表明，在深度学习时代之前的技术，诸如结构化学习（全局TreeCRF损失函数）和高阶建模仍然是有益的，并且可以进一步在最好的Biaffine Parser的基础上提升性能，尤其是在局部标注的场景下。
 
 \section{引言}
-依存句法分析任务是NLP领域的一个基础性任务，由于其简洁性，以及可以方便地在多语言上获得句法和语义信息的特性，目前在这一任务上已经有了大量的研究。
-目前在依存句法分析任务上有两个主流方法，分别是基于转移（transition-based）的方法，和基于图（graph-based）的方法，这里我们的方法主要关注于基于图的解析方式。
+依存句法分析任务是NLP领域的一个基础性任务，由于其简洁性，以及可以方便地在多语言上获得句法和语义信息的特性，目前在这一任务上已经有了大量的研究.
+目前在依存句法分析任务上有两个主流方法，分别是基于转移（transition-based）的方法，和基于图（graph-based）的方法，这里我们的方法主要关注于基于图的解析方式.
 
-在深度学习时代之前，基于图的解析依赖于很多手工特征的设计，比如词性、前缀、后缀等等。
-与神经网络方法相比，以前的方法有两个显著的不同。
-首先，对于非神经网络方法而言，结构化学习（structured learning）是不可或缺的，即训练时需要显式地建模树结构的约束。
-通常此类方法采用的是Max Margin训练算法，首先用当前模型训练一棵分值最高的树，然后更新模型参数，以保证正确的树的分值要高于预测树。
+在深度学习时代之前，基于图的解析依赖于很多手工特征的设计，比如词性、前缀、后缀等等.
+与神经网络方法相比，以前的方法有两个显著的不同.
+首先，对于非神经网络方法而言，结构化学习（structured learning）是不可或缺的，即训练时需要显式地建模树结构的约束.
+通常此类方法采用的是Max Margin训练算法，首先用当前模型训练一棵分值最高的树，然后更新模型参数，以保证正确的树的分值要高于预测树.
 
-第二个显著的区别在于高阶特征的使用。
-高阶特征为模型带来了显著的提升。
-基础的一阶模型将句法树的分值分解为若干条独立的弧的分值 \citep{mcdonald-etal-2005-online}。
-后续的工作进一步引入了二阶依存弧对的分值，比如邻接兄弟 \citep{mcdonald-pereira-2006-online}和祖父-父亲-孩子这样的弧对 \citep{carreras-2007-experiments,koo-collins-2010-efficient}，这些高阶扩展都带来了模型性能的显著提升\footnote{三阶和四阶模型的提升不大，这可能是由于特征稀疏的问题导致的 \citep{koo-collins-2010-efficient,ma-zhao-2012-fourth}.}。
-但是这些高阶模型需要引入更复杂的解码算法，导致了模型更加低效。
+第二个显著的区别在于高阶特征的使用.
+高阶特征为模型带来了显著的提升.
+基础的一阶模型将句法树的分值分解为若干条独立的弧的分值 \citep{mcdonald-etal-2005-online}.
+后续的工作进一步引入了二阶依存弧对的分值，比如邻接兄弟 \citep{mcdonald-pereira-2006-online}和祖父-父亲-孩子这样的弧对 \citep{carreras-2007-experiments,koo-collins-2010-efficient}，这些高阶扩展都带来了模型性能的显著提升\footnote{三阶和四阶模型的提升不大，这可能是由于特征稀疏的问题导致的 \citep{koo-collins-2010-efficient,ma-zhao-2012-fourth}.}.
+但是这些高阶模型需要引入更复杂的解码算法，导致了模型更加低效.
 
-相比之下，基于图的神经网络依存句法分析器的发展呈现出相反的趋势。
-\citet{pei-etal-2015-effective}提出利用前馈神经网络来自动学习\citet{chen-manning-2014-fast}的若干特征组合，并计算子树得分。
-他们的工作表明引入二阶邻接兄弟子树的分值显著提高了性能。
-随后， \citet{wang-chang-2016-graph}和\citet{kiperwasser-goldberg-2016-simple}都建议使用双向LSTM作为编码器，以及在一阶模型中利用minus feature来对单条弧打分。
-这三个代表性方法都采用了全局的Max Margin方法。
-\citet{dozat-etal-2017-biaffine}提出了一种强大而高效的Biaffine Parser，并在各种数据集和语言上获得了最先进的精度。
-Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head selection）的方式 \citep{zhang-etal-2017-head}，采用了更简单、更有效的非结构化训练方法。
+相比之下，基于图的神经网络依存句法分析器的发展呈现出相反的趋势.
+\citet{pei-etal-2015-effective}提出利用前馈神经网络来自动学习\citet{chen-manning-2014-fast}的若干特征组合，并计算子树得分.
+他们的工作表明引入二阶邻接兄弟子树的分值显著提高了性能.
+随后， \citet{wang-chang-2016-graph}和\citet{kiperwasser-goldberg-2016-simple}都建议使用双向LSTM作为编码器，以及在一阶模型中利用minus feature来对单条弧打分.
+这三个代表性方法都采用了全局的Max Margin方法.
+\citet{dozat-etal-2017-biaffine}提出了一种强大而高效的Biaffine Parser，并在各种数据集和语言上获得了最先进的精度.
+Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head selection）的方式 \citep{zhang-etal-2017-head}，采用了更简单、更有效的非结构化训练方法.
 
-基于这些对比，我们尝试在基于图的分析器的基础上，将前深度学习时代的一些方法与神经网络模型做一下连接。
+基于这些对比，我们尝试在基于图的分析器的基础上，将前深度学习时代的一些方法与神经网络模型做一下连接.
 这里要解决的\textbf{第一个问题}是:
 \emph{
 	以前的一些技术，比如结构化学习和高阶建模，能够进一步提升当前最佳的分析器Biaffine Parser的性能吗
 	\footnote{
-		尽管最近的一些工作汇报了相比Biaffin Parser更高的性能，但是都引入了一些外部资源，比如大规模语言模型的上下文词表示。
-		在相同网络和相同实验设置的场景下，这些工作的结果都是相近的。
+		尽管最近的一些工作汇报了相比Biaffin Parser更高的性能，但是都引入了一些外部资源，比如大规模语言模型的上下文词表示.
+		在相同网络和相同实验设置的场景下，这些工作的结果都是相近的.
 	}，
 	如果可以，他们在哪些方面是有用的？
 }
@@ -54,12 +54,12 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 
 总体而言，针对上面的两个问题，我们在本章节的贡献如下：
 \begin{itemize}
-	\item 我们第一次提出将二阶TreeCRF应用到神经依存句法分析中。
-	      我们还提出了一个高效的Triaffine结构来对于二阶子树打分。
-	\item 我们提出通过GPU上大规模的并行张量计算来批次化Inside算法，来进行更高效的TreeCRF损失函数的计算。
-	      我们表明复杂的Outside算法对于梯度和边缘概率的计算而言已不再必须，相应的可以用高效的反向传播代替。
-	\item 我们在13个语言的27个树库上进行了实验。
-	      结果和分析都表明，在深度学习时代，结构化学习和高阶建模在许多方面对当前最好的Biaffine Parser仍然是有用的。
+	\item 我们第一次提出将二阶TreeCRF应用到神经依存句法分析中.
+	      我们还提出了一个高效的Triaffine结构来对于二阶子树打分.
+	\item 我们提出通过GPU上大规模的并行张量计算来批次化Inside算法，来进行更高效的TreeCRF损失函数的计算.
+	      我们表明复杂的Outside算法对于梯度和边缘概率的计算而言已不再必须，相应的可以用高效的反向传播代替.
+	\item 我们在13个语言的27个树库上进行了实验.
+	      结果和分析都表明，在深度学习时代，结构化学习和高阶建模在许多方面对当前最好的Biaffine Parser仍然是有用的.
 \end{itemize}
 
 \section{基线模型}
@@ -94,7 +94,7 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 \noindent\textbf{Biaffine打分器.}
 \citet{dozat-etal-2017-biaffine}首次提出通过biaffine attention计算一条依存弧$i \rightarrow j$的分值
 \begin{equation} \label{eq:biaffine}
-	\mathrm{s}(i,j) =  \left[
+	\mathrm{s}(i\rightarrow j) =  \left[
 		\begin{array}{c}
 			\mathbf{r}_{j}^{m} \\
 			1                  
@@ -102,8 +102,8 @@ Biaffine Parser也是一阶的，通过对每个词进行局部头选择（head 
 	\right]^\mathrm{T}
 	\mathbf{W}^\textit{biaffine}  \mathbf{r}_{i}^{h}
 \end{equation}
-其中$\mathbf{W}^\textit{biaffine} \in \mathbb{R}^{d \times d}$。
-这种计算方式在GPU上进行尤其高效。
+其中$\mathbf{W}^\textit{biaffine} \in \mathbb{R}^{(d+1) \times (d)}$.
+这种计算方式在GPU上进行尤其高效.
 
 \begin{figure}[tb]
 	\centering
@@ -154,8 +154,8 @@ Biaffine Parser将骨干树的搜索和依存弧标签标注视为两个独立�
 使用概率TreeCRF来进行结构化训练，以及显式引入高阶子树的分值。
 
 具体地，我们在基本的一阶模型的基础上引入了二阶邻接兄弟子树的分值:\footnote{
-	我们还可以进一步扩展，引入祖父-父亲-孩子的子树分值，然后基于\citet{koo-collins-2010-efficient}提出的$O(n^4)$的Viterbi算法解码。
-	这里我们留待作为未来的工作。
+	我们还可以进一步扩展，引入祖父-父亲-孩子的子树分值，然后基于\citet{koo-collins-2010-efficient}提出的$O(n^4)$的Viterbi算法解码.
+	这里我们留待作为未来的工作.
 }
 \begin{equation}\label{eq:dep-2otree-score}
 	\mathrm{s}(\boldsymbol{x}, \boldsymbol{y}) = \sum_{i\rightarrow j \in \boldsymbol{y}}\mathrm{s}(i\rightarrow j) + \sum_{
@@ -221,8 +221,8 @@ $\mathbf{r}_i^{h'}; \mathbf{r}_i^{s}; \mathbf{r}_i^{m'}$是词$w_i$分别作为�
 }
 
 然后，我们提出了一个对Biaffine自然的扩展，Triaffine结构，来通过上述的三个向量计算分值\footnote{
-	我们同样尝试了\citet{wang-etal-2019-second}的方法，他们用了三个biaffine操作来模拟三个输入向量的交互，但是这种方法的结果相对要差一点。
-	篇幅限制我们省略了相应结果的汇报。
+	我们同样尝试了\citet{wang-etal-2019-second}的方法，他们用了三个biaffine操作来模拟三个输入向量的交互，但是这种方法的结果相对要差一点.
+	篇幅限制我们省略了相应结果的汇报.
 }
 \begin{equation} \label{eq:triaffine}
 	\mathrm{s}(i\rightarrow \{k,j\}) =
@@ -241,8 +241,8 @@ $\mathbf{r}_i^{h'}; \mathbf{r}_i^{s}; \mathbf{r}_i^{m'}$是词$w_i$分别作为�
 		\end{array}
 	\right]
 \end{equation}
-其中$\mathbf{W}^\textit{triaffine} \in \mathbb{R}^{d' \times d' \times d'}$是一个三维的张量。
-Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算。
+其中$\mathbf{W}^\textit{triaffine} \in \mathbb{R}^{d' \times (d'+1) \times (d'+1)}$是一个三维的张量.
+Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算.
 
 \subsection{高效的TreeCRF计算方法}
 
@@ -322,7 +322,7 @@ Triaffine可以方便的通过$\mathrm{einsum}$函数在GPU上高效计算。
 	\centering
 	\includegraphics[scale=1.2]{figures/dep-speed.pdf}
 	\caption{
-		PTB的test数据上的速度比较。
+		PTB的test数据上的速度比较.
 	}
 	\label{fig:speed}
 \end{figure}
@@ -412,7 +412,7 @@ UCM（Unlabeled Complete Match）代表无标签完全匹配率，即所有对�
 之后我们评估相应的P/R/$\mathrm{F}_1$值。
 请注意在局部标注下评估SIB是做不到的。
 
-可以明显看到，通过建模邻接兄弟子树的分值，SIB的性能相比于\textsc{Crf}和\textsc{Loc}得到了更大的提升，并且这进一步带来了在完全树匹配率（UCM/LCM）上的进步。
+可以明显看到，通过建模邻接兄弟子树的分值，SIB的性能相比于\textsc{Crf}和\textsc{Loc}得到了更大的提升，并且这进一步带来了在完全树匹配率（UCM/LCM）上的进步.
 
 \begin{figure}[tb!]
 	\centering
@@ -425,7 +425,7 @@ UCM（Unlabeled Complete Match）代表无标签完全匹配率，即所有对�
 		\includegraphics[width=1.\textwidth]{figures/part-gap-conll.pdf}
 	\end{subfigure}
 	\caption{
-		PTB（左）和CoNLL09（右）的测试集有关训练数据量（弧数以及句子数）变化之后的LAS比较。
+		PTB（左）和CoNLL09（右）的测试集有关训练数据量（弧数以及句子数）变化之后的LAS比较.
 	}
 	\label{fig:part-gap}
 \end{figure}
@@ -454,10 +454,10 @@ UCM（Unlabeled Complete Match）代表无标签完全匹配率，即所有对�
 在UD2.2和UD2.3上，我们提出的\textsc{Crf2o}模型在12个语言中的10个上达到了最高的解析准确率，并且在超过7个语言上获得的提升是显著的。
 总体上，平均分别在UD2.2和UD2.3各自达到了0.45和0.29的提升，这同样是显著的（$p<0.005$）。
 
-在UD2.2上，我们和CoNLL18任务一样采用的是毛文本，并且我们的\textsc{Crf2o}分析器上比\citet{ji-etal-2019-graph}平均要高2.30。
-在UD2.3上，\citet{zhang-etal-2019-empirical}使用了正确词性作为输入，我们平均比他们高0.91。
-需要注意的是\citet{ji-etal-2019-graph}里德语（\textsc{De}）结果错误地使用了正确的句子分割，符号化以及词性，而表中的结果是用了预测的词性，并重新运行他们的分析器得到的。
-我们的\textsc{Crf2o}分析器在使用他们的词性之后平均的LAS达到了87.64。
+在UD2.2上，我们和CoNLL18任务一样采用的是毛文本，并且我们的\textsc{Crf2o}分析器上比\citet{ji-etal-2019-graph}平均要高2.30.
+在UD2.3上，\citet{zhang-etal-2019-empirical}使用了正确词性作为输入，我们平均比他们高0.91.
+需要注意的是\citet{ji-etal-2019-graph}里德语（\textsc{De}）结果错误地使用了正确的句子分割，符号化以及词性，而表中的结果是用了预测的词性，并重新运行他们的分析器得到的.
+我们的\textsc{Crf2o}分析器在使用他们的词性之后平均的LAS达到了87.64.
 
 \section{本章小结}
 \label{sec:dep-conclusions}

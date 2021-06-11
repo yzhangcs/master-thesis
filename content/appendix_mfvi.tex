@@ -1,17 +1,17 @@
 \chapter{用于结构化预测的平均场变分推断的推导}
 \label{appendix:mfvi-derivation}
-对于一般的结构化任务而言，我们需要得到后验分布$P(\boldsymbol{y}\mid\boldsymbol{x})$。
+对于一般的结构化任务而言，我们需要得到后验分布$P(\boldsymbol{y}\mid\boldsymbol{x})$.
 我们可以将输出$\boldsymbol{y}$按照对应的因子图分解为若干个因子的集合 \citep{sutton-etal-2012-crf}，相应的$P(\boldsymbol{y}\mid\boldsymbol{x})$定义为\footnote{后面方便起见我们省略输入$\boldsymbol{x}$的标记}
 \begin{equation}\label{eq:posterior}
 	P(\boldsymbol{y}\mid\boldsymbol{x}) =\frac{\prod_{\alpha} \psi_{\alpha}(y_{\alpha})}{Z(\boldsymbol{x})\equiv\sum_{\boldsymbol{y}^{\prime}}\prod_{\alpha} \psi_{\alpha}(y^{\prime}_{\alpha})}
 \end{equation}
-其中$Z$为配分项，$\psi_{\alpha}(\cdot)$为因子$\alpha$的势函数，我们定义未归一化的分布$\tilde{P}(\boldsymbol{y})=\prod_{\alpha} \psi_{\alpha}(y_{\alpha})$。
+其中$Z$为配分项，$\psi_{\alpha}(\cdot)$为因子$\alpha$的势函数，我们定义未归一化的分布$\tilde{P}(\boldsymbol{y})=\prod_{\alpha} \psi_{\alpha}(y_{\alpha})$.
 
 变分推断建模一个近似分布$Q(\boldsymbol{y})$，并最小化其与真实分布的KL散度（Kullback–Leibler Divergence）
 \begin{equation}
 	\begin{split}
 		Q^{\ast}(\boldsymbol{y})
-		&=\arg\min_{Q} KL(Q\|P)\\
+		&=\arg\min_{Q} KL(Q\;\|\;P)\\
 		&=\arg\min_{Q} E_{Q}\left[\log\frac{Q(\boldsymbol{y})}{P(\boldsymbol{y})}\right]\\
 		&=\arg\min_{Q} E_{Q}\left[\log Q(\boldsymbol{y})\right] - E_{Q}\left[\log P(\boldsymbol{y})\right]\\
 		&=\arg\min_{Q} \log Z-\underbrace{\left(E_{Q}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q}\left[\log Q(\boldsymbol{y})\right]\right)}_{ELBo}
@@ -30,8 +30,8 @@
 \end{equation}
 
 
-Mean Field假设每个变量相互独立，即有$Q(\boldsymbol{y})=\prod_i{Q_i(y_i)}$。
-因此上式可应用坐标上升法（Coordinate Ascent），每次迭代优化一个变量$Q_j(y_j)$，保持其余变量$Q_{-j}(y_{-j})$不变。
+Mean Field假设每个变量相互独立，即有$Q(\boldsymbol{y})=\prod_i{Q_i(y_i)}$.
+因此上式可应用坐标上升法（Coordinate Ascent），每次迭代优化一个变量$Q_j(y_j)$，保持其余变量$Q_{-j}(y_{-j})$不变.
 对于目标函数
 \begin{equation}
 	\mathcal{L}(Q)=\underbrace{E_{Q}\left[\log \tilde{P}(\boldsymbol{y})\right]}_{\tcircle{1}}-\underbrace{E_{Q}\left[\log Q(\boldsymbol{y})\right]}_{\tcircle{2}}
@@ -58,12 +58,12 @@ $C$代表常数项，因此有
 \begin{equation}
 	\begin{split}
 		\mathcal{L}(Q)&=\tcircle{1}-\tcircle{2}\\
-		&=\int_{\boldsymbol{y_j}}Q_j(y_j)\underbrace{E_{Q_{-j}}\left[\log \tilde{P}(\boldsymbol{y}) \right]}_{\log \dot{P}_j(y_j)} dy_j-\int_{y_j}Q_j(y_j)\log Q_j(y_j) dy_j +C\\
-		&=\int_{\boldsymbol{y_j}}Q_j(y_j)\log\frac{\dot{P}_j(y_j)}{Q_j(y_j)} dy_j +C\\
-		&=-KL\left(Q_j(y_j)\|\dot{P}_j(y_j)\right)+C
+		&=\int_{y_j}Q_j(y_j)\underbrace{E_{Q_{-j}}\left[\log \tilde{P}(\boldsymbol{y}) \right]}_{\log \dot{P}_j(y_j)} dy_j-\int_{y_j}Q_j(y_j)\log Q_j(y_j) dy_j +C\\
+		&=\int_{y_j}Q_j(y_j)\log\frac{\dot{P}_j(y_j)}{Q_j(y_j)} dy_j +C\\
+		&=-KL\left(Q_j(y_j)\;\|\;\dot{P}_j(y_j)\right)+C
 	\end{split}
 \end{equation}
-因此最大化$\mathcal{L}(Q)$即最小化$KL\left(Q_j(y_j)\|\dot{P}_j(y_j)\right)$。
+因此最大化$\mathcal{L}(Q)$即最小化$KL\left(Q_j(y_j)\;\|\;\dot{P}_j(y_j)\right)$.
 当两个分布相等时KL散度最小，因此相应的更新公式为
 \begin{equation}
 	\begin{split}
@@ -75,7 +75,7 @@ $C$代表常数项，因此有
 		&\propto\exp\left(\sum_{\alpha:j\in \mathcal{N}(\alpha)}\int_{y_{-j}} Q_{-j}(y_{-j})\log \psi_{\alpha}(y_{\alpha}) dy_{-j}\right)\\
 	\end{split}
 \end{equation}
-$\mathcal{N}(\alpha)$代表与因子$\alpha$连接的变量，上式中，所有与变量$j$无关的因子对应的积分之和为一个常数项。
+$\mathcal{N}(\alpha)$代表与因子$\alpha$连接的变量，上式中，所有与变量$j$无关的因子对应的积分之和为一个常数项.
 继续推导得
 \begin{equation}
 	\begin{split}
@@ -90,7 +90,7 @@ $\mathcal{N}(\alpha)$代表与因子$\alpha$连接的变量，上式中，所有
 \begin{equation}
 	Q^{\ast}_j(y_j)\propto\exp\left(\sum_{\alpha:j\in \mathcal{N}(\alpha)}E_{Q_{\mathcal{N}(\alpha)-j}}\log \psi_{\alpha}(y_{\alpha})\right)
 \end{equation}
-对于包含高阶因子的模型，我们引入记号$\alpha$和$\beta$分别代表一阶因子和高阶因子。
+对于包含高阶因子的模型，我们引入记号$\alpha$和$\beta$分别代表一阶因子和高阶因子.
 容易得，相应的更新公式为
 \begin{equation}
 	Q^{\ast}_j(y_j)\propto\psi_{\alpha}(y_{\alpha})\cdot\exp\left(\sum_{\beta:j\in \mathcal{N}(\beta)}E_{Q_{\mathcal{N}(\beta)-j}}\log \psi_{\beta}(y_{\beta})\right)
