@@ -1,0 +1,16 @@
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.gz
+*.dat
+*.thm
+*.bst
+*.toc
+.vscode
+anthology.bib
+__latexindent_temp.tex
