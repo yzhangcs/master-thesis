@@ -11,7 +11,7 @@
 \begin{equation}
 	\begin{split}
 		Q^{\ast}(\boldsymbol{y})
-		&=\arg\min_{Q} KL(Q\;\|\;P)\\
+		&=\arg\min_{Q} KL(Q\parallel P)\\
 		&=\arg\min_{Q} E_{Q}\left[\log\frac{Q(\boldsymbol{y})}{P(\boldsymbol{y})}\right]\\
 		&=\arg\min_{Q} E_{Q}\left[\log Q(\boldsymbol{y})\right] - E_{Q}\left[\log P(\boldsymbol{y})\right]\\
 		&=\arg\min_{Q} \log Z-\underbrace{\left(E_{Q}\left[\log \tilde{P}(\boldsymbol{y})\right]-E_{Q}\left[\log Q(\boldsymbol{y})\right]\right)}_{ELBo}
@@ -60,10 +60,10 @@ $C$代表常数项，因此有
 		\mathcal{L}(Q)&=\tcircle{1}-\tcircle{2}\\
 		&=\int_{y_j}Q_j(y_j)\underbrace{E_{Q_{-j}}\left[\log \tilde{P}(\boldsymbol{y}) \right]}_{\log \dot{P}_j(y_j)} dy_j-\int_{y_j}Q_j(y_j)\log Q_j(y_j) dy_j +C\\
 		&=\int_{y_j}Q_j(y_j)\log\frac{\dot{P}_j(y_j)}{Q_j(y_j)} dy_j +C\\
-		&=-KL\left(Q_j(y_j)\;\|\;\dot{P}_j(y_j)\right)+C
+		&=-KL\left(Q_j(y_j)\parallel \dot{P}_j(y_j)\right)+C
 	\end{split}
 \end{equation}
-因此最大化$\mathcal{L}(Q)$即最小化$KL\left(Q_j(y_j)\;\|\;\dot{P}_j(y_j)\right)$.
+因此最大化$\mathcal{L}(Q)$即最小化$KL\left(Q_j(y_j)\parallel \dot{P}_j(y_j)\right)$.
 当两个分布相等时KL散度最小，因此相应的更新公式为
 \begin{equation}
 	\begin{split}
