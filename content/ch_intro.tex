@@ -9,9 +9,9 @@
 句法分析的目的是以句法树的形式刻画句子结构，主要包含了依存句法（Dependency Parsing）和成分句法（Constituency Parsing）分析这两种范式.
 语义分析则是为了理解句子的内含语义，包含语义角色标注（Semantic Role Labeling, SRL）、语义依存分析（Semantic Dependency Parsing, SDP）和抽象语义表示（Abstract Meaning Representation, AMR）等子任务.
 
-上述的三个流程通常以管道的方式进行，而句法分析作为连接词法和语义分析的中间步骤，具备十分重要的研究价值。
-目前存在着多种句法分析文法，例如组合范畴文法（Combinatorial Categorical Grammars, CCGs），成分文法（Constituency Grammars or Context Free Grammars, CFGs），以及依存文法（Dependency Grammars）。
-其中依存文法对应的依存句法分析，和成分文法对应的成分句法分析是目前最常见的句法分析范式，也是本文主要的研究对象。
+上述的三个流程通常以管道的方式进行，而句法分析作为连接词法和语义分析的中间步骤，具备十分重要的研究价值.
+目前存在着多种句法分析文法，例如组合范畴文法（Combinatorial Categorical Grammars, CCGs），成分文法（Constituency Grammars or Context Free Grammars, CFGs），以及依存文法（Dependency Grammars）.
+其中依存文法对应的依存句法分析，和成分文法对应的成分句法分析是目前最常见的句法分析范式，也是本文主要的研究对象.
 
 \input{figures/dep-tree.tex}
 依存句法分析的目的是识别句子中词语的修饰关系.
@@ -50,19 +50,19 @@
 主要限制TreeCRF应用的原因在于Inside-Outside算法的高复杂度问题，尤其是Outside过程，通常而言Outside算法要两倍慢于Inside.
 对此，我们主要从两个方面尝试解决：
 1）我们为Inside算法设计了精巧的批次化方法，使得TreeCRF能够利用GPU的并行计算能力大大加速；
-2）得益于集成了自动求导机制的深度学习库的出现，我们无需和前人一样需要在CPU上进行完整的Inside-Outside过程得到梯度，而是将Outside过程由高效的反向传播机制代替。
+2）得益于集成了自动求导机制的深度学习库的出现，我们无需和前人一样需要在CPU上进行完整的Inside-Outside过程得到梯度，而是将Outside过程由高效的反向传播机制代替.
 
-此外，已经有很多工作证明，在模型中引入包含更多变量交互的高阶特征可以极大提升句法分析的准确率 \citep{mcdonald-pereira-2006-online,chen-manning-2014-fast,ji-etal-2019-graph}。
-因此在章节~\ref{cha:dep-crf}和章节~\ref{cha:con-crf}中，我们在一阶模型的基础上引入了一个高阶TreeCRF的拓展。
-为了能够对二阶子树特征打分，我们还参考Biaffine打分器为其设计了一个Triaffine机制。
-结果表明，高阶TreeCRF在大多数数据集上都带来了显著的提升。
+此外，已经有很多工作证明，在模型中引入包含更多变量交互的高阶特征可以极大提升句法分析的准确率 \citep{mcdonald-pereira-2006-online,chen-manning-2014-fast,ji-etal-2019-graph}.
+因此在章节~\ref{cha:dep-crf}和章节~\ref{cha:con-crf}中，我们在一阶模型的基础上引入了一个高阶TreeCRF的拓展.
+为了能够对二阶子树特征打分，我们还参考Biaffine打分器为其设计了一个Triaffine机制.
+结果表明，高阶TreeCRF在大多数数据集上都带来了显著的提升.
 
-尽管可以应用批次化技术，高阶TreeCRF仍不可避免地加剧了推断算法效率低下的问题。
-在机器学习社区中，研究者在针对推断算法高复杂度或者不可精确推断问题时，一个通常的做法是尝试采用近似推断算法。
-因此在章节~\ref{cha:vi}中，我们还尝试了利用近似的平均场变分推断（Mean Field Variational Inference, MFVI）方法来代替高阶TreeCRF。
-和其他同样在句法分析中广泛应用的近似推断算法，例如循环置信传播 \citep{smith-eisner-2008-dependency}和对偶分解 \citep{martins-etal-2009-concise}，相比，MFVI的效率更高，收敛更快，并且通常可以达到更好的结果 \citep{wang-etal-2019-second}。
-此外，MFVI能够方便的得到树/子树的概率，这保留了TreeCRF的优势。
-我们在依存句法和成分句法分析两种范式中分别设计了两种不同的因子图以及变分推断迭代算法，结构表明MFVI在达到和高阶TreeCRF相接近的性能的同时，显著提升了句法模型的解析速度。
+尽管可以应用批次化技术，高阶TreeCRF仍不可避免地加剧了推断算法效率低下的问题.
+在机器学习社区中，研究者在针对推断算法高复杂度或者不可精确推断问题时，一个通常的做法是尝试采用近似推断算法.
+因此在章节~\ref{cha:vi}中，我们还尝试了利用近似的平均场变分推断（Mean Field Variational Inference, MFVI）方法来代替高阶TreeCRF.
+和其他同样在句法分析中广泛应用的近似推断算法，例如循环置信传播 \citep{smith-eisner-2008-dependency}和对偶分解 \citep{martins-etal-2009-concise}，相比，MFVI的效率更高，收敛更快，并且通常可以达到更好的结果 \citep{wang-etal-2019-second}.
+此外，MFVI能够方便的得到树/子树的概率，这保留了TreeCRF的优势.
+我们在依存句法和成分句法分析两种范式中分别设计了两种不同的因子图以及变分推断迭代算法，结构表明MFVI在达到和高阶TreeCRF相接近的性能的同时，显著提升了句法模型的解析速度.
 
 \section{数据集和评价指标}
 
@@ -193,29 +193,29 @@ TreeCRF方法在计算句法树概率时需要在全局空间上对句法树的�
 \citet{durrett-klein-2015-neural}拓展了\citet{finkel-etal-2008-efficient}的工作，使用一个带非线性激活的前馈神经网络来打分产生式.
 这两个工作都在CPU上显式进行了Inside-Outside计算，带来了严重的效率问题.
 
-与此对应的，和TreeCRF类似进行结构化学习，但是无需全局归一化的Max Margin方法相对要更加流行。
-\citet{taskar-etal-2004-max}首次在依存句法上提出Max Margin解析，训练时最大化正确句法树和其他可能句法树的分值间隔，后来\citet{mcdonald-etal-2005-online,mcdonald-etal-2005-online}都采用了这种学习目标，而近期的代表性工作中，\citet{wang-chang-2016-graph,kiperwasser-goldberg-2016-simple}均采用了Max Margin训练。
-当前流行的成分句法模型 \citep{stern-etal-2017-minimal,kitaev-klein-2018-constituency,zhou-zhao-2019-head}通常也采用了Max Margin训练方法。
+与此对应的，和TreeCRF类似进行结构化学习，但是无需全局归一化的Max Margin方法相对要更加流行.
+\citet{taskar-etal-2004-max}首次在依存句法上提出Max Margin解析，训练时最大化正确句法树和其他可能句法树的分值间隔，后来\citet{mcdonald-etal-2005-online,mcdonald-etal-2005-online}都采用了这种学习目标，而近期的代表性工作中，\citet{wang-chang-2016-graph,kiperwasser-goldberg-2016-simple}均采用了Max Margin训练.
+当前流行的成分句法模型 \citep{stern-etal-2017-minimal,kitaev-klein-2018-constituency,zhou-zhao-2019-head}通常也采用了Max Margin训练方法.
 
-最近也有工作提出对TreeCRF等结构化学习算法进行加速。
-\citet{zhang-etal-2017-dependency-parsing,jiang-etal-2018-supervised,li-etal-2019-semi-supervised}作为最近的基于TreeCRF的工作，采用了Cython Programming并结合多线程，在CPU上加快了Inside-Outside的计算。
-类似地，\citet{kitaev-klein-2018-constituency}将Cython Programming应用到了Max Margin训练上。
-而在本文中，我们从两个方面来加速TreeCRF算法：1）批次化技术；2）用基于自动求导的反向传播代替Outside算法。
+最近也有工作提出对TreeCRF等结构化学习算法进行加速.
+\citet{zhang-etal-2017-dependency-parsing,jiang-etal-2018-supervised,li-etal-2019-semi-supervised}作为最近的基于TreeCRF的工作，采用了Cython Programming并结合多线程，在CPU上加快了Inside-Outside的计算.
+类似地，\citet{kitaev-klein-2018-constituency}将Cython Programming应用到了Max Margin训练上.
+而在本文中，我们从两个方面来加速TreeCRF算法：1）批次化技术；2）用基于自动求导的反向传播代替Outside算法.
 
-对于序列标注任务而言，批次化很直接，并且已经被很好的解决，比如NCRF++的实现\footnote{\url{https://github.com/jiesutd/NCRFpp}}，但是在树形结构中这个要复杂得多。
-我们首次提出分别在依存和成分句法上批次化树形结构的Inside和Viterbi（Eisner/CKY）计算，以便于利用GPU加速。
+对于序列标注任务而言，批次化很直接，并且已经被很好的解决，比如NCRF++的实现\footnote{\url{https://github.com/jiesutd/NCRFpp}}，但是在树形结构中这个要复杂得多.
+我们首次提出分别在依存和成分句法上批次化树形结构的Inside和Viterbi（Eisner/CKY）计算，以便于利用GPU加速.
 
 \citet{eisner-2016-inside}在成分句法分析上提出了一个关于Outside算法和反向传播机制等价性的理论证明，并同样讨论了其他类似于依存文法的范式.
 我们在本文的工作中借鉴了他们的理论性工作，在依存和成分文法中用反向传播完全取代了Outside算法，显著提升了解析效率.
 作为一个经验性分析，我们相信我们的尝试能够让TreeCRF在现实系统中应用起来.
 
-Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}} \citep{rush-2020-torch}是我们的方法之外一个同期独立完成的工作，他们同样为依存句法和成分句法实现了批次化的Eisner/CKY算法，并且和我们一样，将Outside算法用Inside过程以及基于自动求导的反向传播代替。
-然而，Torch-Struct旨在实现通用目的的结构化预测算法。
-与此不同的是，我们着力于复杂的解析器模型，并力求达到依存句法分析和成分句法分析在准确率和效率上的最佳性能。
-此外，Torch-Struct关注于一阶算法，而我们分别还在两种句法分析范式中引入了二阶的Eisner/CKY算法，并做了大量的针对性实验和分析。
+Torch-Struct\footnote{\url{https://github.com/harvardnlp/pytorch-struct}} \citep{rush-2020-torch}是我们的方法之外一个同期独立完成的工作，他们同样为依存句法和成分句法实现了批次化的Eisner/CKY算法，并且和我们一样，将Outside算法用Inside过程以及基于自动求导的反向传播代替.
+然而，Torch-Struct旨在实现通用目的的结构化预测算法.
+与此不同的是，我们着力于复杂的解析器模型，并力求达到依存句法分析和成分句法分析在准确率和效率上的最佳性能.
+此外，Torch-Struct关注于一阶算法，而我们分别还在两种句法分析范式中引入了二阶的Eisner/CKY算法，并做了大量的针对性实验和分析.
 
 \subsection{近似推断方法}
-针对句法分析的推断算法，我们关注于两个问题：1）最大后验概率推断（Maximun \textit{a posteriori} inference, MAP inference），即得到后验概率最大化的句法树；2）边缘概率推断（Marginal inference），即得到句法树中每个变量的边缘概率。
+针对句法分析的推断算法，我们关注于两个问题：1）最大后验概率推断（Maximun \textit{a posteriori} inference, MAP inference），即得到后验概率最大化的句法树；2）边缘概率推断（Marginal inference），即得到句法树中每个变量的边缘概率.
 尽管为推断算法引入高阶特征，能够帮助模型准确率的提升 \citep{mcdonald-pereira-2006-online,carreras-2007-experiments,koo-collins-2010-efficient,ma-zhao-2012-fourth}，
 然而这种通常导致两种情况：1）相应的精确推断算法有很高的复杂度；2）无法得到一个可精确推断的动态规划算法来计算目标结构的概率.
 对于前者，我们可以考虑批次化方法和自动求导等技术，利用GPU并行计算的能力，降低算法复杂度.

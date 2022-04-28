@@ -9,21 +9,21 @@
 	Currently, parsing models are greatly simplified, and it's a trend to adopt local loss for syntactic parsing.
 	In contrast, we propose a high-order extension to first-order models.
 	While high-order modeling further increases the algorithm complexity, we also try to apply mean field variational inference (MFVI) as an alternative to exact inference of TreeCRF method, which greatly improves the parsing efficiency.
-	
+
 	Specifically, the main research content of this thesis includes three parts:
-	
+
 	\begin{enumerate}
-		
+
 		\item TreeCRF-based high-order dependency parsing.
-		      
+
 		      This thesis proposes to apply TreeCRF-based method to neural dependency parsing, and further presents a second-order extension.
 		      The main bottleneck leading to the inefficiency of TreeCRF lies in the Inside-Outside algorithm, especially the calculation of the Outside pass.
 		      To overcome this, we propose to batchify the Inside algorithm, and reduce the time complexity from $O(n^3)$ to $O(n^2)$ by utilizing the power of GPU parallel computation.
 		      In addition, we replace the complex Outside algorithm with back-propagation equipped with auto-differentiation, which significantly improves the efficiency and speeds up the model to 400 sentences/s.
 		      We conduct extensive experiments on 27 datasets in 13 languages, and the results reveal the effectiveness of TreeCRF and high-order modeling.
-		      
+
 		\item TreeCRF-based high-order constituency parsing.
-		      
+
 		      This thesis proposes to apply high-order TreeCRF to constituency parsing.
 		      To solve the efficiency issue, we apply batchification techniques and back-propagation consistent with the dependency model to accelerate.
 		      Moreover, we propose a simple two-stage parsing approach, which has comparable results with previous one-stage methods, but is more efficient.
@@ -32,24 +32,24 @@
 		      Experimental results on three Chinese and English benchmark datasets show that our proposed models significantly surpass existing methods.
 		      In terms of parsing speed, our first-order and second-order models can parse over 1,092/598 sentences/s.
 		      After using BERT, our models achieve new state-of-the-art performance on all datasets.
-		      
+
 		\item Efficient syntactic parsing based on variational inference.
-		      
+
 		      In order to deal with the high complexity of the TreeCRF method for exact inference, this thesis proposes to introduce an approximate method based on mean field variational inference for dependency and constituency parsing.
 		      Compared with high-order TreeCRF, variational inference reduces the time complexity on GPU from $O(n^2)$ to $O(n)$, improving the model efficiency greatly.
 		      Experimental results on five Chinese and English datasets show that our second-order variational inference method significantly outperforms the first-order model, and achieves comparable results with second-order TreeCRF models.
 		      Meanwhile, our models can parse over 1,126 and 905 sentences/s on dependency parsing and constituency parsing respectively, greatly surpassing the exact inference of second-order TreeCRF methods .
 		      Moreover, after using BERT, our variational inference method achieves or approaches the performance of current state-of-the-art models.
-		      
+
 	\end{enumerate}
-	
+
 	In summary, this thesis proposes to apply TreeCRF and further presents a second-order extension for both neural dependency and constituency parsing, achieving the current state-of-the-art performance.
 	To tackle the inefficiency issue, we apply batchification techniques and back-propagation to reduce the algorithm complexity.
 	This thesis also studies the impact of approximate methods like variational inference on parsing efficiency.
 	We find it greatly improves the parsing speed while has a similar performance to exact high-order modeling.
-	
+
 	\vskip 21bp
-	{\bf\zihao{-4} Key words: }
+		{\bf\zihao{-4} Key words: }
 	Syntactic Parsing,
 	Dependency Parsing,
 	Constituency Parsing,
@@ -59,6 +59,6 @@
 
 \begin{flushright}
 	Written by ***
-	
+
 	Supervised by ***
 \end{flushright}
